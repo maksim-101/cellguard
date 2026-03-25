@@ -46,7 +46,7 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — ConnectivityMonitor coordinator with NWPathMonitor, path classification, drop duration
+- [x] 02-01-PLAN.md — ConnectivityMonitor coordinator with NWPathMonitor, path classification, drop duration
 - [ ] 02-02-PLAN.md — HEAD probe, silent failure detection, CoreTelephony telemetry, app wiring
 
 ### Phase 3: Background Lifecycle

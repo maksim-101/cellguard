@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-03-25T13:19:13.049Z"
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-03-25T13:42:32.872Z"
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
+  total_plans: 3
+  completed_plans: 2
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-25)
 
 **Core value:** Reliably detect and log every cellular connectivity drop — including silent modem failures — to produce irrefutable evidence for Apple's engineering team.
-**Current focus:** Phase 01 — foundation
+**Current focus:** Phase 02 — core-monitoring
 
 ## Current Position
 
-Phase: 2
-Plan: Not started
+Phase: 02 (core-monitoring) — EXECUTING
+Plan: 2 of 2
 
 ## Performance Metrics
 
@@ -47,6 +47,7 @@ Plan: Not started
 
 *Updated after each plan completion*
 | Phase 01 P01 | 4min | 2 tasks | 7 files |
+| Phase 02 P01 | 2min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -62,6 +63,7 @@ Recent decisions affecting current work:
 - [Phase 01]: Store enum fields as Int rawValues with computed accessors for SwiftData predicate compatibility
 - [Phase 01]: Decompose CLLocationCoordinate2D to separate latitude/longitude Doubles for SwiftData storage
 - [Phase 01]: Implement scenePhase workaround for iOS 18+ @Query refresh bug from day one
+- [Phase 02]: Use availableInterfaces.first for primary interface detection (avoids multi-interface ambiguity)
 
 ### Pending Todos
 
@@ -75,6 +77,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T13:12:34.955Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-03-25T13:42:32.870Z
+Stopped at: Completed 02-01-PLAN.md
 Resume file: None

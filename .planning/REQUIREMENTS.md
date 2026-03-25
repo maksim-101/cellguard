@@ -7,18 +7,18 @@
 
 ### Monitoring
 
-- [ ] **MON-01**: App monitors network path changes in real-time via NWPathMonitor and logs every transition (satisfied/unsatisfied/requiresConnection, interface changes)
+- [x] **MON-01**: App monitors network path changes in real-time via NWPathMonitor and logs every transition (satisfied/unsatisfied/requiresConnection, interface changes)
 - [ ] **MON-02**: App performs periodic active connectivity probe (HEAD request to Apple captive portal) to detect silent modem failures where path reports "satisfied" but no data transits
 - [ ] **MON-03**: App classifies a probe timeout while path status is "satisfied" as a distinct "silent modem failure" event type
 - [ ] **MON-04**: App captures radio access technology (LTE, 5G NR, etc.) via CTTelephonyNetworkInfo with each event
 - [ ] **MON-05**: App captures carrier metadata (carrier name, MCC/MNC) on a best-effort basis (may be nil due to CTCarrier deprecation)
-- [ ] **MON-06**: App detects and logs when device silently falls back to Wi-Fi after a cellular drop (interface transition from cellular to Wi-Fi)
+- [x] **MON-06**: App detects and logs when device silently falls back to Wi-Fi after a cellular drop (interface transition from cellular to Wi-Fi)
 - [ ] **MON-07**: App prompts user via local notification to trigger sysdiagnose immediately after a drop is detected (for Apple baseband logging profile capture)
 
 ### Data & Storage
 
 - [x] **DAT-01**: Each event is stored with full metadata: ISO 8601 timestamp (local + UTC), event type, path status, interface type, is_expensive, is_constrained, radio technology, carrier name, probe result (latency or failure reason), coarse location
-- [ ] **DAT-02**: App calculates and stores drop duration (time from drop-start event to next connectivity restoration event)
+- [x] **DAT-02**: App calculates and stores drop duration (time from drop-start event to next connectivity restoration event)
 - [ ] **DAT-03**: App persists monitoring-enabled state across app kills, iOS terminations, and device reboots — auto-resumes monitoring on relaunch
 - [ ] **DAT-04**: App captures coarse location (via significant location changes) with each event for geographic pattern analysis
 - [ ] **DAT-05**: App tracks and records monitoring gaps (periods when iOS suspended/terminated the app and no events could be captured)
@@ -79,15 +79,15 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MON-01 | Phase 2 | Pending |
+| MON-01 | Phase 2 | Complete |
 | MON-02 | Phase 2 | Pending |
 | MON-03 | Phase 2 | Pending |
 | MON-04 | Phase 2 | Pending |
 | MON-05 | Phase 2 | Pending |
-| MON-06 | Phase 2 | Pending |
+| MON-06 | Phase 2 | Complete |
 | MON-07 | Phase 4 | Pending |
 | DAT-01 | Phase 1 | Complete |
-| DAT-02 | Phase 2 | Pending |
+| DAT-02 | Phase 2 | Complete |
 | DAT-03 | Phase 3 | Pending |
 | DAT-04 | Phase 2 | Pending |
 | DAT-05 | Phase 3 | Pending |
