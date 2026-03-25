@@ -62,7 +62,7 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — LocationService (CLLocationManager + CLServiceSession), AppDelegate, gap detection, monitoringGap event type
+- [x] 03-01-PLAN.md — LocationService (CLLocationManager + CLServiceSession), AppDelegate, gap detection, monitoringGap event type
 - [x] 03-02-PLAN.md — MonitoringHealthService (health aggregation), ProvisioningProfileService (expiry + notification)
 - [ ] 03-03-PLAN.md — App lifecycle wiring, health status bar UI, HealthDetailSheet, gap event rendering
 

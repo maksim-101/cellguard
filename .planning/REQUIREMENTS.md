@@ -19,18 +19,18 @@
 
 - [x] **DAT-01**: Each event is stored with full metadata: ISO 8601 timestamp (local + UTC), event type, path status, interface type, is_expensive, is_constrained, radio technology, carrier name, probe result (latency or failure reason), coarse location
 - [x] **DAT-02**: App calculates and stores drop duration (time from drop-start event to next connectivity restoration event)
-- [ ] **DAT-03**: App persists monitoring-enabled state across app kills, iOS terminations, and device reboots — auto-resumes monitoring on relaunch
+- [x] **DAT-03**: App persists monitoring-enabled state across app kills, iOS terminations, and device reboots — auto-resumes monitoring on relaunch
 - [x] **DAT-04**: App captures coarse location (via significant location changes) with each event for geographic pattern analysis
-- [ ] **DAT-05**: App tracks and records monitoring gaps (periods when iOS suspended/terminated the app and no events could be captured)
+- [x] **DAT-05**: App tracks and records monitoring gaps (periods when iOS suspended/terminated the app and no events could be captured)
 - [x] **DAT-06**: App stores weeks of event data locally without significant storage impact using SwiftData
 
 ### Background Execution
 
-- [ ] **BKG-01**: App uses significant location change monitoring (CLLocationManager) as primary background wake trigger and location source
-- [ ] **BKG-02**: App retains an active CLServiceSession for background location delivery on iOS 18+
+- [x] **BKG-01**: App uses significant location change monitoring (CLLocationManager) as primary background wake trigger and location source
+- [x] **BKG-02**: App retains an active CLServiceSession for background location delivery on iOS 18+
 - [x] **BKG-03**: App uses BGAppRefreshTask for supplementary background wake events
 - [x] **BKG-04**: App detects and warns user when Background App Refresh is disabled, Low Power Mode is active, or other conditions prevent reliable background monitoring
-- [ ] **BKG-05**: App runs in background for 24+ hours without being terminated by iOS or causing noticeable battery drain
+- [x] **BKG-05**: App runs in background for 24+ hours without being terminated by iOS or causing noticeable battery drain
 
 ### User Interface
 
@@ -88,15 +88,15 @@
 | MON-07 | Phase 4 | Pending |
 | DAT-01 | Phase 1 | Complete |
 | DAT-02 | Phase 2 | Complete |
-| DAT-03 | Phase 3 | Pending |
+| DAT-03 | Phase 3 | Complete |
 | DAT-04 | Phase 2 | Complete |
-| DAT-05 | Phase 3 | Pending |
+| DAT-05 | Phase 3 | Complete |
 | DAT-06 | Phase 1 | Complete |
-| BKG-01 | Phase 3 | Pending |
-| BKG-02 | Phase 3 | Pending |
+| BKG-01 | Phase 3 | Complete |
+| BKG-02 | Phase 3 | Complete |
 | BKG-03 | Phase 3 | Complete |
 | BKG-04 | Phase 3 | Complete |
-| BKG-05 | Phase 3 | Pending |
+| BKG-05 | Phase 3 | Complete |
 | UI-01 | Phase 4 | Pending |
 | UI-02 | Phase 4 | Pending |
 | UI-03 | Phase 4 | Pending |
