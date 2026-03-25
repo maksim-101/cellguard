@@ -183,6 +183,13 @@ final class ConnectivityMonitor {
         probeTimer = nil
     }
 
+    /// Public entry point for background wake-then-probe pattern.
+    /// Called by LocationService on significant location change and by BGAppRefreshTask handler.
+    @MainActor
+    func runSingleProbe() async {
+        await runProbe()
+    }
+
     // MARK: - HEAD Probe (MON-02, MON-03)
 
     /// Performs a single HEAD request to Apple's captive portal to verify actual connectivity.

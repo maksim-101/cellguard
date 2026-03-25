@@ -11,6 +11,7 @@ enum EventType: Int, Codable, CaseIterable {
     case probeSuccess = 2
     case probeFailure = 3
     case connectivityRestored = 4
+    case monitoringGap = 5
 }
 
 /// Network path status as reported by NWPathMonitor.
@@ -244,6 +245,7 @@ extension EventType {
         case .probeSuccess: "Probe Success"
         case .probeFailure: "Probe Failure"
         case .connectivityRestored: "Connectivity Restored"
+        case .monitoringGap: "Monitoring Gap"
         }
     }
 }
