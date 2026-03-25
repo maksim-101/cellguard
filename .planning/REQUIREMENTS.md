@@ -79,37 +79,37 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MON-01 | — | Pending |
-| MON-02 | — | Pending |
-| MON-03 | — | Pending |
-| MON-04 | — | Pending |
-| MON-05 | — | Pending |
-| MON-06 | — | Pending |
-| MON-07 | — | Pending |
-| DAT-01 | — | Pending |
-| DAT-02 | — | Pending |
-| DAT-03 | — | Pending |
-| DAT-04 | — | Pending |
-| DAT-05 | — | Pending |
-| DAT-06 | — | Pending |
-| BKG-01 | — | Pending |
-| BKG-02 | — | Pending |
-| BKG-03 | — | Pending |
-| BKG-04 | — | Pending |
-| BKG-05 | — | Pending |
-| UI-01 | — | Pending |
-| UI-02 | — | Pending |
-| UI-03 | — | Pending |
-| UI-04 | — | Pending |
-| EXP-01 | — | Pending |
-| EXP-02 | — | Pending |
-| EXP-03 | — | Pending |
+| MON-01 | Phase 2 | Pending |
+| MON-02 | Phase 2 | Pending |
+| MON-03 | Phase 2 | Pending |
+| MON-04 | Phase 2 | Pending |
+| MON-05 | Phase 2 | Pending |
+| MON-06 | Phase 2 | Pending |
+| MON-07 | Phase 4 | Pending |
+| DAT-01 | Phase 1 | Pending |
+| DAT-02 | Phase 2 | Pending |
+| DAT-03 | Phase 3 | Pending |
+| DAT-04 | Phase 2 | Pending |
+| DAT-05 | Phase 3 | Pending |
+| DAT-06 | Phase 1 | Pending |
+| BKG-01 | Phase 3 | Pending |
+| BKG-02 | Phase 3 | Pending |
+| BKG-03 | Phase 3 | Pending |
+| BKG-04 | Phase 3 | Pending |
+| BKG-05 | Phase 3 | Pending |
+| UI-01 | Phase 4 | Pending |
+| UI-02 | Phase 4 | Pending |
+| UI-03 | Phase 4 | Pending |
+| UI-04 | Phase 4 | Pending |
+| EXP-01 | Phase 4 | Pending |
+| EXP-02 | Phase 4 | Pending |
+| EXP-03 | Phase 4 | Pending |
 
 **Coverage:**
 - v1 requirements: 25 total
-- Mapped to phases: 0
-- Unmapped: 25 ⚠️
+- Mapped to phases: 25
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-25*
-*Last updated: 2026-03-25 after initial definition*
+*Last updated: 2026-03-25 after roadmap creation — all 25 requirements mapped*
