@@ -1,15 +1,17 @@
 import Network
 import Observation
 import Foundation
+import CoreTelephony
 
 /// Core detection engine that translates NWPathMonitor transitions into classified
 /// ConnectivityEvent records and persists them through EventStore.
 ///
-/// Handles four classification cases:
+/// Handles five classification cases:
 /// 1. Overt drop: path goes from satisfied to unsatisfied/requiresConnection
 /// 2. Connectivity restored: path recovers to satisfied (with drop duration calculation)
 /// 3. Wi-Fi fallback: device silently falls back from cellular to Wi-Fi (MON-06)
-/// 4. Other meaningful transition: any other status or interface change
+/// 4. Silent modem failure: probe fails while path reports satisfied + cellular (MON-03)
+/// 5. Other meaningful transition: any other status or interface change
 ///
 /// Design notes:
 /// - NWPathMonitor cannot be restarted after cancel(). If monitoring needs to resume
@@ -18,10 +20,12 @@ import Foundation
 /// - The initial NWPathMonitor callback is suppressed to avoid logging a spurious event
 ///   on startup (the first callback reports current state, not a transition).
 /// - Rapid path flapping within 500ms is debounced to a single event.
+/// - HEAD probe fires every 60s in foreground. Timer is paused in background since iOS
+///   suspends timers anyway. Phase 3 adds wake-then-probe via significant location changes.
 @Observable
 final class ConnectivityMonitor {
 
-    // MARK: - Published State (for future UI binding)
+    // MARK: - Published State (for UI binding)
 
     /// Whether the monitor is actively observing path changes.
     private(set) var isMonitoring: Bool = false
@@ -33,7 +37,7 @@ final class ConnectivityMonitor {
     private(set) var currentInterfaceType: InterfaceType = .unknown
 
     /// Current radio access technology string (e.g., "CTRadioAccessTechnologyNR").
-    /// Populated by Plan 02 (CTTelephonyNetworkInfo integration).
+    /// Updated live via CTTelephonyNetworkInfo notification.
     private(set) var currentRadioTechnology: String?
 
     // MARK: - Internal State for Classification
@@ -58,6 +62,39 @@ final class ConnectivityMonitor {
     /// Attached to every logged event for geographic pattern analysis.
     private var lastLocation: (latitude: Double, longitude: Double, accuracy: Double)?
 
+    // MARK: - Probe Properties (MON-02)
+
+    /// Timer that fires the HEAD probe every 60 seconds in foreground.
+    /// Paused in background (iOS suspends timers). Phase 3 adds wake-then-probe.
+    private var probeTimer: Timer?
+
+    /// URL for the active connectivity probe. Apple's captive portal detection endpoint
+    /// is lightweight, always up, and raises no privacy concerns.
+    private let probeURL = URL(string: "https://captive.apple.com/hotspot-detect.html")!
+
+    /// Timeout for each HEAD probe request. 10 seconds is generous but catches slow failures.
+    private let probeTimeout: TimeInterval = 10
+
+    /// Interval between probe firings. 60 seconds balances detection speed with battery.
+    private let probeInterval: TimeInterval = 60
+
+    /// Reusable URLSession for probes. One session for all probes (not per-probe).
+    /// `waitsForConnectivity = false` ensures immediate failure when network is down,
+    /// which is essential for detecting silent modem failures.
+    /// Note: Cannot use `lazy` with @Observable macro, so we use nonisolated(unsafe)
+    /// static factory instead.
+    private let probeSession: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 10
+        config.waitsForConnectivity = false
+        return URLSession(configuration: config)
+    }()
+
+    // MARK: - CoreTelephony (MON-04, MON-05)
+
+    /// Shared CTTelephonyNetworkInfo instance for radio tech and carrier queries.
+    private let networkInfo = CTTelephonyNetworkInfo()
+
     // MARK: - Dependencies
 
     /// The NWPathMonitor instance that delivers path change callbacks.
@@ -79,10 +116,8 @@ final class ConnectivityMonitor {
 
     // MARK: - Public API
 
-    /// Starts monitoring network path changes via NWPathMonitor.
-    ///
-    /// Sets up the path update handler and begins delivering callbacks on `monitorQueue`.
-    /// The first callback is suppressed (initial state capture, not a transition).
+    /// Starts monitoring network path changes via NWPathMonitor, sets up CoreTelephony
+    /// radio tech observation, and begins the 60-second HEAD probe cycle.
     func startMonitoring() {
         guard !isMonitoring else { return }
         isMonitoring = true
@@ -95,15 +130,22 @@ final class ConnectivityMonitor {
         }
 
         pathMonitor.start(queue: monitorQueue)
+
+        // CoreTelephony: register for radio tech changes and capture initial state
+        setupRadioTechObserver()
+        currentRadioTechnology = networkInfo.serviceCurrentRadioAccessTechnology?.values.first
+
+        // Start the 60-second HEAD probe cycle
+        startProbeTimer()
     }
 
-    /// Stops monitoring and cancels any pending debounce task.
+    /// Stops monitoring and cancels any pending debounce task and probe timer.
     ///
     /// Note: NWPathMonitor cannot be restarted after cancel(). To resume monitoring,
     /// a new ConnectivityMonitor instance must be created.
     func stopMonitoring() {
         pathMonitor.cancel()
-        // Probe timer placeholder -- Plan 02 adds the actual timer
+        stopProbeTimer()
         isMonitoring = false
         debounceTask?.cancel()
         debounceTask = nil
@@ -118,6 +160,137 @@ final class ConnectivityMonitor {
     ///   - accuracy: Horizontal accuracy in meters.
     func updateLocation(latitude: Double, longitude: Double, accuracy: Double) {
         lastLocation = (latitude: latitude, longitude: longitude, accuracy: accuracy)
+    }
+
+    // MARK: - Probe Timer Management
+
+    /// Starts (or restarts) the 60-second HEAD probe timer.
+    /// Called on app launch and when returning to foreground.
+    func startProbeTimer() {
+        stopProbeTimer() // Safety: invalidate any existing timer
+        probeTimer = Timer.scheduledTimer(withTimeInterval: probeInterval, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            Task { await self.runProbe() }
+        }
+        // Run first probe immediately rather than waiting 60 seconds
+        Task { await runProbe() }
+    }
+
+    /// Stops the probe timer. Called when entering background since iOS suspends timers anyway.
+    /// Phase 3 adds wake-then-probe via significant location changes for background probing.
+    func stopProbeTimer() {
+        probeTimer?.invalidate()
+        probeTimer = nil
+    }
+
+    // MARK: - HEAD Probe (MON-02, MON-03)
+
+    /// Performs a single HEAD request to Apple's captive portal to verify actual connectivity.
+    ///
+    /// Detects silent modem failures (MON-03): when the probe fails but NWPathMonitor still
+    /// reports the path as satisfied on cellular, the modem is "attached but unreachable."
+    ///
+    /// Captures path state BEFORE awaiting the probe result to avoid the race condition
+    /// where path status changes during the request (Pitfall 5 from research).
+    @MainActor
+    private func runProbe() async {
+        // Pitfall 5: Capture state before awaiting probe to avoid race condition
+        let capturedStatus = currentPathStatus
+        let capturedInterface = currentInterfaceType
+
+        var request = URLRequest(url: probeURL)
+        request.httpMethod = "HEAD"
+
+        let start = Date()
+
+        do {
+            let (_, response) = try await probeSession.data(for: request)
+            let latencyMs = Date().timeIntervalSince(start) * 1000
+
+            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
+                logEvent(
+                    type: .probeSuccess,
+                    status: capturedStatus,
+                    interface: capturedInterface,
+                    isExpensive: false,
+                    isConstrained: false,
+                    probeLatencyMs: latencyMs
+                )
+            } else {
+                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+                logEvent(
+                    type: .probeFailure,
+                    status: capturedStatus,
+                    interface: capturedInterface,
+                    isExpensive: false,
+                    isConstrained: false,
+                    probeLatencyMs: latencyMs,
+                    probeFailureReason: "HTTP \(statusCode)"
+                )
+            }
+        } catch {
+            let latencyMs = Date().timeIntervalSince(start) * 1000
+
+            // MON-03: Silent modem failure -- path says satisfied + cellular but probe fails.
+            // This is the "attached but unreachable" state the app is designed to catch.
+            if capturedStatus == .satisfied && capturedInterface == .cellular {
+                logEvent(
+                    type: .silentFailure,
+                    status: capturedStatus,
+                    interface: capturedInterface,
+                    isExpensive: false,
+                    isConstrained: false,
+                    probeLatencyMs: latencyMs,
+                    probeFailureReason: error.localizedDescription
+                )
+                // Start tracking drop duration if not already in a drop
+                if dropStartDate == nil {
+                    dropStartDate = Date()
+                }
+            } else {
+                logEvent(
+                    type: .probeFailure,
+                    status: capturedStatus,
+                    interface: capturedInterface,
+                    isExpensive: false,
+                    isConstrained: false,
+                    probeLatencyMs: latencyMs,
+                    probeFailureReason: error.localizedDescription
+                )
+            }
+        }
+    }
+
+    // MARK: - CoreTelephony Observers
+
+    /// Registers for radio access technology change notifications via NotificationCenter.
+    /// Updates `currentRadioTechnology` on the main actor when the radio tech changes
+    /// (e.g., switching from LTE to 5G NR, or losing radio entirely).
+    private func setupRadioTechObserver() {
+        NotificationCenter.default.addObserver(
+            forName: .CTServiceRadioAccessTechnologyDidChange,
+            object: nil,
+            queue: nil
+        ) { [weak self] _ in
+            guard let self else { return }
+            let newTech = self.networkInfo.serviceCurrentRadioAccessTechnology?.values.first
+            Task { @MainActor in
+                self.currentRadioTechnology = newTech
+            }
+        }
+    }
+
+    /// Captures the current radio access technology string for event metadata (MON-04).
+    /// Returns values like "CTRadioAccessTechnologyLTE", "CTRadioAccessTechnologyNR", etc.
+    private func captureRadioTechnology() -> String? {
+        return networkInfo.serviceCurrentRadioAccessTechnology?.values.first
+    }
+
+    /// Captures the current carrier name for event metadata (MON-05).
+    /// Deprecated since iOS 16.4 with no replacement -- may return nil on iOS 26.
+    /// Best-effort per MON-05; nil is acceptable.
+    private func captureCarrierName() -> String? {
+        return networkInfo.serviceSubscriberCellularProviders?.values.first?.carrierName
     }
 
     // MARK: - Path Update Handling
@@ -260,8 +433,9 @@ final class ConnectivityMonitor {
 
     /// Creates a ConnectivityEvent with all available metadata and persists it via EventStore.
     ///
-    /// Radio technology and carrier name are nil for now (Plan 02 adds CTTelephonyNetworkInfo).
-    /// Location is attached from `lastLocation` if available (Phase 3 provides updates).
+    /// Radio technology captured from CTTelephonyNetworkInfo (MON-04).
+    /// Carrier name captured best-effort from deprecated CTCarrier API (MON-05).
+    /// Location attached from `lastLocation` if available (DAT-04, Phase 3 provides updates).
     private func logEvent(
         type: EventType,
         status: PathStatus,
@@ -278,8 +452,8 @@ final class ConnectivityMonitor {
             interfaceType: interface,
             isExpensive: isExpensive,
             isConstrained: isConstrained,
-            radioTechnology: nil,  // Plan 02: CTTelephonyNetworkInfo integration
-            carrierName: nil,      // Plan 02: CTCarrier (deprecated, best-effort)
+            radioTechnology: captureRadioTechnology(),
+            carrierName: captureCarrierName(),
             probeLatencyMs: probeLatencyMs,
             probeFailureReason: probeFailureReason,
             latitude: lastLocation?.latitude,
