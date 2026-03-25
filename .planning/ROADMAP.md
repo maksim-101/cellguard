@@ -43,7 +43,11 @@ Plans:
   3. Each event record includes radio access technology from CTTelephonyNetworkInfo (or "Unknown" if unavailable) and carrier name on a best-effort basis
   4. A Wi-Fi fallback after a cellular drop is detected and logged as a distinct interface transition event
   5. Drop duration (time from drop-start to next restoration event) is calculated and stored on the restoration event
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — ConnectivityMonitor coordinator with NWPathMonitor, path classification, drop duration
+- [ ] 02-02-PLAN.md — HEAD probe, silent failure detection, CoreTelephony telemetry, app wiring
 
 ### Phase 3: Background Lifecycle
 **Goal**: The monitoring engine runs reliably for 24+ hours in the background, survives iOS termination and device reboots, and surfaces degraded monitoring conditions to the user
@@ -78,6 +82,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 0/1 | Planning complete | - |
-| 2. Core Monitoring | 0/TBD | Not started | - |
+| 2. Core Monitoring | 0/2 | Planning complete | - |
 | 3. Background Lifecycle | 0/TBD | Not started | - |
 | 4. UI and Evidence Export | 0/TBD | Not started | - |
