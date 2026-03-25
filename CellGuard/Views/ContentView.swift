@@ -5,29 +5,44 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.modelContext) private var modelContext
     @Environment(ConnectivityMonitor.self) private var monitor
+    @Environment(LocationService.self) private var locationService
+    @Environment(MonitoringHealthService.self) private var healthService
+    @Environment(ProvisioningProfileService.self) private var profileService
+
     @Query(sort: \ConnectivityEvent.timestamp, order: .reverse)
     private var events: [ConnectivityEvent]
+
+    @State private var showHealthSheet = false
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Monitoring status bar
-                HStack {
-                    Circle()
-                        .fill(monitor.isMonitoring ? Color.green : Color.red)
-                        .frame(width: 8, height: 8)
-                    Text(monitor.isMonitoring ? "Monitoring Active" : "Monitoring Stopped")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    if let radio = monitor.currentRadioTechnology {
-                        Text(radio.replacingOccurrences(of: "CTRadioAccessTechnology", with: ""))
+                // Health status bar (tappable, opens detail sheet)
+                Button {
+                    showHealthSheet = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(healthDotColor)
+                            .frame(width: 8, height: 8)
+                        Text(healthLabel)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        if let radio = monitor.currentRadioTechnology {
+                            Text(radio.replacingOccurrences(of: "CTRadioAccessTechnology", with: ""))
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        Image(systemName: "chevron.right")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
                 }
-                .padding(.horizontal)
-                .padding(.vertical, 8)
+                .buttonStyle(.plain)
+                .accessibilityLabel("Monitoring \(healthAccessibilityLabel), tap for details")
 
                 // Event list or empty state
                 Group {
@@ -39,12 +54,10 @@ struct ContentView: View {
                         )
                     } else {
                         List(events) { event in
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(event.eventType.displayName)
-                                    .font(.headline)
-                                Text(event.timestamp, format: .dateTime)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                            if event.eventType == .monitoringGap {
+                                gapEventRow(event)
+                            } else {
+                                standardEventRow(event)
                             }
                         }
                     }
@@ -52,8 +65,8 @@ struct ContentView: View {
             }
             .navigationTitle("CellGuard")
         }
-        .onAppear {
-            monitor.startMonitoring()
+        .sheet(isPresented: $showHealthSheet) {
+            HealthDetailSheet()
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
@@ -64,10 +77,80 @@ struct ContentView: View {
 
                 // Resume probe timer in foreground
                 monitor.startProbeTimer()
+
+                // Re-evaluate health on foreground return (catches changes that happened
+                // while backgrounded, complementing the real-time onConditionChanged callback)
+                healthService.evaluate(
+                    isMonitoring: monitor.isMonitoring,
+                    locationAuth: locationService.authorizationStatus,
+                    backgroundRefresh: UIApplication.shared.backgroundRefreshStatus
+                )
             } else if newPhase == .background {
-                // Timer suspended by iOS in background. Phase 3 adds wake-then-probe
-                // via significant location changes.
+                // Timer suspended by iOS in background
                 monitor.stopProbeTimer()
+
+                // Schedule BGAppRefreshTask on background entry (BKG-03)
+                MonitoringHealthService.scheduleAppRefresh()
+            }
+        }
+    }
+
+    // MARK: - Health Status Bar Helpers
+
+    private var healthDotColor: Color {
+        switch healthService.health {
+        case .active: .green
+        case .degraded: .orange
+        case .paused: .red
+        }
+    }
+
+    private var healthLabel: String {
+        switch healthService.health {
+        case .active: "Monitoring Active"
+        case .degraded: "Monitoring Degraded"
+        case .paused: "Monitoring Paused"
+        }
+    }
+
+    private var healthAccessibilityLabel: String {
+        switch healthService.health {
+        case .active: "active"
+        case .degraded: "degraded"
+        case .paused: "paused"
+        }
+    }
+
+    // MARK: - Event Row Views
+
+    @ViewBuilder
+    private func standardEventRow(_ event: ConnectivityEvent) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(event.eventType.displayName)
+                .font(.headline)
+            Text(event.timestamp, format: .dateTime)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder
+    private func gapEventRow(_ event: ConnectivityEvent) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(event.eventType.displayName)
+                .font(.headline)
+            HStack(spacing: 4) {
+                Image(systemName: "pause.circle")
+                    .foregroundStyle(.secondary)
+                Text("Monitoring was suspended")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            if let gapDuration = event.dropDurationSeconds {
+                let endTime = event.timestamp.addingTimeInterval(gapDuration)
+                Text("\(event.timestamp, format: .dateTime.hour().minute()) - \(endTime, format: .dateTime.hour().minute()) (\(Int(gapDuration / 60)) min)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
         }
     }
