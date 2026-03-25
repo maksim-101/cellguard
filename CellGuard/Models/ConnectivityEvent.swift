@@ -1,0 +1,249 @@
+import SwiftData
+import Foundation
+import CoreLocation
+
+// MARK: - Enums with explicit Int raw values (never rely on auto-increment -- migration safety)
+
+/// Classification of connectivity events detected by CellGuard.
+enum EventType: Int, Codable, CaseIterable {
+    case pathChange = 0
+    case silentFailure = 1
+    case probeSuccess = 2
+    case probeFailure = 3
+    case connectivityRestored = 4
+}
+
+/// Network path status as reported by NWPathMonitor.
+enum PathStatus: Int, Codable {
+    case satisfied = 0
+    case unsatisfied = 1
+    case requiresConnection = 2
+}
+
+/// Network interface type for the active path.
+enum InterfaceType: Int, Codable {
+    case cellular = 0
+    case wifi = 1
+    case wiredEthernet = 2
+    case loopback = 3
+    case other = 4
+    case unknown = 5
+}
+
+// MARK: - ConnectivityEvent Model
+
+/// A single connectivity event captured by CellGuard.
+///
+/// All DAT-01 metadata fields are stored as properties. Enum fields use the rawValue
+/// storage pattern because SwiftData does not support enum types in `#Predicate` queries.
+/// CLLocationCoordinate2D is decomposed into separate latitude/longitude Doubles because
+/// SwiftData cannot store C structs directly.
+@Model
+final class ConnectivityEvent {
+
+    // MARK: Timestamps
+
+    /// Event timestamp in local timezone
+    var timestamp: Date
+
+    /// Same instant as `timestamp`, stored separately for export clarity
+    var timestampUTC: Date
+
+    // MARK: Event classification (rawValue storage for predicate support)
+
+    /// Raw integer storage for EventType enum. Use `eventType` computed property for typed access.
+    var eventTypeRaw: Int
+
+    /// Raw integer storage for PathStatus enum. Use `pathStatus` computed property for typed access.
+    var pathStatusRaw: Int
+
+    /// Raw integer storage for InterfaceType enum. Use `interfaceType` computed property for typed access.
+    var interfaceTypeRaw: Int
+
+    // MARK: Network path flags
+
+    /// Whether the network path is considered expensive (e.g., cellular data)
+    var isExpensive: Bool
+
+    /// Whether the network path is constrained (e.g., Low Data Mode)
+    var isConstrained: Bool
+
+    // MARK: Cellular metadata
+
+    /// Radio access technology string, e.g. "CTRadioAccessTechnologyNR" for 5G. Nil if unknown.
+    var radioTechnology: String?
+
+    /// Carrier name from CTTelephonyNetworkInfo. May be nil due to CTCarrier deprecation on iOS 16.4+.
+    var carrierName: String?
+
+    // MARK: Active probe results
+
+    /// Round-trip latency of the connectivity probe in milliseconds. Nil if probe was not performed.
+    var probeLatencyMs: Double?
+
+    /// Reason the connectivity probe failed. Nil if probe succeeded or was not performed.
+    var probeFailureReason: String?
+
+    // MARK: Location (decomposed from CLLocationCoordinate2D)
+
+    /// Latitude component of the event location. Nil if location was unavailable.
+    var latitude: Double?
+
+    /// Longitude component of the event location. Nil if location was unavailable.
+    var longitude: Double?
+
+    /// Horizontal accuracy of the location fix in meters. Nil if location was unavailable.
+    var locationAccuracy: Double?
+
+    // MARK: Drop duration
+
+    /// Duration of the connectivity drop in seconds. Calculated in Phase 2, nil until then.
+    var dropDurationSeconds: Double?
+
+    // MARK: Computed enum accessors
+
+    /// Typed accessor for the event type. Maps to/from `eventTypeRaw` for SwiftData predicate compatibility.
+    var eventType: EventType {
+        get { EventType(rawValue: eventTypeRaw) ?? .pathChange }
+        set { eventTypeRaw = newValue.rawValue }
+    }
+
+    /// Typed accessor for the path status. Maps to/from `pathStatusRaw` for SwiftData predicate compatibility.
+    var pathStatus: PathStatus {
+        get { PathStatus(rawValue: pathStatusRaw) ?? .unsatisfied }
+        set { pathStatusRaw = newValue.rawValue }
+    }
+
+    /// Typed accessor for the interface type. Maps to/from `interfaceTypeRaw` for SwiftData predicate compatibility.
+    var interfaceType: InterfaceType {
+        get { InterfaceType(rawValue: interfaceTypeRaw) ?? .unknown }
+        set { interfaceTypeRaw = newValue.rawValue }
+    }
+
+    // MARK: Location reconstruction
+
+    /// Reconstructs a CLLocationCoordinate2D from stored latitude/longitude. Returns nil if either is missing.
+    var coordinate: CLLocationCoordinate2D? {
+        guard let lat = latitude, let lon = longitude else { return nil }
+        return CLLocationCoordinate2D(latitude: lat, longitude: lon)
+    }
+
+    // MARK: Initializer
+
+    init(
+        timestamp: Date = .now,
+        eventType: EventType,
+        pathStatus: PathStatus,
+        interfaceType: InterfaceType,
+        isExpensive: Bool = false,
+        isConstrained: Bool = false,
+        radioTechnology: String? = nil,
+        carrierName: String? = nil,
+        probeLatencyMs: Double? = nil,
+        probeFailureReason: String? = nil,
+        latitude: Double? = nil,
+        longitude: Double? = nil,
+        locationAccuracy: Double? = nil,
+        dropDurationSeconds: Double? = nil
+    ) {
+        self.timestamp = timestamp
+        self.timestampUTC = timestamp // Same Date object; formatting handles timezone
+        self.eventTypeRaw = eventType.rawValue
+        self.pathStatusRaw = pathStatus.rawValue
+        self.interfaceTypeRaw = interfaceType.rawValue
+        self.isExpensive = isExpensive
+        self.isConstrained = isConstrained
+        self.radioTechnology = radioTechnology
+        self.carrierName = carrierName
+        self.probeLatencyMs = probeLatencyMs
+        self.probeFailureReason = probeFailureReason
+        self.latitude = latitude
+        self.longitude = longitude
+        self.locationAccuracy = locationAccuracy
+        self.dropDurationSeconds = dropDurationSeconds
+    }
+}
+
+// MARK: - Codable Conformance
+
+extension ConnectivityEvent: Codable {
+
+    enum CodingKeys: String, CodingKey {
+        case timestamp
+        case timestampUTC
+        case eventType
+        case pathStatus
+        case interfaceType
+        case isExpensive
+        case isConstrained
+        case radioTechnology
+        case carrierName
+        case probeLatencyMs
+        case probeFailureReason
+        case latitude
+        case longitude
+        case locationAccuracy
+        case dropDurationSeconds
+    }
+
+    convenience init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let timestamp = try container.decode(Date.self, forKey: .timestamp)
+        let eventType = try container.decode(EventType.self, forKey: .eventType)
+        let pathStatus = try container.decode(PathStatus.self, forKey: .pathStatus)
+        let interfaceType = try container.decode(InterfaceType.self, forKey: .interfaceType)
+
+        self.init(
+            timestamp: timestamp,
+            eventType: eventType,
+            pathStatus: pathStatus,
+            interfaceType: interfaceType,
+            isExpensive: try container.decode(Bool.self, forKey: .isExpensive),
+            isConstrained: try container.decode(Bool.self, forKey: .isConstrained),
+            radioTechnology: try container.decodeIfPresent(String.self, forKey: .radioTechnology),
+            carrierName: try container.decodeIfPresent(String.self, forKey: .carrierName),
+            probeLatencyMs: try container.decodeIfPresent(Double.self, forKey: .probeLatencyMs),
+            probeFailureReason: try container.decodeIfPresent(String.self, forKey: .probeFailureReason),
+            latitude: try container.decodeIfPresent(Double.self, forKey: .latitude),
+            longitude: try container.decodeIfPresent(Double.self, forKey: .longitude),
+            locationAccuracy: try container.decodeIfPresent(Double.self, forKey: .locationAccuracy),
+            dropDurationSeconds: try container.decodeIfPresent(Double.self, forKey: .dropDurationSeconds)
+        )
+        self.timestampUTC = try container.decode(Date.self, forKey: .timestampUTC)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(timestamp, forKey: .timestamp)
+        try container.encode(timestampUTC, forKey: .timestampUTC)
+        // Encode human-readable enum values (not raw Ints)
+        try container.encode(eventType, forKey: .eventType)
+        try container.encode(pathStatus, forKey: .pathStatus)
+        try container.encode(interfaceType, forKey: .interfaceType)
+        try container.encode(isExpensive, forKey: .isExpensive)
+        try container.encode(isConstrained, forKey: .isConstrained)
+        try container.encodeIfPresent(radioTechnology, forKey: .radioTechnology)
+        try container.encodeIfPresent(carrierName, forKey: .carrierName)
+        try container.encodeIfPresent(probeLatencyMs, forKey: .probeLatencyMs)
+        try container.encodeIfPresent(probeFailureReason, forKey: .probeFailureReason)
+        try container.encodeIfPresent(latitude, forKey: .latitude)
+        try container.encodeIfPresent(longitude, forKey: .longitude)
+        try container.encodeIfPresent(locationAccuracy, forKey: .locationAccuracy)
+        try container.encodeIfPresent(dropDurationSeconds, forKey: .dropDurationSeconds)
+    }
+}
+
+// MARK: - Display Names
+
+extension EventType {
+    /// Human-readable name for UI display.
+    var displayName: String {
+        switch self {
+        case .pathChange: "Path Change"
+        case .silentFailure: "Silent Failure"
+        case .probeSuccess: "Probe Success"
+        case .probeFailure: "Probe Failure"
+        case .connectivityRestored: "Connectivity Restored"
+        }
+    }
+}
