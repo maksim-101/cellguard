@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Roadmap created and written to disk. No plans yet.
-last_updated: "2026-03-25T13:06:19.692Z"
+stopped_at: Completed 01-01-PLAN.md
+last_updated: "2026-03-25T13:12:34.957Z"
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 1
-  completed_plans: 0
+  completed_plans: 1
 ---
 
 # Project State
@@ -46,6 +46,7 @@ Plan: 1 of 1
 - Trend: —
 
 *Updated after each plan completion*
+| Phase 01 P01 | 4min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -58,6 +59,9 @@ Recent decisions affecting current work:
 - Pre-roadmap: SwiftData with @ModelActor for persistence (adequate for ~1,440 events/day, no third-party dependency needed)
 - Pre-roadmap: HEAD probe to apple.com/library/test/success.html — Apple-hosted, lightweight, same URL iOS uses internally
 - Pre-roadmap: CLServiceSession required for iOS 18+ background location delivery — must be held active
+- [Phase 01]: Store enum fields as Int rawValues with computed accessors for SwiftData predicate compatibility
+- [Phase 01]: Decompose CLLocationCoordinate2D to separate latitude/longitude Doubles for SwiftData storage
+- [Phase 01]: Implement scenePhase workaround for iOS 18+ @Query refresh bug from day one
 
 ### Pending Todos
 
@@ -71,6 +75,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25
-Stopped at: Roadmap created and written to disk. No plans yet.
+Last session: 2026-03-25T13:12:34.955Z
+Stopped at: Completed 01-01-PLAN.md
 Resume file: None

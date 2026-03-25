@@ -17,12 +17,12 @@
 
 ### Data & Storage
 
-- [ ] **DAT-01**: Each event is stored with full metadata: ISO 8601 timestamp (local + UTC), event type, path status, interface type, is_expensive, is_constrained, radio technology, carrier name, probe result (latency or failure reason), coarse location
+- [x] **DAT-01**: Each event is stored with full metadata: ISO 8601 timestamp (local + UTC), event type, path status, interface type, is_expensive, is_constrained, radio technology, carrier name, probe result (latency or failure reason), coarse location
 - [ ] **DAT-02**: App calculates and stores drop duration (time from drop-start event to next connectivity restoration event)
 - [ ] **DAT-03**: App persists monitoring-enabled state across app kills, iOS terminations, and device reboots — auto-resumes monitoring on relaunch
 - [ ] **DAT-04**: App captures coarse location (via significant location changes) with each event for geographic pattern analysis
 - [ ] **DAT-05**: App tracks and records monitoring gaps (periods when iOS suspended/terminated the app and no events could be captured)
-- [ ] **DAT-06**: App stores weeks of event data locally without significant storage impact using SwiftData
+- [x] **DAT-06**: App stores weeks of event data locally without significant storage impact using SwiftData
 
 ### Background Execution
 
@@ -86,12 +86,12 @@
 | MON-05 | Phase 2 | Pending |
 | MON-06 | Phase 2 | Pending |
 | MON-07 | Phase 4 | Pending |
-| DAT-01 | Phase 1 | Pending |
+| DAT-01 | Phase 1 | Complete |
 | DAT-02 | Phase 2 | Pending |
 | DAT-03 | Phase 3 | Pending |
 | DAT-04 | Phase 2 | Pending |
 | DAT-05 | Phase 3 | Pending |
-| DAT-06 | Phase 1 | Pending |
+| DAT-06 | Phase 1 | Complete |
 | BKG-01 | Phase 3 | Pending |
 | BKG-02 | Phase 3 | Pending |
 | BKG-03 | Phase 3 | Pending |

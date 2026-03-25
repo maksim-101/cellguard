@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** 1 plan
 
 Plans:
-- [ ] 01-01-PLAN.md — Xcode project, ConnectivityEvent SwiftData model, EventStore @ModelActor, app shell
+- [x] 01-01-PLAN.md — Xcode project, ConnectivityEvent SwiftData model, EventStore @ModelActor, app shell
 
 ### Phase 2: Core Monitoring
 **Goal**: The app detects every overt cellular drop and every silent modem failure (path satisfied but no data transits), captures full metadata per event, and writes complete ConnectivityEvent records
