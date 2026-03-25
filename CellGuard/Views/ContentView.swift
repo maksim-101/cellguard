@@ -39,10 +39,15 @@ struct ContentView: View {
                             .foregroundStyle(.secondary)
                     }
                     .padding(.horizontal)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 10)
+                    .background(Color(.secondarySystemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .padding(.horizontal)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Monitoring \(healthAccessibilityLabel), tap for details")
+                .padding(.bottom, 8)
 
                 // Event list or empty state
                 Group {
@@ -75,8 +80,10 @@ struct ContentView: View {
                 // app returns to foreground. See 01-RESEARCH.md Pitfall 1.
                 modelContext.processPendingChanges()
 
-                // Resume probe timer in foreground
-                monitor.startProbeTimer()
+                // Resume probe timer in foreground (only if monitoring is active)
+                if monitor.isMonitoring {
+                    monitor.startProbeTimer()
+                }
 
                 // Re-evaluate health on foreground return (catches changes that happened
                 // while backgrounded, complementing the real-time onConditionChanged callback)

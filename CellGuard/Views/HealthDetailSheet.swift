@@ -144,8 +144,6 @@ struct HealthDetailSheet: View {
         let lastActive = UserDefaults.standard.double(forKey: "lastActiveTimestamp")
         guard lastActive > 0 else { return "Never" }
         let lastDate = Date(timeIntervalSince1970: lastActive)
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .full
-        return formatter.localizedString(for: lastDate, relativeTo: Date())
+        return lastDate.formatted(.dateTime.hour().minute().second())
     }
 }
