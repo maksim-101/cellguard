@@ -6,9 +6,6 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-/* End PBXBuildFile section */
-
 /* Begin PBXFileReference section */
 		A10000010000000000000001 /* CellGuard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CellGuard.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -45,7 +42,7 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		A10000050000000000000001 /* Root */ = {
+		A10000050000000000000001 = {
 			isa = PBXGroup;
 			children = (
 				A1FSRG0010000000000001 /* CellGuard */,
@@ -108,7 +105,7 @@
 				en,
 				Base,
 			);
-			mainGroup = A10000050000000000000001 /* Root */;
+			mainGroup = A10000050000000000000001;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A10000060000000000000001 /* Products */;
@@ -346,7 +343,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
 	};
 	rootObject = A10000090000000000000001 /* Project object */;
 }

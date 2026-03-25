@@ -36,6 +36,12 @@ Reliably detect and log every cellular connectivity drop — including the "atta
 - Wi-Fi SSID capture — requires entitlement not available without paid developer program membership
 - OAuth, user accounts, or onboarding flows — single-user tool
 
+## Current State
+
+**v1.0 shipped 2026-03-25.** 4 phases, 9 plans, 2,332 lines of Swift.
+
+The app is fully functional: monitors cellular connectivity 24/7 in the background, detects both overt drops and silent modem failures, and produces JSON export + summary reports suitable for Apple Feedback Assistant. Deployed via free personal team signing (7-day re-sign cycle).
+
 ## Context
 
 - **Device:** iPhone 17 Pro Max, iOS 26.x, modem firmware 1.55.04, Swisscom 69.0 carrier bundle
@@ -63,8 +69,10 @@ Reliably detect and log every cellular connectivity drop — including the "atta
 | Apple captive portal for connectivity checks | Apple-hosted, always up, lightweight, no privacy concerns, same URL iOS uses internally | Decided Phase 02 |
 | 60-second check interval | Balances drop detection responsiveness with battery impact | Decided Phase 02 |
 | SwiftData for local storage | Native SwiftUI integration, @ModelActor for background writes, sufficient for ~10k rows/week | Decided Phase 01 |
-| Significant location changes (not continuous GPS) | Coarse location sufficient for pattern analysis, minimal battery impact, doubles as background execution eligibility | — Pending |
-| Free personal team signing | No developer program membership currently — can upgrade later if 7-day cycle becomes burdensome | — Pending |
+| Significant location changes (not continuous GPS) | Coarse location sufficient for pattern analysis, minimal battery impact, doubles as background execution eligibility | ✓ Good — Phase 03 |
+| Free personal team signing | No developer program membership currently — can upgrade later if 7-day cycle becomes burdensome | ✓ Good — v1.0 |
+| 500ms debounce on path changes | NWPathMonitor fires rapid duplicate transitions; debounce prevents event log noise | ✓ Good — Phase 02 |
+| CLLocationManager over CLMonitor | CLMonitor has documented crash bugs on recreation and 20-region limit; CLLocationManager is battle-tested | ✓ Good — Phase 03 |
 
 ## Evolution
 
@@ -84,4 +92,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-25 after Phase 04 completion*
+*Last updated: 2026-03-25 after v1.0 milestone*

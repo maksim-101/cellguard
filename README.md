@@ -145,4 +145,4 @@ Personal diagnostic tool. No license specified.
 - CoreTelephony for radio technology metadata
 - CoreLocation for background execution + geographic context
 - Swift Charts for timeline visualization
-- [Claude Code](https://claude.ai/claude-code) with [GSD workflow](https://github.com/coleam00/gsd)
+- [Claude Code](https://github.com/anthropics/claude-code) with [GSD workflow](https://github.com/gsd-build/get-shit-done)
