@@ -15,16 +15,16 @@ Reliably detect and log every cellular connectivity drop — including the "atta
 - [x] Structured local logging of all connectivity events with full metadata (timestamp, event type, path status, interface type, radio technology, carrier, location, connectivity test result, drop duration) — *Data model validated in Phase 01: Foundation*
 - [x] Real-time monitoring of network path changes via NWPathMonitor — *Validated in Phase 02: Core Monitoring*
 - [x] Periodic active connectivity checks (HEAD request to Apple captive portal every 60s) to detect silent modem failures — *Validated in Phase 02: Core Monitoring*
+- [x] Background execution that persists for 24+ hours without iOS termination or noticeable battery drain — *Validated in Phase 03: Background Lifecycle*
+- [x] Coarse location capture per event for geographic pattern analysis — *Validated in Phase 03: Background Lifecycle*
+- [x] Minimal dashboard UI showing current status, drop count (24h/7d), and scrollable event log — *Validated in Phase 04: UI & Evidence Export*
+- [x] Event detail view showing all captured metadata per event — *Validated in Phase 04: UI & Evidence Export*
+- [x] CSV/JSON export of the full event log for Feedback Assistant attachment — *Validated in Phase 04: UI & Evidence Export*
+- [x] Summary report generation (drops per day, average duration, affected times/locations) — *Validated in Phase 04: UI & Evidence Export*
 
 ### Active
 
-- [ ] Structured local logging of all connectivity events with full metadata (timestamp, event type, path status, interface type, radio technology, carrier, location, connectivity test result, drop duration)
-- [ ] Background execution that persists for 24+ hours without iOS termination or noticeable battery drain
-- [ ] CSV/JSON export of the full event log for Feedback Assistant attachment
-- [ ] Minimal dashboard UI showing current status, drop count (24h/7d), and scrollable event log
-- [ ] Event detail view showing all captured metadata per event
-- [ ] Coarse location capture per event for geographic pattern analysis
-- [ ] Summary report generation (drops per day, average duration, affected times/locations)
+(None — all v1.0 requirements validated)
 
 ### Out of Scope
 
@@ -84,4 +84,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-25 after Phase 02 completion*
+*Last updated: 2026-03-25 after Phase 04 completion*
