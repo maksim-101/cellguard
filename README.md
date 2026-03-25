@@ -51,18 +51,26 @@ open CellGuard.xcodeproj
 
 Connect via USB cable, or use wireless debugging if already paired. Select your iPhone as the run destination in Xcode's toolbar.
 
-### 5. Trust the developer profile (first time only)
+### 5. Enable Developer Mode (first time only)
+
+On your iPhone:
+1. Go to **Settings > Privacy & Security > Developer Mode**
+2. Toggle **Developer Mode** on
+3. Your device will prompt to restart — confirm the restart
+4. After reboot, confirm when prompted to enable Developer Mode
+
+### 6. Trust the developer profile (first time only)
 
 On your iPhone:
 1. Go to **Settings > General > VPN & Device Management**
 2. Tap your Apple ID under "Developer App"
 3. Tap **Trust**
 
-### 6. Build and run
+### 7. Build and run
 
 Press **Cmd+R** in Xcode. The app will build, install, and launch on your device.
 
-### 7. Grant permissions
+### 8. Grant permissions
 
 On first launch, the app will request:
 - **Location** — select **"Always Allow"** (required for background monitoring via significant location changes)
