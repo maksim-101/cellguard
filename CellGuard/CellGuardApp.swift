@@ -18,7 +18,18 @@ struct CellGuardApp: App {
         let store = EventStore(modelContainer: container)
         let monitor = ConnectivityMonitor(eventStore: store)
         _monitor = State(initialValue: monitor)
-        _locationService = State(initialValue: LocationService(monitor: monitor, eventStore: store))
+        let locationService = LocationService(monitor: monitor, eventStore: store)
+        _locationService = State(initialValue: locationService)
+
+        // Auto-resume monitoring immediately during init (DAT-03).
+        // This is critical for background relaunches: when iOS relaunches the app
+        // due to a significant location change, no UI scene is created, so .onAppear
+        // never fires. Starting monitoring here ensures it runs regardless of whether
+        // the launch is foreground or background.
+        if UserDefaults.standard.bool(forKey: "monitoringEnabled") {
+            monitor.startMonitoring()
+            locationService.startMonitoring()
+        }
     }
 
     var body: some Scene {
@@ -30,12 +41,6 @@ struct CellGuardApp: App {
                 .environment(profileService)
                 .onAppear {
                     profileService.loadProfile()
-
-                    // Auto-resume monitoring if it was previously enabled (DAT-03)
-                    if UserDefaults.standard.bool(forKey: "monitoringEnabled") {
-                        monitor.startMonitoring()
-                        locationService.startMonitoring()
-                    }
 
                     // Start observing system condition changes (BKG-04).
                     // The onConditionChanged closure is called by MonitoringHealthService

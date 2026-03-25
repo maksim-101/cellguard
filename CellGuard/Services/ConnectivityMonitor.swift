@@ -170,14 +170,23 @@ final class ConnectivityMonitor {
 
     /// Starts (or restarts) the 60-second HEAD probe timer.
     /// Called on app launch and when returning to foreground.
+    ///
+    /// The first probe is delayed by 5 seconds to avoid false positive silent failure
+    /// classifications at launch. NWPathMonitor's initial callback may not have fired yet,
+    /// leaving currentPathStatus/currentInterfaceType stale, and the network may not be
+    /// fully established after a background wake. Without this delay, the probe can fail
+    /// while path status is stale-satisfied+cellular, producing a spurious silentFailure event.
     func startProbeTimer() {
         stopProbeTimer() // Safety: invalidate any existing timer
         probeTimer = Timer.scheduledTimer(withTimeInterval: probeInterval, repeats: true) { [weak self] _ in
             guard let self else { return }
             Task { await self.runProbe() }
         }
-        // Run first probe immediately rather than waiting 60 seconds
-        Task { await runProbe() }
+        // Delay first probe to let NWPathMonitor deliver initial state and network stabilize
+        Task {
+            try? await Task.sleep(for: .seconds(5))
+            await runProbe()
+        }
     }
 
     /// Stops the probe timer. Called when entering background since iOS suspends timers anyway.
