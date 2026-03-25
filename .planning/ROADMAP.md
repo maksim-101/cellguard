@@ -77,7 +77,12 @@ Plans:
   4. The app generates and displays a summary report showing total drops, drop breakdown by type (overt vs silent), average and max duration, drops per day, location distribution, and radio technology distribution
   5. A Swift Charts timeline visualization shows drops over time with silent failures visually distinct from overt drops
   6. A local notification fires after a drop is detected prompting the user to capture a sysdiagnose immediately
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Dashboard, event list, event detail views, drop classification helper
+- [ ] 04-02-PLAN.md — Drop notification (MON-07), JSON export Transferable model (EXP-01)
+- [ ] 04-03-PLAN.md — Summary report, Swift Charts timeline, dashboard wiring
 
 ## Progress
 
@@ -89,4 +94,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Foundation | 0/1 | Planning complete | - |
 | 2. Core Monitoring | 0/2 | Planning complete | - |
 | 3. Background Lifecycle | 0/3 | Planning complete | - |
-| 4. UI and Evidence Export | 0/TBD | Not started | - |
+| 4. UI and Evidence Export | 0/3 | Planning complete | - |
