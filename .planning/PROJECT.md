@@ -13,11 +13,11 @@ Reliably detect and log every cellular connectivity drop — including the "atta
 ### Validated
 
 - [x] Structured local logging of all connectivity events with full metadata (timestamp, event type, path status, interface type, radio technology, carrier, location, connectivity test result, drop duration) — *Data model validated in Phase 01: Foundation*
+- [x] Real-time monitoring of network path changes via NWPathMonitor — *Validated in Phase 02: Core Monitoring*
+- [x] Periodic active connectivity checks (HEAD request to Apple captive portal every 60s) to detect silent modem failures — *Validated in Phase 02: Core Monitoring*
 
 ### Active
 
-- [ ] Real-time monitoring of network path changes via NWPathMonitor
-- [ ] Periodic active connectivity checks (HEAD request to Apple captive portal every 60s) to detect silent modem failures where path reports "satisfied" but no data transits
 - [ ] Structured local logging of all connectivity events with full metadata (timestamp, event type, path status, interface type, radio technology, carrier, location, connectivity test result, drop duration)
 - [ ] Background execution that persists for 24+ hours without iOS termination or noticeable battery drain
 - [ ] CSV/JSON export of the full event log for Feedback Assistant attachment
@@ -60,8 +60,8 @@ Reliably detect and log every cellular connectivity drop — including the "atta
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Apple captive portal for connectivity checks | Apple-hosted, always up, lightweight, no privacy concerns, same URL iOS uses internally | — Pending |
-| 60-second check interval | Balances drop detection responsiveness with battery impact | — Pending |
+| Apple captive portal for connectivity checks | Apple-hosted, always up, lightweight, no privacy concerns, same URL iOS uses internally | Decided Phase 02 |
+| 60-second check interval | Balances drop detection responsiveness with battery impact | Decided Phase 02 |
 | SwiftData for local storage | Native SwiftUI integration, @ModelActor for background writes, sufficient for ~10k rows/week | Decided Phase 01 |
 | Significant location changes (not continuous GPS) | Coarse location sufficient for pattern analysis, minimal battery impact, doubles as background execution eligibility | — Pending |
 | Free personal team signing | No developer program membership currently — can upgrade later if 7-day cycle becomes burdensome | — Pending |
@@ -84,4 +84,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-25 after Phase 01 completion*
+*Last updated: 2026-03-25 after Phase 02 completion*
