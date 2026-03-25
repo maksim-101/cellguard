@@ -2,6 +2,7 @@ import Network
 import Observation
 import Foundation
 import CoreTelephony
+import UserNotifications
 
 /// Core detection engine that translates NWPathMonitor transitions into classified
 /// ConnectivityEvent records and persists them through EventStore.
@@ -137,6 +138,9 @@ final class ConnectivityMonitor {
 
         // Start the 60-second HEAD probe cycle
         startProbeTimer()
+
+        // Request notification authorization for drop alerts (MON-07)
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
     }
 
     /// Stops monitoring and cancels any pending debounce task and probe timer.
@@ -472,5 +476,35 @@ final class ConnectivityMonitor {
         Task {
             try? await eventStore.insertEvent(event)
         }
+
+        scheduleDropNotification(eventType: type)
+    }
+
+    // MARK: - Drop Notifications (MON-07)
+
+    /// Schedules a local notification prompting sysdiagnose capture after a drop (MON-07).
+    /// Only fires for drop events (silentFailure, pathChange to unsatisfied/requiresConnection).
+    /// Uses a unique identifier per notification so multiple drops don't replace each other.
+    private func scheduleDropNotification(eventType: EventType) {
+        // Only notify for actual drops -- not probe successes, restorations, or gaps
+        guard eventType == .silentFailure ||
+              (eventType == .pathChange && (currentPathStatus == .unsatisfied || currentPathStatus == .requiresConnection)) else {
+            return
+        }
+
+        let content = UNMutableNotificationContent()
+        content.title = "Cellular Drop Detected"
+        content.body = eventType == .silentFailure
+            ? "Silent modem failure detected. Capture sysdiagnose: Settings > Privacy > Analytics > sysdiagnose"
+            : "Connectivity lost. Capture sysdiagnose: Settings > Privacy > Analytics > sysdiagnose"
+        content.sound = .default
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        let request = UNNotificationRequest(
+            identifier: "dropAlert-\(UUID().uuidString)",
+            content: content,
+            trigger: trigger
+        )
+        UNUserNotificationCenter.current().add(request)
     }
 }
