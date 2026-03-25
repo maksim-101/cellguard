@@ -42,8 +42,8 @@
 ### Export & Reporting
 
 - [x] **EXP-01**: User can export full event log as structured JSON file via iOS Share Sheet
-- [ ] **EXP-02**: App generates a summary report with: total drops, drops by type (overt vs silent), average/max duration, drops per day, location distribution, radio technology distribution
-- [ ] **EXP-03**: App displays a timeline visualization (Swift Charts) showing drops over time with silent failures marked distinctly
+- [x] **EXP-02**: App generates a summary report with: total drops, drops by type (overt vs silent), average/max duration, drops per day, location distribution, radio technology distribution
+- [x] **EXP-03**: App displays a timeline visualization (Swift Charts) showing drops over time with silent failures marked distinctly
 
 ## v2 Requirements
 
@@ -102,8 +102,8 @@
 | UI-03 | Phase 4 | Complete |
 | UI-04 | Phase 4 | Complete |
 | EXP-01 | Phase 4 | Complete |
-| EXP-02 | Phase 4 | Pending |
-| EXP-03 | Phase 4 | Pending |
+| EXP-02 | Phase 4 | Complete |
+| EXP-03 | Phase 4 | Complete |
 
 **Coverage:**
 - v1 requirements: 25 total
