@@ -47,7 +47,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md — ConnectivityMonitor coordinator with NWPathMonitor, path classification, drop duration
-- [ ] 02-02-PLAN.md — HEAD probe, silent failure detection, CoreTelephony telemetry, app wiring
+- [x] 02-02-PLAN.md — HEAD probe, silent failure detection, CoreTelephony telemetry, app wiring
 
 ### Phase 3: Background Lifecycle
 **Goal**: The monitoring engine runs reliably for 24+ hours in the background, survives iOS termination and device reboots, and surfaces degraded monitoring conditions to the user

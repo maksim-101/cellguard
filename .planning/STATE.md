@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-03-25T13:42:32.872Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-03-25T13:47:56.922Z"
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Project State
@@ -48,6 +48,7 @@ Plan: 2 of 2
 *Updated after each plan completion*
 | Phase 01 P01 | 4min | 2 tasks | 7 files |
 | Phase 02 P01 | 2min | 1 tasks | 1 files |
+| Phase 02 P02 | 3min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -64,6 +65,8 @@ Recent decisions affecting current work:
 - [Phase 01]: Decompose CLLocationCoordinate2D to separate latitude/longitude Doubles for SwiftData storage
 - [Phase 01]: Implement scenePhase workaround for iOS 18+ @Query refresh bug from day one
 - [Phase 02]: Use availableInterfaces.first for primary interface detection (avoids multi-interface ambiguity)
+- [Phase 02]: Used NotificationCenter .CTServiceRadioAccessTechnologyDidChange for radio tech observation (SDK API name mismatch)
+- [Phase 02]: Closure-initialized let for probeSession instead of lazy var (incompatible with @Observable macro)
 
 ### Pending Todos
 
@@ -77,6 +80,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T13:42:32.870Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-03-25T13:47:56.920Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None
