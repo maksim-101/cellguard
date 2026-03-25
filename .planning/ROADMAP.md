@@ -64,7 +64,7 @@ Plans:
 Plans:
 - [x] 03-01-PLAN.md — LocationService (CLLocationManager + CLServiceSession), AppDelegate, gap detection, monitoringGap event type
 - [x] 03-02-PLAN.md — MonitoringHealthService (health aggregation), ProvisioningProfileService (expiry + notification)
-- [ ] 03-03-PLAN.md — App lifecycle wiring, health status bar UI, HealthDetailSheet, gap event rendering
+- [x] 03-03-PLAN.md — App lifecycle wiring, health status bar UI, HealthDetailSheet, gap event rendering
 
 ### Phase 4: UI and Evidence Export
 **Goal**: The collected evidence is browsable in a clear minimal UI and exportable as structured files and a human-readable summary suitable for an Apple Feedback Assistant report
