@@ -12,7 +12,7 @@ Reliably detect and log every cellular connectivity drop — including the "atta
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] Structured local logging of all connectivity events with full metadata (timestamp, event type, path status, interface type, radio technology, carrier, location, connectivity test result, drop duration) — *Data model validated in Phase 01: Foundation*
 
 ### Active
 
@@ -62,7 +62,7 @@ Reliably detect and log every cellular connectivity drop — including the "atta
 |----------|-----------|---------|
 | Apple captive portal for connectivity checks | Apple-hosted, always up, lightweight, no privacy concerns, same URL iOS uses internally | — Pending |
 | 60-second check interval | Balances drop detection responsiveness with battery impact | — Pending |
-| SwiftData or SQLite for local storage | Lightweight, built-in, handles weeks of data | — Pending |
+| SwiftData for local storage | Native SwiftUI integration, @ModelActor for background writes, sufficient for ~10k rows/week | Decided Phase 01 |
 | Significant location changes (not continuous GPS) | Coarse location sufficient for pattern analysis, minimal battery impact, doubles as background execution eligibility | — Pending |
 | Free personal team signing | No developer program membership currently — can upgrade later if 7-day cycle becomes burdensome | — Pending |
 
@@ -84,4 +84,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-25 after initialization*
+*Last updated: 2026-03-25 after Phase 01 completion*
