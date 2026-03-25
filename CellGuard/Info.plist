@@ -37,5 +37,18 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>fetch</string>
+	</array>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>CellGuard needs Always location access to monitor cellular connectivity in the background using significant location changes. Location data stays on your device.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>CellGuard uses your location to correlate connectivity drops with geographic areas. Location data stays on your device.</string>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.cellguard.refresh</string>
+	</array>
 </dict>
 </plist>
