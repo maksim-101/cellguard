@@ -59,7 +59,12 @@ Plans:
   3. The app detects and logs monitoring gaps — periods when iOS suspended the app and no events could be captured — so exported data accurately represents coverage
   4. The user sees a clear monitoring health indicator (active / degraded / paused) whenever Background App Refresh is disabled, Low Power Mode is active, or location authorization is reduced
   5. The provisioning profile expiration date is visible in the UI and the user receives a local notification 48 hours before expiry
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — LocationService (CLLocationManager + CLServiceSession), AppDelegate, gap detection, monitoringGap event type
+- [ ] 03-02-PLAN.md — MonitoringHealthService (health aggregation), ProvisioningProfileService (expiry + notification)
+- [ ] 03-03-PLAN.md — App lifecycle wiring, health status bar UI, HealthDetailSheet, gap event rendering
 
 ### Phase 4: UI and Evidence Export
 **Goal**: The collected evidence is browsable in a clear minimal UI and exportable as structured files and a human-readable summary suitable for an Apple Feedback Assistant report
@@ -83,5 +88,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Foundation | 0/1 | Planning complete | - |
 | 2. Core Monitoring | 0/2 | Planning complete | - |
-| 3. Background Lifecycle | 0/TBD | Not started | - |
+| 3. Background Lifecycle | 0/3 | Planning complete | - |
 | 4. UI and Evidence Export | 0/TBD | Not started | - |
