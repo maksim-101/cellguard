@@ -13,7 +13,7 @@
 - [x] **MON-04**: App captures radio access technology (LTE, 5G NR, etc.) via CTTelephonyNetworkInfo with each event
 - [x] **MON-05**: App captures carrier metadata (carrier name, MCC/MNC) on a best-effort basis (may be nil due to CTCarrier deprecation)
 - [x] **MON-06**: App detects and logs when device silently falls back to Wi-Fi after a cellular drop (interface transition from cellular to Wi-Fi)
-- [ ] **MON-07**: App prompts user via local notification to trigger sysdiagnose immediately after a drop is detected (for Apple baseband logging profile capture)
+- [x] **MON-07**: App prompts user via local notification to trigger sysdiagnose immediately after a drop is detected (for Apple baseband logging profile capture)
 
 ### Data & Storage
 
@@ -41,7 +41,7 @@
 
 ### Export & Reporting
 
-- [ ] **EXP-01**: User can export full event log as structured JSON file via iOS Share Sheet
+- [x] **EXP-01**: User can export full event log as structured JSON file via iOS Share Sheet
 - [ ] **EXP-02**: App generates a summary report with: total drops, drops by type (overt vs silent), average/max duration, drops per day, location distribution, radio technology distribution
 - [ ] **EXP-03**: App displays a timeline visualization (Swift Charts) showing drops over time with silent failures marked distinctly
 
@@ -85,7 +85,7 @@
 | MON-04 | Phase 2 | Complete |
 | MON-05 | Phase 2 | Complete |
 | MON-06 | Phase 2 | Complete |
-| MON-07 | Phase 4 | Pending |
+| MON-07 | Phase 4 | Complete |
 | DAT-01 | Phase 1 | Complete |
 | DAT-02 | Phase 2 | Complete |
 | DAT-03 | Phase 3 | Complete |
@@ -101,7 +101,7 @@
 | UI-02 | Phase 4 | Pending |
 | UI-03 | Phase 4 | Pending |
 | UI-04 | Phase 4 | Pending |
-| EXP-01 | Phase 4 | Pending |
+| EXP-01 | Phase 4 | Complete |
 | EXP-02 | Phase 4 | Pending |
 | EXP-03 | Phase 4 | Pending |
 

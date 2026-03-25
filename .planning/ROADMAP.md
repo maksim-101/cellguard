@@ -81,7 +81,7 @@ Plans:
 
 Plans:
 - [ ] 04-01-PLAN.md — Dashboard, event list, event detail views, drop classification helper
-- [ ] 04-02-PLAN.md — Drop notification (MON-07), JSON export Transferable model (EXP-01)
+- [x] 04-02-PLAN.md — Drop notification (MON-07), JSON export Transferable model (EXP-01)
 - [ ] 04-03-PLAN.md — Summary report, Swift Charts timeline, dashboard wiring
 
 ## Progress
