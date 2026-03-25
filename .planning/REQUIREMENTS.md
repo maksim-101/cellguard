@@ -28,8 +28,8 @@
 
 - [ ] **BKG-01**: App uses significant location change monitoring (CLLocationManager) as primary background wake trigger and location source
 - [ ] **BKG-02**: App retains an active CLServiceSession for background location delivery on iOS 18+
-- [ ] **BKG-03**: App uses BGAppRefreshTask for supplementary background wake events
-- [ ] **BKG-04**: App detects and warns user when Background App Refresh is disabled, Low Power Mode is active, or other conditions prevent reliable background monitoring
+- [x] **BKG-03**: App uses BGAppRefreshTask for supplementary background wake events
+- [x] **BKG-04**: App detects and warns user when Background App Refresh is disabled, Low Power Mode is active, or other conditions prevent reliable background monitoring
 - [ ] **BKG-05**: App runs in background for 24+ hours without being terminated by iOS or causing noticeable battery drain
 
 ### User Interface
@@ -94,8 +94,8 @@
 | DAT-06 | Phase 1 | Complete |
 | BKG-01 | Phase 3 | Pending |
 | BKG-02 | Phase 3 | Pending |
-| BKG-03 | Phase 3 | Pending |
-| BKG-04 | Phase 3 | Pending |
+| BKG-03 | Phase 3 | Complete |
+| BKG-04 | Phase 3 | Complete |
 | BKG-05 | Phase 3 | Pending |
 | UI-01 | Phase 4 | Pending |
 | UI-02 | Phase 4 | Pending |
