@@ -34,10 +34,10 @@
 
 ### User Interface
 
-- [ ] **UI-01**: Dashboard view shows: monitoring active/paused status, current connectivity state, drop count (24h / 7d / total), last drop timestamp
-- [ ] **UI-02**: Scrollable event log displays all captured events in reverse chronological order
-- [ ] **UI-03**: Event detail view shows all captured metadata for a single event
-- [ ] **UI-04**: App launches directly to dashboard with no onboarding beyond required permission prompts (location)
+- [x] **UI-01**: Dashboard view shows: monitoring active/paused status, current connectivity state, drop count (24h / 7d / total), last drop timestamp
+- [x] **UI-02**: Scrollable event log displays all captured events in reverse chronological order
+- [x] **UI-03**: Event detail view shows all captured metadata for a single event
+- [x] **UI-04**: App launches directly to dashboard with no onboarding beyond required permission prompts (location)
 
 ### Export & Reporting
 
@@ -97,10 +97,10 @@
 | BKG-03 | Phase 3 | Complete |
 | BKG-04 | Phase 3 | Complete |
 | BKG-05 | Phase 3 | Complete |
-| UI-01 | Phase 4 | Pending |
-| UI-02 | Phase 4 | Pending |
-| UI-03 | Phase 4 | Pending |
-| UI-04 | Phase 4 | Pending |
+| UI-01 | Phase 4 | Complete |
+| UI-02 | Phase 4 | Complete |
+| UI-03 | Phase 4 | Complete |
+| UI-04 | Phase 4 | Complete |
 | EXP-01 | Phase 4 | Complete |
 | EXP-02 | Phase 4 | Pending |
 | EXP-03 | Phase 4 | Pending |

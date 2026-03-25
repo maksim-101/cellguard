@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 04-02-PLAN.md
-last_updated: "2026-03-25T16:30:52.123Z"
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-03-25T16:33:44.918Z"
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 9
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-25)
 ## Current Position
 
 Phase: 04 (ui-and-evidence-export) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Plan: 2 of 3
 | Phase 03 P01 | 4min | 2 tasks | 5 files |
 | Phase 03 P03 | 8min | 2 tasks | 3 files |
 | Phase 04 P02 | 2min | 2 tasks | 2 files |
+| Phase 04 P01 | 4min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,9 @@ Recent decisions affecting current work:
 - [Phase 03]: Environment injection for all four services rather than singleton access
 - [Phase 03]: Half-sheet (.medium detent) for HealthDetailSheet to keep dashboard visible
 - [Phase 04]: UUID-suffixed notification identifiers ensure multiple rapid drops each produce separate notifications
+- [Phase 04]: In-memory filtering for drop counts correct at ~10k event volume
+- [Phase 04]: View decomposition: ContentView is thin NavigationStack shell, DashboardView owns health bar and @Query
+- [Phase 04]: isDropEvent free function as shared classifier for dashboard, summary report, and chart
 
 ### Pending Todos
 
@@ -91,6 +95,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T16:30:52.121Z
-Stopped at: Completed 04-02-PLAN.md
+Last session: 2026-03-25T16:33:44.916Z
+Stopped at: Completed 04-01-PLAN.md
 Resume file: None
