@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import Charts
 
 /// Main landing screen showing monitoring status, connectivity state,
 /// drop counts (24h/7d/total), and last drop timestamp (UI-01, UI-04).
@@ -13,6 +14,7 @@ struct DashboardView: View {
     @State private var showHealthSheet = false
 
     var body: some View {
+        ScrollView {
         VStack(spacing: 0) {
             // Health status bar (tappable, opens detail sheet)
             healthBar
@@ -32,6 +34,17 @@ struct DashboardView: View {
             lastDropRow
                 .padding(.horizontal)
                 .padding(.bottom, 12)
+
+            // Drop timeline chart (EXP-03)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Drop Timeline")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+                DropTimelineChart(events: allEvents)
+                    .padding(.horizontal)
+            }
+            .padding(.bottom, 12)
 
             // Navigation to full event list
             NavigationLink {
@@ -57,8 +70,44 @@ struct DashboardView: View {
             }
             .buttonStyle(.plain)
             .padding(.horizontal)
+            .padding(.bottom, 4)
 
-            Spacer()
+            // Navigation to summary report (EXP-02)
+            NavigationLink {
+                SummaryReportView()
+            } label: {
+                HStack {
+                    Label("Summary Report", systemImage: "doc.text.magnifyingglass")
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding()
+                .background(Color(.secondarySystemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal)
+            .padding(.bottom, 4)
+
+            // Export event log as JSON via ShareLink (EXP-01)
+            ShareLink(
+                item: EventLogExport(events: allEvents),
+                preview: SharePreview("CellGuard Event Log", image: Image(systemName: "doc.text"))
+            ) {
+                HStack {
+                    Label("Export Event Log (JSON)", systemImage: "square.and.arrow.up")
+                    Spacer()
+                }
+                .padding()
+                .background(Color(.secondarySystemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal)
+            .padding(.bottom, 16)
+        }
         }
         .navigationTitle("CellGuard")
         .sheet(isPresented: $showHealthSheet) {
