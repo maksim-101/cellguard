@@ -73,8 +73,14 @@ None yet.
 
 None for v1.1 — all foundation work is shipped.
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260326-pjn | Improve JSON export readability for Apple Feedback Assistant | 2026-03-26 | 52732b8 | [260326-pjn-improve-json-export-readability-for-appl](./quick/260326-pjn-improve-json-export-readability-for-appl/) |
+
 ## Session Continuity
 
-Last session: 2026-03-26T15:28:02Z
+Last activity: 2026-03-26 - Completed quick task 260326-pjn: Improve JSON export readability for Apple Feedback Assistant
 Stopped at: Completed quick/260326-pjn (JSON export readability)
 Resume file: None
