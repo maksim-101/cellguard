@@ -24,7 +24,14 @@ Reliably detect and log every cellular connectivity drop — including the "atta
 
 ### Active
 
-(None — all v1.0 requirements validated)
+- [ ] Privacy-aware JSON export that omits latitude/longitude from event data
+
+## Current Milestone: v1.1 Privacy Export
+
+**Goal:** Add a privacy-aware export option that strips location data (latitude, longitude) from JSON output so users can share logs with Apple without exposing personal location history.
+
+**Target features:**
+- Toggle on existing JSON ShareLink to omit lat/long from exported events
 
 ### Out of Scope
 
@@ -92,4 +99,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-25 after v1.0 milestone*
+*Last updated: 2026-03-26 after v1.1 milestone start*
