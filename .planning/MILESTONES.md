@@ -1,5 +1,15 @@
 # Milestones
 
+## v1.1 Privacy Export (Shipped: 2026-03-26)
+
+**Phases completed:** 1 phases, 1 plans, 2 tasks
+
+**Key accomplishments:**
+
+- Privacy toggle strips latitude/longitude/locationAccuracy from JSON export via CodingUserInfoKey encoder flag with @AppStorage persistence
+
+---
+
 ## v1.0 MVP (Shipped: 2026-03-25)
 
 **Phases completed:** 4 phases, 9 plans, 17 tasks

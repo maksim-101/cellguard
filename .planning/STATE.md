@@ -3,8 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Privacy Export
 status: unknown
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-03-26T15:28:02Z"
+stopped_at: Completed quick/260326-pjn (JSON export readability)
+last_updated: "2026-03-26T17:33:08.060Z"
+last_activity: 2026-03-26
 progress:
   total_phases: 1
   completed_phases: 1
@@ -81,6 +82,6 @@ None for v1.1 — all foundation work is shipped.
 
 ## Session Continuity
 
-Last activity: 2026-03-26 - Completed quick task 260326-pjn: Improve JSON export readability for Apple Feedback Assistant
+Last activity: 2026-03-26
 Stopped at: Completed quick/260326-pjn (JSON export readability)
 Resume file: None
