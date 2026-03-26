@@ -2,6 +2,12 @@ import SwiftData
 import Foundation
 import CoreLocation
 
+extension CodingUserInfoKey {
+    /// When set to `true` on a JSONEncoder's userInfo, the encoder omits
+    /// latitude, longitude, and locationAccuracy from the output.
+    static let omitLocation = CodingUserInfoKey(rawValue: "omitLocation")!
+}
+
 // MARK: - Enums with explicit Int raw values (never rely on auto-increment -- migration safety)
 
 /// Classification of connectivity events detected by CellGuard.
@@ -227,9 +233,12 @@ extension ConnectivityEvent: Codable {
         try container.encodeIfPresent(carrierName, forKey: .carrierName)
         try container.encodeIfPresent(probeLatencyMs, forKey: .probeLatencyMs)
         try container.encodeIfPresent(probeFailureReason, forKey: .probeFailureReason)
-        try container.encodeIfPresent(latitude, forKey: .latitude)
-        try container.encodeIfPresent(longitude, forKey: .longitude)
-        try container.encodeIfPresent(locationAccuracy, forKey: .locationAccuracy)
+        let omitLocation = encoder.userInfo[.omitLocation] as? Bool ?? false
+        if !omitLocation {
+            try container.encodeIfPresent(latitude, forKey: .latitude)
+            try container.encodeIfPresent(longitude, forKey: .longitude)
+            try container.encodeIfPresent(locationAccuracy, forKey: .locationAccuracy)
+        }
         try container.encodeIfPresent(dropDurationSeconds, forKey: .dropDurationSeconds)
     }
 }

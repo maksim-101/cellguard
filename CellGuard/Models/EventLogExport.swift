@@ -10,12 +10,16 @@ import Foundation
 /// a date stamp for uniqueness: "cellguard-events-2026-03-25.json".
 struct EventLogExport: Transferable {
     let events: [ConnectivityEvent]
+    let omitLocation: Bool
 
     static var transferRepresentation: some TransferRepresentation {
         FileRepresentation(exportedContentType: .json) { export in
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            if export.omitLocation {
+                encoder.userInfo[.omitLocation] = true
+            }
             let data = try encoder.encode(export.events)
 
             let dateString = ISO8601DateFormatter().string(from: Date())
