@@ -12,6 +12,7 @@ struct DashboardView: View {
     private var allEvents: [ConnectivityEvent]
 
     @State private var showHealthSheet = false
+    @AppStorage("omitLocationData") private var omitLocation = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -92,9 +93,19 @@ struct DashboardView: View {
             .padding(.horizontal)
             .padding(.bottom, 4)
 
+            // Privacy toggle for export (EXPT-01, EXPT-03)
+            Toggle("Omit location data", isOn: $omitLocation)
+                .font(.subheadline)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(Color(.secondarySystemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .padding(.horizontal)
+                .padding(.bottom, 4)
+
             // Export event log as JSON via ShareLink (EXP-01)
             ShareLink(
-                item: EventLogExport(events: allEvents),
+                item: EventLogExport(events: allEvents, omitLocation: omitLocation),
                 preview: SharePreview("CellGuard Event Log", image: Image(systemName: "doc.text"))
             ) {
                 HStack {
