@@ -24,7 +24,11 @@ Reliably detect and log every cellular connectivity drop — including the "atta
 
 ### Active
 
-- [ ] Privacy-aware JSON export that omits latitude/longitude from event data
+(none)
+
+### Recently Validated
+
+- [x] Privacy-aware JSON export that omits latitude/longitude from event data — *Validated in Phase 05: Privacy-Aware Export*
 
 ## Current Milestone: v1.1 Privacy Export
 
@@ -45,7 +49,7 @@ Reliably detect and log every cellular connectivity drop — including the "atta
 
 ## Current State
 
-**v1.0 shipped 2026-03-25.** 4 phases, 9 plans, 2,332 lines of Swift.
+**v1.1 Privacy Export — Phase 05 complete 2026-03-26.** Privacy toggle added to JSON export flow; location data can be stripped before sharing.
 
 The app is fully functional: monitors cellular connectivity 24/7 in the background, detects both overt drops and silent modem failures, and produces JSON export + summary reports suitable for Apple Feedback Assistant. Deployed via free personal team signing (7-day re-sign cycle).
 
@@ -99,4 +103,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-26 after v1.1 milestone start*
+*Last updated: 2026-03-26 after Phase 05 completion*
