@@ -1,5 +1,35 @@
 # Retrospective
 
+## Milestone: v1.1 — Privacy Export
+
+**Shipped:** 2026-03-26
+**Phases:** 1 | **Plans:** 1 + 1 quick task
+
+### What Was Built
+- Privacy toggle ("Omit location data") strips latitude/longitude/locationAccuracy from JSON export
+- Toggle persists across app launches via @AppStorage
+- JSON enums encode as human-readable strings instead of opaque integers
+- Export wrapped in metadata envelope (device model, iOS version, carrier, collection period, event/drop counts)
+
+### What Worked
+- Small milestone (1 phase, 1 plan) executed cleanly in a single session
+- CodingUserInfoKey approach for encoder-level privacy was clean — no second Codable struct needed
+- Quick task workflow for the JSON readability improvement avoided full phase ceremony for a 2-file change
+- encodingString pattern preserved SwiftData Int predicates while getting readable JSON
+
+### What Was Inefficient
+- Nothing notable — small scope, clean execution
+
+### Patterns Established
+- `encodingString`/`fromEncodingString`: stable JSON serialization for Int-backed enums that need human-readable export
+- Metadata envelope pattern for export files: device context travels with the data
+
+### Key Lessons
+- Export readability matters for Apple Feedback Assistant — opaque integers and bare arrays waste Apple engineering time
+- Quick tasks are the right vehicle for post-phase polish discovered during review
+
+---
+
 ## Milestone: v1.0 — MVP
 
 **Shipped:** 2026-03-25
@@ -39,10 +69,10 @@
 
 ## Cross-Milestone Trends
 
-| Metric | v1.0 |
-|--------|------|
-| Phases | 4 |
-| Plans | 9 |
-| Tasks | 17 |
-| LOC (Swift) | 2,332 |
-| Duration | 1 day |
+| Metric | v1.0 | v1.1 |
+|--------|------|------|
+| Phases | 4 | 1 |
+| Plans | 9 | 1 (+1 quick) |
+| Tasks | 17 | 2 (+2 quick) |
+| LOC (Swift) | 2,332 | 2,792 |
+| Duration | 1 day | 1 day |

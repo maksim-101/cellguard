@@ -22,20 +22,11 @@ Reliably detect and log every cellular connectivity drop — including the "atta
 - [x] CSV/JSON export of the full event log for Feedback Assistant attachment — *Validated in Phase 04: UI & Evidence Export*
 - [x] Summary report generation (drops per day, average duration, affected times/locations) — *Validated in Phase 04: UI & Evidence Export*
 
+- [x] Privacy-aware JSON export that omits latitude/longitude from event data — *Validated in Phase 05: Privacy-Aware Export, v1.1*
+
 ### Active
 
-(none)
-
-### Recently Validated
-
-- [x] Privacy-aware JSON export that omits latitude/longitude from event data — *Validated in Phase 05: Privacy-Aware Export*
-
-## Current Milestone: v1.1 Privacy Export
-
-**Goal:** Add a privacy-aware export option that strips location data (latitude, longitude) from JSON output so users can share logs with Apple without exposing personal location history.
-
-**Target features:**
-- Toggle on existing JSON ShareLink to omit lat/long from exported events
+(none — next milestone not yet defined)
 
 ### Out of Scope
 
@@ -49,9 +40,9 @@ Reliably detect and log every cellular connectivity drop — including the "atta
 
 ## Current State
 
-**v1.1 Privacy Export — Phase 05 complete 2026-03-26.** Privacy toggle added to JSON export flow; location data can be stripped before sharing.
+**v1.1 shipped 2026-03-26.** 5 phases, 10 plans, 2,792 lines of Swift.
 
-The app is fully functional: monitors cellular connectivity 24/7 in the background, detects both overt drops and silent modem failures, and produces JSON export + summary reports suitable for Apple Feedback Assistant. Deployed via free personal team signing (7-day re-sign cycle).
+The app is fully functional: monitors cellular connectivity 24/7 in the background, detects both overt drops and silent modem failures, and produces JSON export + summary reports suitable for Apple Feedback Assistant. Privacy toggle allows sharing logs without exposing location history. JSON export includes device/OS metadata envelope for Apple engineering context. Deployed via free personal team signing (7-day re-sign cycle).
 
 ## Context
 
@@ -84,6 +75,9 @@ The app is fully functional: monitors cellular connectivity 24/7 in the backgrou
 | Free personal team signing | No developer program membership currently — can upgrade later if 7-day cycle becomes burdensome | ✓ Good — v1.0 |
 | 500ms debounce on path changes | NWPathMonitor fires rapid duplicate transitions; debounce prevents event log noise | ✓ Good — Phase 02 |
 | CLLocationManager over CLMonitor | CLMonitor has documented crash bugs on recreation and 20-region limit; CLLocationManager is battle-tested | ✓ Good — Phase 03 |
+| CodingUserInfoKey for location omission | Encoder-level flag avoids separate Codable struct; clean conditional in encode(to:) | ✓ Good — Phase 05 |
+| encodingString pattern for JSON enums | Int raw values for SwiftData predicates, camelCase strings for human-readable JSON export | ✓ Good — v1.1 quick task |
+| utsname for device model | UIDevice.current.model returns generic "iPhone"; utsname gives "iPhone17,4" | ✓ Good — v1.1 quick task |
 
 ## Evolution
 
@@ -103,4 +97,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-26 after Phase 05 completion*
+*Last updated: 2026-03-26 after v1.1 milestone*

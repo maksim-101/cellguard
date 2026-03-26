@@ -15,7 +15,8 @@ The iPhone 17 Pro Max has a widely reported cellular connectivity bug where the 
 - **Full metadata** — Each event captures: timestamp, event type, path status, interface type, radio technology, carrier, probe result, GPS coordinates, drop duration
 - **Gap detection** — Logs periods when iOS suspended monitoring so exported data accurately represents coverage
 - **Dashboard** — Health status bar, drop counts (24h/7d/total), connectivity state, Swift Charts timeline
-- **JSON export** — One-tap export of the complete event log via the iOS Share Sheet for Feedback Assistant attachment
+- **JSON export** — One-tap export of the complete event log via the iOS Share Sheet, with device/OS/carrier metadata envelope and human-readable field names for Feedback Assistant attachment
+- **Privacy toggle** — "Omit location data" switch strips latitude/longitude from exported JSON so logs can be shared without exposing location history
 - **Summary report** — Drops per day, duration statistics, radio technology breakdown, location distribution
 
 ## Requirements
@@ -131,9 +132,12 @@ CellGuard/
 
 ## Exporting Evidence
 
-1. Open the app and tap **"Export Event Log (JSON)"** on the dashboard
-2. The iOS Share Sheet opens with a timestamped JSON file
-3. Save to Files, AirDrop to your Mac, or attach directly to a Feedback Assistant report
+1. Open the app dashboard
+2. Toggle **"Omit location data"** if you want to strip GPS coordinates from the export
+3. Tap **"Export Event Log (JSON)"** — the iOS Share Sheet opens with a timestamped JSON file
+4. Save to Files, AirDrop to your Mac, or attach directly to a Feedback Assistant report
+
+The exported JSON includes a metadata header with device model, iOS version, carrier, collection period, and event counts — everything Apple engineering needs at a glance.
 
 The **Summary Report** (accessible from the dashboard) provides a human-readable overview suitable for pasting into a bug report narrative.
 

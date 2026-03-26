@@ -1,13 +1,48 @@
 import SwiftUI
 import UniformTypeIdentifiers
 import Foundation
+import CoreTelephony
+
+// MARK: - Export Metadata
+
+/// Device and collection metadata included in the top-level JSON export envelope.
+private struct ExportMetadata: Codable {
+    let appName: String
+    let appVersion: String
+    let buildNumber: String
+    let deviceModel: String
+    let osVersion: String
+    let carrier: String?
+    let collectionPeriod: CollectionPeriod?
+    let totalEvents: Int
+    let totalDrops: Int
+    let exportDate: Date
+    let locationDataIncluded: Bool
+}
+
+/// Start and end timestamps of the event collection window.
+private struct CollectionPeriod: Codable {
+    let start: Date
+    let end: Date
+}
+
+// MARK: - Top-Level Export Wrapper
+
+/// Top-level JSON structure: `{ "metadata": {...}, "events": [...] }`.
+private struct CellGuardExport: Codable {
+    let metadata: ExportMetadata
+    let events: [ConnectivityEvent]
+}
+
+// MARK: - EventLogExport (public interface unchanged)
 
 /// Transferable wrapper that encodes ConnectivityEvent arrays to JSON for ShareLink export (EXP-01).
 ///
-/// Usage: ShareLink(item: EventLogExport(events: allEvents), preview: SharePreview("CellGuard Event Log", image: Image(systemName: "doc.text")))
+/// Usage: ShareLink(item: EventLogExport(events: allEvents, omitLocation: false), preview: SharePreview("CellGuard Event Log", image: Image(systemName: "doc.text")))
 ///
-/// Writes a pretty-printed, sorted-keys JSON file to the temp directory. The filename includes
-/// a date stamp for uniqueness: "cellguard-events-2026-03-25.json".
+/// Produces a pretty-printed JSON file with a metadata envelope containing device info, OS version,
+/// carrier, collection period, event counts, and the events array. The filename includes a date stamp
+/// for uniqueness: "cellguard-export-2026-03-25.json".
 struct EventLogExport: Transferable {
     let events: [ConnectivityEvent]
     let omitLocation: Bool
@@ -20,15 +55,63 @@ struct EventLogExport: Transferable {
             if export.omitLocation {
                 encoder.userInfo[.omitLocation] = true
             }
-            let data = try encoder.encode(export.events)
+
+            // Build metadata envelope
+            let sortedEvents = export.events.sorted { $0.timestamp < $1.timestamp }
+
+            let collectionPeriod: CollectionPeriod?
+            if let first = sortedEvents.first, let last = sortedEvents.last {
+                collectionPeriod = CollectionPeriod(start: first.timestamp, end: last.timestamp)
+            } else {
+                collectionPeriod = nil
+            }
+
+            let info = Bundle.main.infoDictionary
+            let appVersion = info?["CFBundleShortVersionString"] as? String ?? "unknown"
+            let buildNumber = info?["CFBundleVersion"] as? String ?? "unknown"
+
+            // Carrier name (may be nil due to CTCarrier deprecation on iOS 16.4+)
+            let carrierName = CTTelephonyNetworkInfo()
+                .serviceSubscriberCellularProviders?
+                .values.first?.carrierName
+
+            let metadata = ExportMetadata(
+                appName: "CellGuard",
+                appVersion: appVersion,
+                buildNumber: buildNumber,
+                deviceModel: deviceModelIdentifier(),
+                osVersion: "\(UIDevice.current.systemName) \(UIDevice.current.systemVersion)",
+                carrier: carrierName,
+                collectionPeriod: collectionPeriod,
+                totalEvents: export.events.count,
+                totalDrops: export.events.filter { isDropEvent($0) }.count,
+                exportDate: Date(),
+                locationDataIncluded: !export.omitLocation
+            )
+
+            let wrapper = CellGuardExport(metadata: metadata, events: sortedEvents)
+            let data = try encoder.encode(wrapper)
 
             let dateString = ISO8601DateFormatter().string(from: Date())
                 .prefix(10) // "2026-03-25"
-            let filename = "cellguard-events-\(dateString).json"
+            let filename = "cellguard-export-\(dateString).json"
             let url = FileManager.default.temporaryDirectory
                 .appendingPathComponent(filename)
             try data.write(to: url, options: .atomic)
             return SentTransferredFile(url)
+        }
+    }
+}
+
+// MARK: - Device Model Identifier
+
+/// Returns the hardware model identifier (e.g. "iPhone17,4") rather than the marketing name.
+private func deviceModelIdentifier() -> String {
+    var systemInfo = utsname()
+    uname(&systemInfo)
+    return withUnsafePointer(to: &systemInfo.machine) {
+        $0.withMemoryRebound(to: CChar.self, capacity: 1) {
+            String(validatingCString: $0) ?? UIDevice.current.model
         }
     }
 }

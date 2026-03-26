@@ -196,9 +196,31 @@ extension ConnectivityEvent: Codable {
     convenience init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let timestamp = try container.decode(Date.self, forKey: .timestamp)
-        let eventType = try container.decode(EventType.self, forKey: .eventType)
-        let pathStatus = try container.decode(PathStatus.self, forKey: .pathStatus)
-        let interfaceType = try container.decode(InterfaceType.self, forKey: .interfaceType)
+
+        // Decode enums: try String-based encoding first, fall back to Int for legacy files
+        let eventType: EventType
+        if let str = try? container.decode(String.self, forKey: .eventType),
+           let decoded = EventType.fromEncodingString(str) {
+            eventType = decoded
+        } else {
+            eventType = try container.decode(EventType.self, forKey: .eventType)
+        }
+
+        let pathStatus: PathStatus
+        if let str = try? container.decode(String.self, forKey: .pathStatus),
+           let decoded = PathStatus.fromEncodingString(str) {
+            pathStatus = decoded
+        } else {
+            pathStatus = try container.decode(PathStatus.self, forKey: .pathStatus)
+        }
+
+        let interfaceType: InterfaceType
+        if let str = try? container.decode(String.self, forKey: .interfaceType),
+           let decoded = InterfaceType.fromEncodingString(str) {
+            interfaceType = decoded
+        } else {
+            interfaceType = try container.decode(InterfaceType.self, forKey: .interfaceType)
+        }
 
         self.init(
             timestamp: timestamp,
@@ -223,10 +245,10 @@ extension ConnectivityEvent: Codable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(timestamp, forKey: .timestamp)
         try container.encode(timestampUTC, forKey: .timestampUTC)
-        // Encode human-readable enum values (not raw Ints)
-        try container.encode(eventType, forKey: .eventType)
-        try container.encode(pathStatus, forKey: .pathStatus)
-        try container.encode(interfaceType, forKey: .interfaceType)
+        // Encode enums as human-readable strings (not raw Ints) for export readability
+        try container.encode(eventType.encodingString, forKey: .eventType)
+        try container.encode(pathStatus.encodingString, forKey: .pathStatus)
+        try container.encode(interfaceType.encodingString, forKey: .interfaceType)
         try container.encode(isExpensive, forKey: .isExpensive)
         try container.encode(isConstrained, forKey: .isConstrained)
         try container.encodeIfPresent(radioTechnology, forKey: .radioTechnology)
@@ -240,6 +262,83 @@ extension ConnectivityEvent: Codable {
             try container.encodeIfPresent(locationAccuracy, forKey: .locationAccuracy)
         }
         try container.encodeIfPresent(dropDurationSeconds, forKey: .dropDurationSeconds)
+    }
+}
+
+// MARK: - JSON Encoding Strings (stable, machine-friendly identifiers for export)
+
+extension EventType {
+    /// Stable camelCase identifier for JSON export. Distinct from `displayName` (which is for UI).
+    var encodingString: String {
+        switch self {
+        case .pathChange: "pathChange"
+        case .silentFailure: "silentFailure"
+        case .probeSuccess: "probeSuccess"
+        case .probeFailure: "probeFailure"
+        case .connectivityRestored: "connectivityRestored"
+        case .monitoringGap: "monitoringGap"
+        }
+    }
+
+    /// Decodes from a stable encoding string. Returns nil if the string is unrecognized.
+    static func fromEncodingString(_ string: String) -> EventType? {
+        switch string {
+        case "pathChange": .pathChange
+        case "silentFailure": .silentFailure
+        case "probeSuccess": .probeSuccess
+        case "probeFailure": .probeFailure
+        case "connectivityRestored": .connectivityRestored
+        case "monitoringGap": .monitoringGap
+        default: nil
+        }
+    }
+}
+
+extension PathStatus {
+    /// Stable camelCase identifier for JSON export.
+    var encodingString: String {
+        switch self {
+        case .satisfied: "satisfied"
+        case .unsatisfied: "unsatisfied"
+        case .requiresConnection: "requiresConnection"
+        }
+    }
+
+    /// Decodes from a stable encoding string. Returns nil if the string is unrecognized.
+    static func fromEncodingString(_ string: String) -> PathStatus? {
+        switch string {
+        case "satisfied": .satisfied
+        case "unsatisfied": .unsatisfied
+        case "requiresConnection": .requiresConnection
+        default: nil
+        }
+    }
+}
+
+extension InterfaceType {
+    /// Stable camelCase identifier for JSON export.
+    var encodingString: String {
+        switch self {
+        case .cellular: "cellular"
+        case .wifi: "wifi"
+        case .wiredEthernet: "wiredEthernet"
+        case .loopback: "loopback"
+        case .other: "other"
+        case .unknown: "unknown"
+        }
+    }
+
+    /// Decodes from a stable encoding string. Returns nil if the string is unrecognized.
+    static func fromEncodingString(_ string: String) -> InterfaceType? {
+        switch string {
+        case "cellular": .cellular
+        case "wifi": .wifi
+        case "wiredEthernet": .wiredEthernet
+        case "loopback": .loopback
+        case "other": .other
+        case "unknown": .unknown
+        default: nil
+        }
     }
 }
 
