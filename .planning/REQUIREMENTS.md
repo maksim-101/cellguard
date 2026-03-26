@@ -9,9 +9,9 @@ Requirements for privacy-aware export. Each maps to roadmap phases.
 
 ### Export Privacy
 
-- [ ] **EXPT-01**: User can toggle "Omit location data" before exporting JSON
-- [ ] **EXPT-02**: When privacy toggle is on, exported JSON excludes latitude and longitude fields from all events
-- [ ] **EXPT-03**: Privacy toggle state persists across app launches
+- [x] **EXPT-01**: User can toggle "Omit location data" before exporting JSON
+- [x] **EXPT-02**: When privacy toggle is on, exported JSON excludes latitude and longitude fields from all events
+- [x] **EXPT-03**: Privacy toggle state persists across app launches
 
 ## Future Requirements
 
@@ -31,9 +31,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| EXPT-01 | Phase 5 | Pending |
-| EXPT-02 | Phase 5 | Pending |
-| EXPT-03 | Phase 5 | Pending |
+| EXPT-01 | Phase 5 | Complete |
+| EXPT-02 | Phase 5 | Complete |
+| EXPT-03 | Phase 5 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 3 total

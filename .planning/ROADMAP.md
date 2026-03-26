@@ -35,7 +35,7 @@
 **Plans:** 1 plan
 
 Plans:
-- [ ] 05-01-PLAN.md — Privacy toggle with conditional location encoding in export
+- [x] 05-01-PLAN.md — Privacy toggle with conditional location encoding in export
 
 ## Progress
 
