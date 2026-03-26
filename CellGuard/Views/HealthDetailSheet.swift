@@ -9,6 +9,7 @@ struct HealthDetailSheet: View {
 
     var body: some View {
         NavigationStack {
+            ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 // Health status header
                 HStack(spacing: 8) {
@@ -69,7 +70,24 @@ struct HealthDetailSheet: View {
                     .tint(.red)
                 }
 
-                Spacer()
+                // Radio technology info
+                if let radio = monitor.currentRadioTechnology {
+                    let shortName = radio.replacingOccurrences(of: "CTRadioAccessTechnology", with: "")
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Cellular Radio")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text("\(shortName) — \(radioDescription(shortName))")
+                            .font(.subheadline)
+                        Text("Modem registration, not active data connection. Shows even when on Wi-Fi.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(.tertiarySystemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
 
                 // Footer metadata
                 VStack(alignment: .leading, spacing: 4) {
@@ -96,6 +114,7 @@ struct HealthDetailSheet: View {
                 }
             }
             .padding(24)
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -107,7 +126,7 @@ struct HealthDetailSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }
 
@@ -137,6 +156,23 @@ struct HealthDetailSheet: View {
             "Background monitoring may miss events due to:"
         case .paused:
             "Monitoring is not running. Tap \"Start Monitoring\" to begin."
+        }
+    }
+
+    private func radioDescription(_ shortName: String) -> String {
+        switch shortName {
+        case "NRNSA": return "5G Non-Standalone (LTE anchor)"
+        case "NR": return "5G Standalone"
+        case "LTE": return "4G LTE"
+        case "WCDMA": return "3G WCDMA"
+        case "HSDPA": return "3G HSDPA"
+        case "HSUPA": return "3G HSUPA"
+        case "CDMA1x": return "2G CDMA"
+        case "CDMAEVDORev0", "CDMAEVDORevA", "CDMAEVDORevB": return "3G EV-DO"
+        case "eHRPD": return "3G eHRPD"
+        case "GPRS": return "2G GPRS"
+        case "Edge": return "2G EDGE"
+        default: return shortName
         }
     }
 

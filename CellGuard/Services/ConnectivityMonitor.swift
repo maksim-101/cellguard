@@ -93,8 +93,15 @@ final class ConnectivityMonitor {
 
     // MARK: - CoreTelephony (MON-04, MON-05)
 
-    /// Shared CTTelephonyNetworkInfo instance for radio tech and carrier queries.
+    /// CTTelephonyNetworkInfo instance for notification registration.
+    /// IMPORTANT: A single instance can return stale radio tech values. The captureRadioTechnology()
+    /// method creates a fresh instance each time to ensure current values are read.
+    /// This is a known behavior where the dictionary returned by serviceCurrentRadioAccessTechnology
+    /// on a long-lived instance may not reflect settings changes (e.g., user switching LTE <-> 5G).
     private let networkInfo = CTTelephonyNetworkInfo()
+
+    /// NotificationCenter observer token for radio tech changes, stored for cleanup on stop.
+    private var radioTechObserver: (any NSObjectProtocol)?
 
     // MARK: - Dependencies
 
@@ -132,9 +139,10 @@ final class ConnectivityMonitor {
 
         pathMonitor.start(queue: monitorQueue)
 
-        // CoreTelephony: register for radio tech changes and capture initial state
+        // CoreTelephony: register for radio tech changes and capture initial state.
+        // Use a fresh CTTelephonyNetworkInfo for the initial read to avoid stale cached values.
         setupRadioTechObserver()
-        currentRadioTechnology = networkInfo.serviceCurrentRadioAccessTechnology?.values.first
+        currentRadioTechnology = CTTelephonyNetworkInfo().serviceCurrentRadioAccessTechnology?.values.first
 
         // Start the 60-second HEAD probe cycle
         startProbeTimer()
@@ -150,6 +158,7 @@ final class ConnectivityMonitor {
     func stopMonitoring() {
         pathMonitor.cancel()
         stopProbeTimer()
+        removeRadioTechObserver()
         isMonitoring = false
         debounceTask?.cancel()
         debounceTask = nil
@@ -286,31 +295,56 @@ final class ConnectivityMonitor {
     /// Registers for radio access technology change notifications via NotificationCenter.
     /// Updates `currentRadioTechnology` on the main actor when the radio tech changes
     /// (e.g., switching from LTE to 5G NR, or losing radio entirely).
+    ///
+    /// Uses a fresh CTTelephonyNetworkInfo instance in the callback because the long-lived
+    /// `networkInfo` property can return stale values after iOS settings changes.
     private func setupRadioTechObserver() {
-        NotificationCenter.default.addObserver(
+        // Remove any existing observer to prevent duplicates on restart
+        if let existing = radioTechObserver {
+            NotificationCenter.default.removeObserver(existing)
+        }
+
+        radioTechObserver = NotificationCenter.default.addObserver(
             forName: .CTServiceRadioAccessTechnologyDidChange,
             object: nil,
             queue: nil
         ) { [weak self] _ in
-            guard let self else { return }
-            let newTech = self.networkInfo.serviceCurrentRadioAccessTechnology?.values.first
+            // Create a fresh instance to avoid stale cached values
+            let freshInfo = CTTelephonyNetworkInfo()
+            let newTech = freshInfo.serviceCurrentRadioAccessTechnology?.values.first
             Task { @MainActor in
-                self.currentRadioTechnology = newTech
+                self?.currentRadioTechnology = newTech
             }
+        }
+    }
+
+    /// Removes the radio tech notification observer. Called during stopMonitoring()
+    /// to prevent duplicate observers if monitoring is restarted.
+    private func removeRadioTechObserver() {
+        if let existing = radioTechObserver {
+            NotificationCenter.default.removeObserver(existing)
+            radioTechObserver = nil
         }
     }
 
     /// Captures the current radio access technology string for event metadata (MON-04).
     /// Returns values like "CTRadioAccessTechnologyLTE", "CTRadioAccessTechnologyNR", etc.
+    ///
+    /// Creates a fresh CTTelephonyNetworkInfo instance each time to avoid returning stale
+    /// cached values from the long-lived `networkInfo` property. This is necessary because
+    /// a single CTTelephonyNetworkInfo instance can cache the radio tech from creation time
+    /// and not reflect subsequent user settings changes (e.g., switching from LTE to 5G).
     private func captureRadioTechnology() -> String? {
-        return networkInfo.serviceCurrentRadioAccessTechnology?.values.first
+        let freshInfo = CTTelephonyNetworkInfo()
+        return freshInfo.serviceCurrentRadioAccessTechnology?.values.first
     }
 
     /// Captures the current carrier name for event metadata (MON-05).
     /// Deprecated since iOS 16.4 with no replacement -- may return nil on iOS 26.
     /// Best-effort per MON-05; nil is acceptable.
     private func captureCarrierName() -> String? {
-        return networkInfo.serviceSubscriberCellularProviders?.values.first?.carrierName
+        let freshInfo = CTTelephonyNetworkInfo()
+        return freshInfo.serviceSubscriberCellularProviders?.values.first?.carrierName
     }
 
     // MARK: - Path Update Handling

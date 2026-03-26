@@ -14,26 +14,25 @@ struct DashboardView: View {
     @State private var showHealthSheet = false
 
     var body: some View {
-        ScrollView {
         VStack(spacing: 0) {
             // Health status bar (tappable, opens detail sheet)
             healthBar
-                .padding(.bottom, 8)
+                .padding(.bottom, 10)
 
             // Current connectivity state
             connectivityStateCard
                 .padding(.horizontal)
-                .padding(.bottom, 12)
+                .padding(.bottom, 10)
 
             // Drop count cards
             dropCountCards
                 .padding(.horizontal)
-                .padding(.bottom, 12)
+                .padding(.bottom, 10)
 
             // Last drop timestamp
             lastDropRow
                 .padding(.horizontal)
-                .padding(.bottom, 12)
+                .padding(.bottom, 10)
 
             // Drop timeline chart (EXP-03)
             VStack(alignment: .leading, spacing: 4) {
@@ -44,7 +43,7 @@ struct DashboardView: View {
                 DropTimelineChart(events: allEvents)
                     .padding(.horizontal)
             }
-            .padding(.bottom, 12)
+            .padding(.bottom, 10)
 
             // Navigation to full event list
             NavigationLink {
@@ -64,7 +63,8 @@ struct DashboardView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                .padding()
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
                 .background(Color(.secondarySystemBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
             }
@@ -83,7 +83,8 @@ struct DashboardView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                .padding()
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
                 .background(Color(.secondarySystemBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
             }
@@ -100,14 +101,14 @@ struct DashboardView: View {
                     Label("Export Event Log (JSON)", systemImage: "square.and.arrow.up")
                     Spacer()
                 }
-                .padding()
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
                 .background(Color(.secondarySystemBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
             }
             .buttonStyle(.plain)
             .padding(.horizontal)
-            .padding(.bottom, 16)
-        }
+            .padding(.bottom, 8)
         }
         .navigationTitle("CellGuard")
         .sheet(isPresented: $showHealthSheet) {

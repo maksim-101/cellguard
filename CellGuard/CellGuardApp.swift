@@ -21,6 +21,11 @@ struct CellGuardApp: App {
         let locationService = LocationService(monitor: monitor, eventStore: store)
         _locationService = State(initialValue: locationService)
 
+        // Set shared monitor reference for AppDelegate's BGAppRefreshTask handler.
+        // Must happen before any background task fires. AppDelegate uses this to run
+        // probes during background-only launches where no SwiftUI scene exists.
+        AppDelegate.sharedMonitor = monitor
+
         // Auto-resume monitoring immediately during init (DAT-03).
         // This is critical for background relaunches: when iOS relaunches the app
         // due to a significant location change, no UI scene is created, so .onAppear
@@ -30,6 +35,10 @@ struct CellGuardApp: App {
             monitor.startMonitoring()
             locationService.startMonitoring()
         }
+
+        // BGAppRefreshTask scheduling is done in AppDelegate.didFinishLaunchingWithOptions
+        // AFTER the handler is registered. Cannot schedule here because App.init() runs
+        // before the delegate, and submitting before registration causes a crash.
     }
 
     var body: some Scene {
@@ -62,20 +71,8 @@ struct CellGuardApp: App {
                         backgroundRefresh: UIApplication.shared.backgroundRefreshStatus
                     )
                 }
-                .onReceive(NotificationCenter.default.publisher(for: .init("com.cellguard.handleRefresh"))) { notification in
-                    // Handle BGAppRefreshTask: run probe + schedule next (BKG-03)
-                    guard let refreshTask = notification.object as? BGAppRefreshTask else { return }
-
-                    refreshTask.expirationHandler = {
-                        refreshTask.setTaskCompleted(success: false)
-                    }
-
-                    Task {
-                        await monitor.runSingleProbe()
-                        refreshTask.setTaskCompleted(success: true)
-                        MonitoringHealthService.scheduleAppRefresh()
-                    }
-                }
+                // BGAppRefreshTask handling moved to AppDelegate.swift where it executes
+                // regardless of whether a SwiftUI scene exists (critical for background launches).
         }
         .modelContainer(container)
     }
