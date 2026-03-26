@@ -32,10 +32,10 @@
   2. When the toggle is on, the shared JSON file contains no latitude or longitude values for any event
   3. When the toggle is off, the shared JSON file contains latitude and longitude as before
   4. The toggle remembers the user's last choice after quitting and relaunching the app
-**Plans**: TBD
+**Plans:** 1 plan
 
 Plans:
-- [ ] 05-01: TBD
+- [ ] 05-01-PLAN.md — Privacy toggle with conditional location encoding in export
 
 ## Progress
 
@@ -48,4 +48,4 @@ Phases execute in numeric order.
 | 2. Core Monitoring | v1.0 | 2/2 | Complete | 2026-03-25 |
 | 3. Background Lifecycle | v1.0 | 3/3 | Complete | 2026-03-25 |
 | 4. UI and Evidence Export | v1.0 | 3/3 | Complete | 2026-03-25 |
-| 5. Privacy-Aware Export | v1.1 | 0/? | Not started | - |
+| 5. Privacy-Aware Export | v1.1 | 0/1 | Not started | - |
