@@ -269,6 +269,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CellGuard/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = CellGuard;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "CellGuard needs Always location access to monitor cellular connectivity in the background using significant location changes. Location data stays on your device.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "CellGuard uses your location to correlate connectivity drops with geographic areas. Location data stays on your device.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -303,6 +304,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CellGuard/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = CellGuard;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "CellGuard needs Always location access to monitor cellular connectivity in the background using significant location changes. Location data stays on your device.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "CellGuard uses your location to correlate connectivity drops with geographic areas. Location data stays on your device.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
