@@ -2,6 +2,7 @@ import Network
 import Observation
 import Foundation
 import CoreTelephony
+import NetworkExtension
 import UserNotifications
 
 /// Core detection engine that translates NWPathMonitor transitions into classified
@@ -345,12 +346,19 @@ final class ConnectivityMonitor {
         nil
     }
 
+    /// Captures the current Wi-Fi SSID if available.
+    /// Returns nil when not on Wi-Fi, missing entitlement, or in restricted background context.
+    private func captureWifiSSID() async -> String? {
+        let network = await NEHotspotNetwork.fetchCurrent()
+        return network?.ssid
+    }
+
     // MARK: - Path Update Handling
 
     /// Processes a raw NWPath update: maps status/interface, guards initial callback,
     /// and debounces rapid changes before classification.
     @MainActor
-    private func handlePathUpdate(_ path: NWPath) {
+    private func handlePathUpdate(_ path: Network.NWPath) {
         let newStatus = mapPathStatus(path.status)
         let newInterface = detectPrimaryInterface(path)
         let isExpensive = path.isExpensive
@@ -454,7 +462,7 @@ final class ConnectivityMonitor {
     // MARK: - Helpers
 
     /// Maps NWPath.Status to the app's PathStatus enum.
-    private func mapPathStatus(_ status: NWPath.Status) -> PathStatus {
+    private func mapPathStatus(_ status: Network.NWPath.Status) -> PathStatus {
         switch status {
         case .satisfied: return .satisfied
         case .unsatisfied: return .unsatisfied
@@ -468,7 +476,7 @@ final class ConnectivityMonitor {
     /// Uses `availableInterfaces` (ordered by system preference) rather than
     /// `usesInterfaceType()` to avoid the pitfall where multiple interface types
     /// return true simultaneously (e.g., both cellular and wifi).
-    private func detectPrimaryInterface(_ path: NWPath) -> InterfaceType {
+    private func detectPrimaryInterface(_ path: Network.NWPath) -> InterfaceType {
         guard let primaryInterface = path.availableInterfaces.first else {
             return .unknown
         }
@@ -498,23 +506,31 @@ final class ConnectivityMonitor {
         probeFailureReason: String? = nil,
         dropDuration: Double? = nil
     ) {
-        let event = ConnectivityEvent(
-            eventType: type,
-            pathStatus: status,
-            interfaceType: interface,
-            isExpensive: isExpensive,
-            isConstrained: isConstrained,
-            radioTechnology: captureRadioTechnology(),
-            carrierName: captureCarrierName(),
-            probeLatencyMs: probeLatencyMs,
-            probeFailureReason: probeFailureReason,
-            latitude: lastLocation?.latitude,
-            longitude: lastLocation?.longitude,
-            locationAccuracy: lastLocation?.accuracy,
-            dropDurationSeconds: dropDuration
-        )
+        // Capture synchronous metadata outside the Task
+        let radioTech = captureRadioTechnology()
+        let carrier = captureCarrierName()
+        let location = lastLocation
 
         Task {
+            let ssid = await captureWifiSSID()
+
+            let event = ConnectivityEvent(
+                eventType: type,
+                pathStatus: status,
+                interfaceType: interface,
+                isExpensive: isExpensive,
+                isConstrained: isConstrained,
+                radioTechnology: radioTech,
+                carrierName: carrier,
+                wifiSSID: ssid,
+                probeLatencyMs: probeLatencyMs,
+                probeFailureReason: probeFailureReason,
+                latitude: location?.latitude,
+                longitude: location?.longitude,
+                locationAccuracy: location?.accuracy,
+                dropDurationSeconds: dropDuration
+            )
+
             try? await eventStore.insertEvent(event)
         }
 

@@ -27,6 +27,12 @@ struct EventDetailView: View {
                 LabeledContent("Carrier", value: event.carrierName ?? "Unknown")
             }
 
+            if event.wifiSSID != nil {
+                Section("Wi-Fi") {
+                    LabeledContent("SSID", value: event.wifiSSID?.isEmpty == true ? "\u{2014}" : event.wifiSSID!)
+                }
+            }
+
             if event.probeLatencyMs != nil || event.probeFailureReason != nil {
                 Section("Probe") {
                     if let latency = event.probeLatencyMs {
