@@ -3,13 +3,13 @@ import Foundation
 import UserNotifications
 
 /// Reads the embedded provisioning profile to detect expiration date and schedules
-/// a local notification 48 hours before profile expiry.
+/// a local notification 7 days before certificate expiry.
 ///
 /// On the iOS Simulator, embedded.mobileprovision does not exist, so all properties
-/// gracefully return nil/fallback values (Pitfall 6 from research).
+/// gracefully return nil/fallback values.
 ///
-/// The 7-day free personal team re-sign cycle means profile expiry awareness is critical
-/// to prevent silent monitoring stoppage when the app is no longer launchable.
+/// With paid Apple Developer Program signing (Team VTWHBCCP36), the provisioning
+/// profile is valid for ~1 year. The 7-day warning gives time to re-deploy from Xcode.
 @Observable
 final class ProvisioningProfileService {
 
@@ -39,10 +39,10 @@ final class ProvisioningProfileService {
 
     // MARK: - Computed Properties
 
-    /// Whether the profile expires within 48 hours.
+    /// Whether the profile expires within 7 days.
     var isExpiringSoon: Bool {
         guard let expirationDate else { return false }
-        return expirationDate.timeIntervalSinceNow < 48 * 3600
+        return expirationDate.timeIntervalSinceNow < 7 * 24 * 3600
     }
 
     /// Human-readable expiration date for display in the UI.
@@ -117,7 +117,7 @@ final class ProvisioningProfileService {
 
     // MARK: - Notification Scheduling
 
-    /// Schedules a local notification 48 hours before the provisioning profile expires.
+    /// Schedules a local notification 7 days before the provisioning profile expires.
     ///
     /// Requests notification authorization if not already granted. Replaces any
     /// previously scheduled "profileExpiry" notification.
@@ -133,15 +133,15 @@ final class ProvisioningProfileService {
             // Remove any previously scheduled expiry notification
             center.removePendingNotificationRequests(withIdentifiers: ["profileExpiry"])
 
-            // Calculate 48 hours before expiration
-            let warningDate = expirationDate.addingTimeInterval(-48 * 3600)
+            // Calculate 7 days before expiration
+            let warningDate = expirationDate.addingTimeInterval(-7 * 24 * 3600)
 
             // If we're already past the warning window, don't schedule
             guard warningDate > Date() else { return }
 
             let content = UNMutableNotificationContent()
-            content.title = "CellGuard Profile Expiring"
-            content.body = "Your provisioning profile expires in 48 hours. Re-sign the app in Xcode to continue monitoring."
+            content.title = "CellGuard Certificate Expiring"
+            content.body = "Your Developer certificate expires in 7 days. Deploy the app from Xcode to renew it and continue monitoring."
             content.sound = .default
 
             let trigger = UNTimeIntervalNotificationTrigger(

@@ -91,9 +91,9 @@ struct HealthDetailSheet: View {
 
                 // Footer metadata
                 VStack(alignment: .leading, spacing: 4) {
-                    // Profile expiry
+                    // Certificate expiry
                     HStack {
-                        Text("Profile Expires:")
+                        Text("Cert Expires:")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Text(profileService.expirationDisplayText)
