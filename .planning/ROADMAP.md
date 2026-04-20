@@ -68,7 +68,9 @@ Plans:
   2. When not connected to Wi-Fi, the SSID field shows nil/empty gracefully (no crash, no placeholder noise)
   3. Exported JSON and CSV files include the Wi-Fi SSID field, respecting the privacy toggle (stripped when enabled)
   4. The SwiftData model stores SSID as a queryable field on ConnectivityEvent
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 07-01-PLAN.md — Add wifiSSID field to model, SSID capture via NEHotspotNetwork, event detail display, privacy-gated export, entitlements
 **UI hint**: yes
 
 ## Progress
@@ -85,4 +87,4 @@ Phases execute in numeric order.
 | 5. Privacy-Aware Export | v1.1 | 1/1 | Complete | 2026-03-26 |
 | 6. Persistent Signing | v1.2 | 1/1 | Complete | 2026-04-20 |
 | 6.1 Signing Polish | v1.2 | 1/1 | Complete | 2026-04-20 |
-| 7. Wi-Fi Context | v1.2 | 0/? | Not started | - |
+| 7. Wi-Fi Context | v1.2 | 0/1 | Planned | - |
