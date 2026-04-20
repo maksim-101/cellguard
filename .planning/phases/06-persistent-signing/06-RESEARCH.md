@@ -295,17 +295,19 @@ This phase does not rename any identifiers, rebrand strings, or migrate data mod
 | A2 | "Cert Expires:" label rename in HealthDetailSheet is optional/cosmetic | Architecture Patterns | Low — purely cosmetic, no functional impact |
 | A3 | The PPQ online check applies to this project's paid team builds (post June 2021) | Common Pitfalls | Medium — if team was created before June 6 2021, PPQ check may not apply |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Is the paid Apple Developer account (VTWHBCCP36) actively enrolled and paid?**
    - What we know: Team ID is already in pbxproj, suggesting it was set intentionally
    - What's unclear: Whether the Developer Program membership is current/active
    - Recommendation: Verify at developer.apple.com before deploying; expired membership = no profile issuance
+   - RESOLVED: Handled by human-verify checkpoint (Task 2) — developer confirms Xcode shows team with no signing errors before proceeding.
 
 2. **What provisioning profile type will Xcode generate with automatic signing?**
    - What we know: For direct device deployment (not App Store), Xcode with paid team generates a development provisioning profile (not distribution). Development profiles expire in 1 year.
    - What's unclear: The ROADMAP says "distribution certificate expiry" — for Xcode direct deployment, the profile is technically a development profile, not a distribution profile. The embedded certificate is a Development certificate, not a Distribution certificate.
    - Recommendation: Clarify in plan whether the 1-year expiry target refers to development profile expiry (Xcode deployment) or an ad-hoc/distribution profile. For personal device use via Xcode, development profile is correct. The functional result (1-year expiry) is the same either way.
+   - RESOLVED: For Xcode direct deployment, Xcode generates a development provisioning profile (1-year expiry). The plan uses "Developer certificate" language which is accurate. The functional result (1-year expiry) is identical regardless of profile type.
 
 ## Environment Availability
 
