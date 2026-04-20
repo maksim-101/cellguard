@@ -21,7 +21,7 @@ Requirements for v1.2 Persistent Signing & Wi-Fi Context. Each maps to roadmap p
 
 - [ ] **WIFI-01**: Current Wi-Fi SSID is captured at the time of each connectivity event
 - [ ] **WIFI-02**: Wi-Fi SSID is stored as a field in the SwiftData ConnectivityEvent model
-- [ ] **WIFI-03**: Wi-Fi SSID is included in JSON and CSV export output
+- [ ] **WIFI-03**: Wi-Fi SSID is included in JSON and CSV export output, respecting the existing privacy toggle (stripped when privacy mode is enabled)
 - [ ] **WIFI-04**: Wi-Fi SSID is visible in the event detail view
 
 ## Future Requirements
@@ -47,20 +47,20 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SIGN-01 | — | Pending |
-| SIGN-02 | — | Pending |
-| EXPR-01 | — | Pending |
-| EXPR-02 | — | Pending |
-| WIFI-01 | — | Pending |
-| WIFI-02 | — | Pending |
-| WIFI-03 | — | Pending |
-| WIFI-04 | — | Pending |
+| SIGN-01 | Phase 6 | Pending |
+| SIGN-02 | Phase 6 | Pending |
+| EXPR-01 | Phase 6 | Pending |
+| EXPR-02 | Phase 6 | Pending |
+| WIFI-01 | Phase 7 | Pending |
+| WIFI-02 | Phase 7 | Pending |
+| WIFI-03 | Phase 7 | Pending |
+| WIFI-04 | Phase 7 | Pending |
 
 **Coverage:**
 - v1.2 requirements: 8 total
-- Mapped to phases: 0
-- Unmapped: 8 ⚠️
+- Mapped to phases: 8
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-20*
-*Last updated: 2026-04-20 after initial definition*
+*Last updated: 2026-04-20 after roadmap creation*
