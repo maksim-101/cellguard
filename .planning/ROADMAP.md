@@ -30,7 +30,7 @@
 **Milestone Goal:** Switch to paid Apple Developer team signing so the app persists indefinitely, and add Wi-Fi SSID capture for richer environmental context in diagnostic logs.
 
 - [x] **Phase 6: Persistent Signing** - Paid team signing with certificate expiry monitoring replaces 7-day re-sign cycle (completed 2026-04-20)
-- [ ] **Phase 6.1: Signing Polish** - Fix profile reading on device + resolve all Xcode warnings
+- [x] **Phase 6.1: Signing Polish** - Fix profile reading on device + resolve all Xcode warnings (completed 2026-04-20)
 - [ ] **Phase 7: Wi-Fi Context** - Wi-Fi SSID captured on each event, stored, exported, and displayed
 
 ## Phase Details
@@ -57,7 +57,7 @@ Plans:
   2. Zero Xcode warnings related to Sendable, deprecated APIs, async access, or missing AccentColor
 **Plans**: 1 plan
 Plans:
-- [ ] 06.1-01-PLAN.md — Fix profile reading fallback, resolve Sendable/async/deprecation/AccentColor warnings
+- [x] 06.1-01-PLAN.md — Fix profile reading fallback, resolve Sendable/async/deprecation/AccentColor warnings
 
 ### Phase 7: Wi-Fi Context
 **Goal**: Every connectivity event captures the current Wi-Fi SSID, providing environmental context for diagnosing cellular drops
@@ -84,5 +84,5 @@ Phases execute in numeric order.
 | 4. UI and Evidence Export | v1.0 | 3/3 | Complete | 2026-03-25 |
 | 5. Privacy-Aware Export | v1.1 | 1/1 | Complete | 2026-03-26 |
 | 6. Persistent Signing | v1.2 | 1/1 | Complete | 2026-04-20 |
-| 6.1 Signing Polish | v1.2 | 0/1 | Not started | - |
+| 6.1 Signing Polish | v1.2 | 1/1 | Complete | 2026-04-20 |
 | 7. Wi-Fi Context | v1.2 | 0/? | Not started | - |

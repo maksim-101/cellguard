@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Persistent Signing & Wi-Fi Context
 status: phase_complete
-stopped_at: Phase 6 executed and verified
+stopped_at: Phase 6.1 executed and verified
 last_updated: "2026-04-20T00:00:00.000Z"
 last_activity: 2026-04-20
 progress:
