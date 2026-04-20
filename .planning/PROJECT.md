@@ -26,7 +26,9 @@ Reliably detect and log every cellular connectivity drop — including the "atta
 
 ### Active
 
-(none — next milestone not yet defined)
+- [ ] Paid Apple Developer team signing (Team ID VTWHBCCP36) replacing free personal team 7-day re-sign
+- [ ] ProvisioningProfileService adapted from 7-day profile expiry to 1-year certificate expiry monitoring
+- [ ] Wi-Fi SSID logging on each connectivity event using Access WiFi Information entitlement
 
 ### Out of Scope
 
@@ -35,8 +37,17 @@ Reliably detect and log every cellular connectivity drop — including the "atta
 - Signal strength (dBm/RSSI) monitoring — Apple does not expose this to third-party apps
 - Direct modem/baseband state access — private framework, not available to third-party apps
 - App Store distribution — personal diagnostic tool deployed via Xcode
-- Wi-Fi SSID capture — requires entitlement not available without paid developer program membership
+- Wi-Fi SSID capture — ~~requires entitlement not available without paid developer program membership~~ **Moved to Active in v1.2**
 - OAuth, user accounts, or onboarding flows — single-user tool
+
+## Current Milestone: v1.2 Persistent Signing & Wi-Fi Context
+
+**Goal:** Switch to paid Apple Developer team signing so the app persists indefinitely, and add Wi-Fi SSID capture for richer environmental context in diagnostic logs.
+
+**Target features:**
+- Paid team signing with Team ID VTWHBCCP36 (no more 7-day re-sign cycle)
+- Adapt ProvisioningProfileService to monitor 1-year certificate expiry instead of 7-day profile
+- Wi-Fi SSID logging on each connectivity event (uses Access WiFi Information entitlement)
 
 ## Current State
 
@@ -57,7 +68,7 @@ The app is fully functional: monitors cellular connectivity 24/7 in the backgrou
 ## Constraints
 
 - **Platform:** iOS 26.x, SwiftUI, Swift — must target iPhone 17 Pro Max specifically
-- **Signing:** Free personal team (7-day re-sign cycle) — no entitlements requiring paid membership
+- **Signing:** Apple Developer Program (Team ID VTWHBCCP36) — paid team signing with 1-year certificate
 - **Background execution:** Must use legitimate iOS background modes (Background App Refresh, NWPathMonitor background delivery, significant location changes) — no hacks that would cause termination
 - **Battery:** Background monitoring must not cause noticeable battery drain
 - **Storage:** All data local, no cloud — must handle weeks of event data without significant storage impact
@@ -72,7 +83,7 @@ The app is fully functional: monitors cellular connectivity 24/7 in the backgrou
 | 60-second check interval | Balances drop detection responsiveness with battery impact | Decided Phase 02 |
 | SwiftData for local storage | Native SwiftUI integration, @ModelActor for background writes, sufficient for ~10k rows/week | Decided Phase 01 |
 | Significant location changes (not continuous GPS) | Coarse location sufficient for pattern analysis, minimal battery impact, doubles as background execution eligibility | ✓ Good — Phase 03 |
-| Free personal team signing | No developer program membership currently — can upgrade later if 7-day cycle becomes burdensome | ✓ Good — v1.0 |
+| Free personal team signing | No developer program membership currently — can upgrade later if 7-day cycle becomes burdensome | ⚠️ Revisit — upgrading to paid in v1.2 |
 | 500ms debounce on path changes | NWPathMonitor fires rapid duplicate transitions; debounce prevents event log noise | ✓ Good — Phase 02 |
 | CLLocationManager over CLMonitor | CLMonitor has documented crash bugs on recreation and 20-region limit; CLLocationManager is battle-tested | ✓ Good — Phase 03 |
 | CodingUserInfoKey for location omission | Encoder-level flag avoids separate Codable struct; clean conditional in encode(to:) | ✓ Good — Phase 05 |
@@ -97,4 +108,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-26 after v1.1 milestone*
+*Last updated: 2026-04-20 after v1.2 milestone start*
