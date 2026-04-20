@@ -100,24 +100,26 @@ final class ProvisioningProfileService {
             let data = try Data(contentsOf: URL(fileURLWithPath: path))
 
             // The mobileprovision file is a CMS/PKCS#7 signed container.
-            // The plist XML is embedded within it as ASCII text.
-            guard let asciiString = String(data: data, encoding: .ascii) else {
-                expirationDate = nil
+            // The plist XML is embedded within it. Use .isoLatin1 to decode
+            // the binary container — ASCII fails on iOS 26 profiles that
+            // contain bytes > 127 in the DER wrapper.
+            guard let profileString = String(data: data, encoding: .isoLatin1) else {
+                estimateExpiryFromBuildDate()
                 return
             }
 
             // Extract the plist XML from the binary container
-            guard let xmlStart = asciiString.range(of: "<?xml"),
-                  let plistEnd = asciiString.range(of: "</plist>") else {
-                expirationDate = nil
+            guard let xmlStart = profileString.range(of: "<?xml"),
+                  let plistEnd = profileString.range(of: "</plist>") else {
+                estimateExpiryFromBuildDate()
                 return
             }
 
             let plistRange = xmlStart.lowerBound..<plistEnd.upperBound
-            let plistString = String(asciiString[plistRange])
+            let plistString = String(profileString[plistRange])
 
             guard let plistData = plistString.data(using: .utf8) else {
-                expirationDate = nil
+                estimateExpiryFromBuildDate()
                 return
             }
 
