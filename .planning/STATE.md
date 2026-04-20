@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Persistent Signing & Wi-Fi Context
-status: ready_to_execute
-stopped_at: Phase 7 planned (1 plan, 1 wave)
-last_updated: "2026-04-20T00:00:00.000Z"
+status: phase_complete
+stopped_at: Phase 7 complete — v1.2 milestone complete
+last_updated: "2026-04-20T20:11:00.000Z"
 last_activity: 2026-04-20
 progress:
   total_phases: 2
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 1
   completed_plans: 1
 ---
@@ -24,12 +24,12 @@ See: .planning/PROJECT.md (updated 2026-04-20)
 
 ## Current Position
 
-Phase: 7 of 7 (Wi-Fi Context)
-Plan: 1 plan in 1 wave (07-01)
-Status: Ready to execute
-Last activity: 2026-04-20 — Phase 7 planned
+Phase: 7 of 7 (Wi-Fi Context) -- COMPLETE
+Plan: 1/1 complete (07-01)
+Status: Phase complete -- v1.2 milestone done
+Last activity: 2026-04-20 — Phase 7 executed
 
-Progress: [█████░░░░░] 50%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -49,6 +49,7 @@ Progress: [█████░░░░░] 50%
 | Phase 04 | 3 | 8min | 2.7min |
 | Phase 05 P01 | 1 | 1min | 1min |
 | Quick 260326-pjn | 1 | 2min | 2min |
+| Phase 07 P01 | 1 | 6min | 6min |
 
 ## Accumulated Context
 
@@ -60,6 +61,8 @@ Recent decisions affecting current work:
 - [v1.2]: Upgrading from free personal team to paid Apple Developer Program (Team VTWHBCCP36)
 - [v1.2]: Adapting ProvisioningProfileService to 1-year certificate expiry (not removing it)
 - [v1.2]: Adding Wi-Fi SSID capture (entitlement now available with paid account)
+- [Phase 7]: NWPath disambiguated as Network.NWPath when both Network and NetworkExtension are imported
+- [Phase 7]: Async SSID capture inside Task block; synchronous metadata captured before Task
 
 ### Pending Todos
 
@@ -72,5 +75,5 @@ None.
 ## Session Continuity
 
 Last activity: 2026-04-20
-Stopped at: Phase 6 complete — Phase 7 next
+Stopped at: Phase 7 complete -- v1.2 milestone complete
 Resume file: None

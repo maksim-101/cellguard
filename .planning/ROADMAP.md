@@ -31,7 +31,7 @@
 
 - [x] **Phase 6: Persistent Signing** - Paid team signing with certificate expiry monitoring replaces 7-day re-sign cycle (completed 2026-04-20)
 - [x] **Phase 6.1: Signing Polish** - Fix profile reading on device + resolve all Xcode warnings (completed 2026-04-20)
-- [ ] **Phase 7: Wi-Fi Context** - Wi-Fi SSID captured on each event, stored, exported, and displayed
+- [x] **Phase 7: Wi-Fi Context** - Wi-Fi SSID captured on each event, stored, exported, and displayed (completed 2026-04-20)
 
 ## Phase Details
 
@@ -70,7 +70,7 @@ Plans:
   4. The SwiftData model stores SSID as a queryable field on ConnectivityEvent
 **Plans**: 1 plan
 Plans:
-- [ ] 07-01-PLAN.md — Add wifiSSID field to model, SSID capture via NEHotspotNetwork, event detail display, privacy-gated export, entitlements
+- [x] 07-01-PLAN.md — Add wifiSSID field to model, SSID capture via NEHotspotNetwork, event detail display, privacy-gated export, entitlements
 **UI hint**: yes
 
 ## Progress
@@ -87,4 +87,4 @@ Phases execute in numeric order.
 | 5. Privacy-Aware Export | v1.1 | 1/1 | Complete | 2026-03-26 |
 | 6. Persistent Signing | v1.2 | 1/1 | Complete | 2026-04-20 |
 | 6.1 Signing Polish | v1.2 | 1/1 | Complete | 2026-04-20 |
-| 7. Wi-Fi Context | v1.2 | 0/1 | Planned | - |
+| 7. Wi-Fi Context | v1.2 | 1/1 | Complete | 2026-04-20 |
