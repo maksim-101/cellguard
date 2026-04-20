@@ -350,22 +350,22 @@ if !omitLocation {
 | A1 | NEHotspotNetwork.fetchCurrent() may return nil in background execution contexts | Pitfall 2 | LOW -- if it works in background, that's strictly better. The nil handling is needed anyway for cellular-only events. |
 | A2 | SwiftData automatic lightweight migration handles new optional String? field without VersionedSchema when ModelContainer uses implicit schema | Pattern 2 | MEDIUM -- if migration fails, app crashes on launch. Mitigation: test on device with existing data before shipping. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Does NEHotspotNetwork.fetchCurrent() work during background significant-location-change wakes?**
    - What we know: The API requires location authorization (which we have). Apple docs don't explicitly address background execution for this API.
    - What's unclear: Whether iOS restricts SSID access when the app is woken in background by location changes.
-   - Recommendation: Implement with nil fallback. Test on physical device: leave app running, let it be woken by movement, check if background-logged events have SSID populated. Either outcome is acceptable.
+   - RESOLVED: Implement with nil fallback. If background context restricts SSID access, nil is captured gracefully — the field is optional. Physical device testing will confirm behavior post-implementation.
 
 2. **CSV export does not exist in the codebase -- should Phase 7 create it?**
    - What we know: WIFI-03 says "included in JSON and CSV export." The UI-SPEC specifies CSV column details. But no CSV export code exists anywhere in the project.
    - What's unclear: Whether CSV export was planned for an earlier phase and not built, or whether WIFI-03 is forward-looking.
-   - Recommendation: Phase 7 should add `wifiSSID` to the JSON export (which exists) and NOT build CSV export from scratch. CSV is a separate feature that should be its own plan/phase. The requirement text should be interpreted as "when CSV exists, include SSID" -- building an entire export format is out of scope for a field-addition phase.
+   - RESOLVED: Phase 7 adds `wifiSSID` to JSON export only. CSV export does not exist in the codebase — building it from scratch is out of scope for a field-addition phase. When CSV is built in a future phase, wifiSSID will be included via the existing Codable conformance.
 
 3. **Should the entitlements file also include other entitlements (e.g., background modes)?**
    - What we know: Background modes are configured in Info.plist (`UIBackgroundModes`), not in the entitlements file. The entitlements file currently does not exist.
    - What's unclear: Whether creating a new entitlements file with only `wifi-info` could conflict with the existing Info.plist-based capability setup.
-   - Recommendation: Adding the capability via Xcode Signing & Capabilities tab is the safest approach -- Xcode manages the entitlements file and build settings automatically. Background modes remain in Info.plist (they are not entitlements).
+   - RESOLVED: Create entitlements file with only `com.apple.developer.networking.wifi-info`. Background modes are Info.plist keys, not entitlements — no conflict. The file is minimal and correct.
 
 ## Sources
 
