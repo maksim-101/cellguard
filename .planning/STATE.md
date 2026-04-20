@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Persistent Signing & Wi-Fi Context
-status: ready_to_plan
-stopped_at: Roadmap created for v1.2
+status: ready_to_execute
+stopped_at: Phase 6 planned (1 plan, 1 wave)
 last_updated: "2026-04-20T00:00:00.000Z"
 last_activity: 2026-04-20
 progress:
   total_phases: 2
   completed_phases: 0
-  total_plans: 0
+  total_plans: 1
   completed_plans: 0
 ---
 
@@ -25,9 +25,9 @@ See: .planning/PROJECT.md (updated 2026-04-20)
 ## Current Position
 
 Phase: 6 of 7 (Persistent Signing)
-Plan: — (not yet planned)
-Status: Ready to plan
-Last activity: 2026-04-20 — Roadmap created for v1.2
+Plan: 1 plan in 1 wave
+Status: Ready to execute
+Last activity: 2026-04-20 — Phase 6 planned
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -72,5 +72,5 @@ None.
 ## Session Continuity
 
 Last activity: 2026-04-20
-Stopped at: Roadmap created — ready to plan Phase 6
+Stopped at: Phase 6 planned — ready to execute
 Resume file: None
