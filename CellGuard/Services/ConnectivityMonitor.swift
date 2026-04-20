@@ -339,13 +339,10 @@ final class ConnectivityMonitor {
         return freshInfo.serviceCurrentRadioAccessTechnology?.values.first
     }
 
-    /// Captures the current carrier name for event metadata (MON-05).
-    /// Deprecated since iOS 16.4 with no replacement -- may return nil on iOS 26.
-    /// Best-effort per MON-05; nil is acceptable.
-    @available(iOS, deprecated: 16.0, message: "No replacement available from Apple")
+    /// Carrier name is no longer available — Apple deprecated CTCarrier in iOS 16 with no replacement.
+    /// Always returns nil. Radio access technology (LTE/5G) is still available via serviceCurrentRadioAccessTechnology.
     private func captureCarrierName() -> String? {
-        let freshInfo = CTTelephonyNetworkInfo()
-        return freshInfo.serviceSubscriberCellularProviders?.values.first?.carrierName
+        nil
     }
 
     // MARK: - Path Update Handling

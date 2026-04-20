@@ -1,7 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
 import Foundation
-import CoreTelephony
 
 // MARK: - Export Metadata
 
@@ -72,16 +71,13 @@ struct EventLogExport: Transferable, @unchecked Sendable {
             let appVersion = info?["CFBundleShortVersionString"] as? String ?? "unknown"
             let buildNumber = info?["CFBundleVersion"] as? String ?? "unknown"
 
-            // Carrier name (deprecated iOS 16.0 with no replacement — best-effort)
-            let carrierName = currentCarrierName()
-
             let metadata = ExportMetadata(
                 appName: "CellGuard",
                 appVersion: appVersion,
                 buildNumber: buildNumber,
                 deviceModel: export.deviceModel,
                 osVersion: export.osVersion,
-                carrier: carrierName,
+                carrier: nil, // CTCarrier deprecated iOS 16 with no replacement
                 collectionPeriod: collectionPeriod,
                 totalEvents: export.events.count,
                 totalDrops: export.events.filter { isDropEvent($0) }.count,
@@ -101,14 +97,6 @@ struct EventLogExport: Transferable, @unchecked Sendable {
             return SentTransferredFile(url)
         }
     }
-}
-
-// MARK: - Carrier Name (deprecated API, no replacement)
-
-/// Returns the current carrier name. Deprecated iOS 16.0 with no replacement — best-effort per MON-05.
-@available(iOS, deprecated: 16.0, message: "No replacement available from Apple")
-private func currentCarrierName() -> String? {
-    CTTelephonyNetworkInfo().serviceSubscriberCellularProviders?.values.first?.carrierName
 }
 
 // MARK: - Device Model Identifier
