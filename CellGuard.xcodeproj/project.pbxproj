@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 100;
 	objects = {
 
 /* Begin PBXFileReference section */
@@ -34,10 +34,8 @@
 /* Begin PBXFrameworksBuildPhase section */
 		A10000020000000000000001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
@@ -71,14 +69,10 @@
 			);
 			buildRules = (
 			);
-			dependencies = (
-			);
 			fileSystemSynchronizedGroups = (
 				A1FSRG0010000000000001 /* CellGuard */,
 			);
 			name = CellGuard;
-			packageProductDependencies = (
-			);
 			productName = CellGuard;
 			productReference = A10000010000000000000001 /* CellGuard.app */;
 			productType = "com.apple.product-type.application";
@@ -107,7 +101,7 @@
 			);
 			mainGroup = A10000050000000000000001;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
+			preferredProjectObjectVersion = 100;
 			productRefGroup = A10000060000000000000001 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -120,25 +114,21 @@
 /* Begin PBXResourcesBuildPhase section */
 		A10000070000000000000001 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		A10000030000000000000001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		A100000B0000000000000001 /* Debug */ = {
+		A100000B0000000000000001 /* Debug configuration for PBXProject "CellGuard" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -201,7 +191,7 @@
 			};
 			name = Debug;
 		};
-		A100000C0000000000000001 /* Release */ = {
+		A100000C0000000000000001 /* Release configuration for PBXProject "CellGuard" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -257,11 +247,12 @@
 			};
 			name = Release;
 		};
-		A100000D0000000000000001 /* Debug */ = {
+		A100000D0000000000000001 /* Debug configuration for PBXNativeTarget "CellGuard" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = CellGuard/CellGuard.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = VTWHBCCP36;
@@ -292,11 +283,12 @@
 			};
 			name = Debug;
 		};
-		A100000E0000000000000001 /* Release */ = {
+		A100000E0000000000000001 /* Release configuration for PBXNativeTarget "CellGuard" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = CellGuard/CellGuard.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = VTWHBCCP36;
@@ -333,19 +325,17 @@
 		A10000080000000000000001 /* Build configuration list for PBXNativeTarget "CellGuard" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				A100000D0000000000000001 /* Debug */,
-				A100000E0000000000000001 /* Release */,
+				A100000D0000000000000001 /* Debug configuration for PBXNativeTarget "CellGuard" */,
+				A100000E0000000000000001 /* Release configuration for PBXNativeTarget "CellGuard" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		A100000A0000000000000001 /* Build configuration list for PBXProject "CellGuard" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				A100000B0000000000000001 /* Debug */,
-				A100000C0000000000000001 /* Release */,
+				A100000B0000000000000001 /* Debug configuration for PBXProject "CellGuard" */,
+				A100000C0000000000000001 /* Release configuration for PBXProject "CellGuard" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */

@@ -83,6 +83,11 @@ final class ConnectivityEvent {
     /// Carrier name from CTTelephonyNetworkInfo. May be nil due to CTCarrier deprecation on iOS 16.4+.
     var carrierName: String?
 
+    // MARK: Wi-Fi metadata
+
+    /// Wi-Fi SSID at the time of the event. Nil if not connected to Wi-Fi or SSID could not be captured.
+    var wifiSSID: String?
+
     // MARK: Active probe results
 
     /// Round-trip latency of the connectivity probe in milliseconds. Nil if probe was not performed.
@@ -146,6 +151,7 @@ final class ConnectivityEvent {
         isConstrained: Bool = false,
         radioTechnology: String? = nil,
         carrierName: String? = nil,
+        wifiSSID: String? = nil,
         probeLatencyMs: Double? = nil,
         probeFailureReason: String? = nil,
         latitude: Double? = nil,
@@ -162,6 +168,7 @@ final class ConnectivityEvent {
         self.isConstrained = isConstrained
         self.radioTechnology = radioTechnology
         self.carrierName = carrierName
+        self.wifiSSID = wifiSSID
         self.probeLatencyMs = probeLatencyMs
         self.probeFailureReason = probeFailureReason
         self.latitude = latitude
@@ -190,6 +197,7 @@ extension ConnectivityEvent: Codable {
         case latitude
         case longitude
         case locationAccuracy
+        case wifiSSID
         case dropDurationSeconds
     }
 
@@ -231,6 +239,7 @@ extension ConnectivityEvent: Codable {
             isConstrained: try container.decode(Bool.self, forKey: .isConstrained),
             radioTechnology: try container.decodeIfPresent(String.self, forKey: .radioTechnology),
             carrierName: try container.decodeIfPresent(String.self, forKey: .carrierName),
+            wifiSSID: try container.decodeIfPresent(String.self, forKey: .wifiSSID),
             probeLatencyMs: try container.decodeIfPresent(Double.self, forKey: .probeLatencyMs),
             probeFailureReason: try container.decodeIfPresent(String.self, forKey: .probeFailureReason),
             latitude: try container.decodeIfPresent(Double.self, forKey: .latitude),
@@ -260,6 +269,7 @@ extension ConnectivityEvent: Codable {
             try container.encodeIfPresent(latitude, forKey: .latitude)
             try container.encodeIfPresent(longitude, forKey: .longitude)
             try container.encodeIfPresent(locationAccuracy, forKey: .locationAccuracy)
+            try container.encodeIfPresent(wifiSSID, forKey: .wifiSSID)
         }
         try container.encodeIfPresent(dropDurationSeconds, forKey: .dropDurationSeconds)
     }
