@@ -52,11 +52,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         // didFinishLaunchingWithOptions, and submitting before registration crashes.
         MonitoringHealthService.scheduleAppRefresh()
 
-        // Detect location-based relaunch (DAT-03)
-        if launchOptions?[.location] != nil {
-            UserDefaults.standard.set(true, forKey: "launchedForLocation")
-        }
-
         return true
     }
 }
