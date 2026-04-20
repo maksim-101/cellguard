@@ -37,6 +37,9 @@ final class ProvisioningProfileService {
     /// Name of the provisioning profile (e.g., "iOS Team Provisioning Profile: com.cellguard").
     private(set) var profileName: String?
 
+    /// Whether the expiry date is estimated from build date (profile file not readable).
+    private(set) var isEstimatedExpiry: Bool = false
+
     // MARK: - Computed Properties
 
     /// Whether the profile expires within 7 days.
@@ -51,7 +54,8 @@ final class ProvisioningProfileService {
         guard let expirationDate else {
             return "Unknown (Simulator)"
         }
-        return expirationDate.formatted(.dateTime.month().day().year())
+        let formatted = expirationDate.formatted(.dateTime.month().day().year())
+        return isEstimatedExpiry ? "\(formatted) (est.)" : formatted
     }
 
     /// Number of days until profile expiry, or nil if expiration date is unknown.
@@ -64,17 +68,34 @@ final class ProvisioningProfileService {
 
     /// Reads the embedded.mobileprovision file and extracts the expiration date.
     ///
-    /// On the Simulator, the file does not exist and `expirationDate` remains nil.
-    /// On a real device, the provisioning profile plist is extracted from the binary
-    /// DER-encoded file by locating the XML plist section.
+    /// Tries two lookup strategies for the profile file:
+    /// 1. Standard `Bundle.main.path(forResource:ofType:)` resource lookup
+    /// 2. Direct path construction at bundle root (iOS 26 + paid signing workaround)
+    ///
+    /// If neither finds the file (Simulator, or profile not embedded), falls back to
+    /// estimating expiry from the executable's build date + 1 year.
     func loadProfile() {
-        guard let path = Bundle.main.path(forResource: "embedded", ofType: "mobileprovision") else {
-            // Simulator or missing profile -- graceful fallback
-            expirationDate = nil
-            profileName = nil
-            return
+        // Strategy 1: standard resource lookup
+        var profilePath = Bundle.main.path(forResource: "embedded", ofType: "mobileprovision")
+
+        // Strategy 2: direct path at bundle root (iOS 26 may not surface via resource lookup)
+        if profilePath == nil {
+            let directPath = Bundle.main.bundlePath + "/embedded.mobileprovision"
+            if FileManager.default.fileExists(atPath: directPath) {
+                profilePath = directPath
+            }
         }
 
+        if let path = profilePath {
+            parseProfile(at: path)
+        } else {
+            // Fallback: estimate expiry from build date (paid dev cert = ~1 year)
+            estimateExpiryFromBuildDate()
+        }
+    }
+
+    /// Parses the CMS/PKCS#7 provisioning profile at the given path.
+    private func parseProfile(at path: String) {
         do {
             let data = try Data(contentsOf: URL(fileURLWithPath: path))
 
@@ -105,14 +126,31 @@ final class ProvisioningProfileService {
 
             expirationDate = profile.expirationDate
             profileName = profile.name
+            isEstimatedExpiry = false
 
             // Schedule notification if we have a valid expiration date
             scheduleExpiryNotification()
         } catch {
             print("Failed to read provisioning profile: \(error)")
+            estimateExpiryFromBuildDate()
+        }
+    }
+
+    /// Estimates certificate expiry from the executable's build date.
+    /// Paid Apple Developer certificates are valid for ~1 year.
+    private func estimateExpiryFromBuildDate() {
+        guard let execURL = Bundle.main.executableURL,
+              let attrs = try? FileManager.default.attributesOfItem(atPath: execURL.path),
+              let buildDate = attrs[.modificationDate] as? Date else {
             expirationDate = nil
             profileName = nil
+            return
         }
+
+        expirationDate = Calendar.current.date(byAdding: .year, value: 1, to: buildDate)
+        profileName = "Estimated (paid team)"
+        isEstimatedExpiry = true
+        scheduleExpiryNotification()
     }
 
     // MARK: - Notification Scheduling

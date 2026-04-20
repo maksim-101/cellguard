@@ -13,6 +13,7 @@ import BackgroundTasks
 /// Previous approach (posting a NotificationCenter notification for SwiftUI .onReceive)
 /// was broken: during background-only launches, no SwiftUI scene exists, so .onReceive
 /// never fires and the task is never completed.
+@MainActor
 class AppDelegate: NSObject, UIApplicationDelegate {
 
     /// Shared reference to the ConnectivityMonitor, set by CellGuardApp.init().

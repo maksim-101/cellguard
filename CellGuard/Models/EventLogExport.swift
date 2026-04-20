@@ -38,14 +38,16 @@ private struct CellGuardExport: Codable {
 
 /// Transferable wrapper that encodes ConnectivityEvent arrays to JSON for ShareLink export (EXP-01).
 ///
-/// Usage: ShareLink(item: EventLogExport(events: allEvents, omitLocation: false), preview: SharePreview("CellGuard Event Log", image: Image(systemName: "doc.text")))
+/// Usage: ShareLink(item: EventLogExport(events: allEvents, omitLocation: false, deviceModel: deviceModelIdentifier(), osVersion: "\(UIDevice.current.systemName) \(UIDevice.current.systemVersion)"), preview: SharePreview("CellGuard Event Log", image: Image(systemName: "doc.text")))
 ///
 /// Produces a pretty-printed JSON file with a metadata envelope containing device info, OS version,
 /// carrier, collection period, event counts, and the events array. The filename includes a date stamp
 /// for uniqueness: "cellguard-export-2026-03-25.json".
-struct EventLogExport: Transferable {
+struct EventLogExport: Transferable, @unchecked Sendable {
     let events: [ConnectivityEvent]
     let omitLocation: Bool
+    let deviceModel: String
+    let osVersion: String
 
     static var transferRepresentation: some TransferRepresentation {
         FileRepresentation(exportedContentType: .json) { export in
@@ -70,17 +72,15 @@ struct EventLogExport: Transferable {
             let appVersion = info?["CFBundleShortVersionString"] as? String ?? "unknown"
             let buildNumber = info?["CFBundleVersion"] as? String ?? "unknown"
 
-            // Carrier name (may be nil due to CTCarrier deprecation on iOS 16.4+)
-            let carrierName = CTTelephonyNetworkInfo()
-                .serviceSubscriberCellularProviders?
-                .values.first?.carrierName
+            // Carrier name (deprecated iOS 16.0 with no replacement — best-effort)
+            let carrierName = currentCarrierName()
 
             let metadata = ExportMetadata(
                 appName: "CellGuard",
                 appVersion: appVersion,
                 buildNumber: buildNumber,
-                deviceModel: deviceModelIdentifier(),
-                osVersion: "\(UIDevice.current.systemName) \(UIDevice.current.systemVersion)",
+                deviceModel: export.deviceModel,
+                osVersion: export.osVersion,
                 carrier: carrierName,
                 collectionPeriod: collectionPeriod,
                 totalEvents: export.events.count,
@@ -103,15 +103,23 @@ struct EventLogExport: Transferable {
     }
 }
 
+// MARK: - Carrier Name (deprecated API, no replacement)
+
+/// Returns the current carrier name. Deprecated iOS 16.0 with no replacement — best-effort per MON-05.
+@available(iOS, deprecated: 16.0, message: "No replacement available from Apple")
+private func currentCarrierName() -> String? {
+    CTTelephonyNetworkInfo().serviceSubscriberCellularProviders?.values.first?.carrierName
+}
+
 // MARK: - Device Model Identifier
 
 /// Returns the hardware model identifier (e.g. "iPhone17,4") rather than the marketing name.
-private func deviceModelIdentifier() -> String {
+func deviceModelIdentifier() -> String {
     var systemInfo = utsname()
     uname(&systemInfo)
     return withUnsafePointer(to: &systemInfo.machine) {
         $0.withMemoryRebound(to: CChar.self, capacity: 1) {
-            String(validatingCString: $0) ?? UIDevice.current.model
+            String(validatingCString: $0) ?? "Unknown"
         }
     }
 }

@@ -105,7 +105,7 @@ struct DashboardView: View {
 
             // Export event log as JSON via ShareLink (EXP-01)
             ShareLink(
-                item: EventLogExport(events: allEvents, omitLocation: omitLocation),
+                item: EventLogExport(events: allEvents, omitLocation: omitLocation, deviceModel: deviceModelIdentifier(), osVersion: "\(UIDevice.current.systemName) \(UIDevice.current.systemVersion)"),
                 preview: SharePreview("CellGuard Event Log", image: Image(systemName: "doc.text"))
             ) {
                 HStack {

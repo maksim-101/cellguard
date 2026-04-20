@@ -342,6 +342,7 @@ final class ConnectivityMonitor {
     /// Captures the current carrier name for event metadata (MON-05).
     /// Deprecated since iOS 16.4 with no replacement -- may return nil on iOS 26.
     /// Best-effort per MON-05; nil is acceptable.
+    @available(iOS, deprecated: 16.0, message: "No replacement available from Apple")
     private func captureCarrierName() -> String? {
         let freshInfo = CTTelephonyNetworkInfo()
         return freshInfo.serviceSubscriberCellularProviders?.values.first?.carrierName
