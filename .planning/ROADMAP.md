@@ -43,7 +43,9 @@
   2. App remains functional on device beyond 7 days without re-deployment
   3. User sees accurate certificate expiry date in the health status UI
   4. User receives a local notification 7 days before certificate expiry
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 06-01-PLAN.md — Update ProvisioningProfileService for 7-day warning window and paid-team copy; verify on-device build
 
 ### Phase 7: Wi-Fi Context
 **Goal**: Every connectivity event captures the current Wi-Fi SSID, providing environmental context for diagnosing cellular drops
@@ -69,5 +71,5 @@ Phases execute in numeric order.
 | 3. Background Lifecycle | v1.0 | 3/3 | Complete | 2026-03-25 |
 | 4. UI and Evidence Export | v1.0 | 3/3 | Complete | 2026-03-25 |
 | 5. Privacy-Aware Export | v1.1 | 1/1 | Complete | 2026-03-26 |
-| 6. Persistent Signing | v1.2 | 0/? | Not started | - |
+| 6. Persistent Signing | v1.2 | 0/1 | Not started | - |
 | 7. Wi-Fi Context | v1.2 | 0/? | Not started | - |
