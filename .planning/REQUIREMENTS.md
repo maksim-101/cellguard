@@ -30,6 +30,7 @@ Requirements for v1.2 Persistent Signing & Wi-Fi Context. Each maps to roadmap p
 
 - **FUTR-01**: Widget showing current connectivity status and recent drop count
 - **FUTR-02**: Export filtering by date range or event type
+- **FUTR-03**: Export filename reflects privacy toggle state (e.g., `_privacyon` / `_privacyoff` suffix)
 
 ## Out of Scope
 
