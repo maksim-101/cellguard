@@ -90,7 +90,8 @@ struct EventLogExport: Transferable, @unchecked Sendable {
 
             let dateString = ISO8601DateFormatter().string(from: Date())
                 .prefix(10) // "2026-03-25"
-            let filename = "cellguard-export-\(dateString).json"
+            let privacySuffix = export.omitLocation ? "_privacyon" : "_privacyoff"
+            let filename = "cellguard-export-\(dateString)\(privacySuffix).json"
             let url = FileManager.default.temporaryDirectory
                 .appendingPathComponent(filename)
             try data.write(to: url, options: .atomic)
