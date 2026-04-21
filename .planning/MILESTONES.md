@@ -1,5 +1,19 @@
 # Milestones
 
+## v1.2 Persistent Signing & Wi-Fi Context (Shipped: 2026-04-21)
+
+**Phases completed:** 3 phases (6, 6.1, 7), 3 plans, 5 tasks
+
+**Key accomplishments:**
+
+- Paid Apple Developer team signing (Team VTWHBCCP36) replaces 7-day free personal team re-sign cycle
+- ProvisioningProfileService adapted for 1-year certificate expiry with 7-day warning notification; "Cert Expires:" shows real date on device
+- iOS 26 provisioning profile parsing fixed (non-ASCII CMS wrapper) and all Xcode warnings resolved
+- Wi-Fi SSID captured on every connectivity event via NEHotspotNetwork.fetchCurrent(), stored in SwiftData, displayed in event detail, privacy-gated in JSON export
+- Export filename now includes privacy toggle suffix (_privacyon/_privacyoff)
+
+---
+
 ## v1.1 Privacy Export (Shipped: 2026-03-26)
 
 **Phases completed:** 1 phases, 1 plans, 2 tasks

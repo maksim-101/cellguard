@@ -4,7 +4,7 @@
 
 - ✅ **v1.0 MVP** — Phases 1-4 (shipped 2026-03-25) — [Archive](milestones/v1.0-ROADMAP.md)
 - ✅ **v1.1 Privacy Export** — Phase 5 (shipped 2026-03-26) — [Archive](milestones/v1.1-ROADMAP.md)
-- ✅ **v1.2 Persistent Signing & Wi-Fi Context** — Phases 6-7 (shipped 2026-04-21)
+- ✅ **v1.2 Persistent Signing & Wi-Fi Context** — Phases 6-7 (shipped 2026-04-21) — [Archive](milestones/v1.2-ROADMAP.md)
 
 ## Phases
 
@@ -25,53 +25,14 @@
 
 </details>
 
-### ✅ v1.2 Persistent Signing & Wi-Fi Context (Shipped 2026-04-21)
+<details>
+<summary>✅ v1.2 Persistent Signing & Wi-Fi Context (Phases 6-7) — SHIPPED 2026-04-21</summary>
 
-**Milestone Goal:** Switch to paid Apple Developer team signing so the app persists indefinitely, and add Wi-Fi SSID capture for richer environmental context in diagnostic logs.
+- [x] Phase 6: Persistent Signing (1/1 plans) — Paid team signing, certificate expiry monitoring
+- [x] Phase 6.1: Signing Polish (1/1 plans) — Profile reading fix, Xcode warning cleanup
+- [x] Phase 7: Wi-Fi Context (1/1 plans) — SSID capture, event detail display, privacy-gated export
 
-- [x] **Phase 6: Persistent Signing** - Paid team signing with certificate expiry monitoring replaces 7-day re-sign cycle (completed 2026-04-20)
-- [x] **Phase 6.1: Signing Polish** - Fix profile reading on device + resolve all Xcode warnings (completed 2026-04-20)
-- [x] **Phase 7: Wi-Fi Context** - Wi-Fi SSID captured on each event, stored, exported, and displayed (completed 2026-04-20)
-
-## Phase Details
-
-### Phase 6: Persistent Signing
-**Goal**: App persists on device indefinitely with paid team signing, and user is warned before certificate expires
-**Depends on**: Phase 5 (completed v1.1 baseline)
-**Requirements**: SIGN-01, SIGN-02, EXPR-01, EXPR-02
-**Success Criteria** (what must be TRUE):
-  1. App is signed with Team ID VTWHBCCP36 and installs on device without free-team limitations
-  2. App remains functional on device beyond 7 days without re-deployment
-  3. User sees accurate certificate expiry date in the health status UI
-  4. User receives a local notification 7 days before certificate expiry
-**Plans**: 1 plan
-Plans:
-- [x] 06-01-PLAN.md — Update ProvisioningProfileService for 7-day warning window and paid-team copy; verify on-device build
-
-### Phase 6.1: Signing Polish
-**Goal**: Fix provisioning profile reading on physical device and resolve all Xcode warnings
-**Depends on**: Phase 6 (gap closure)
-**Requirements**: EXPR-01 (gap closure)
-**Success Criteria** (what must be TRUE):
-  1. "Cert Expires:" shows a real date on iPhone 17 Pro Max (not "Unknown (Simulator)")
-  2. Zero Xcode warnings related to Sendable, deprecated APIs, async access, or missing AccentColor
-**Plans**: 1 plan
-Plans:
-- [x] 06.1-01-PLAN.md — Fix profile reading fallback, resolve Sendable/async/deprecation/AccentColor warnings
-
-### Phase 7: Wi-Fi Context
-**Goal**: Every connectivity event captures the current Wi-Fi SSID, providing environmental context for diagnosing cellular drops
-**Depends on**: Phase 6 (paid signing enables Access WiFi Information entitlement)
-**Requirements**: WIFI-01, WIFI-02, WIFI-03, WIFI-04
-**Success Criteria** (what must be TRUE):
-  1. When connected to Wi-Fi, the current SSID appears in the event detail view for each logged event
-  2. When not connected to Wi-Fi, the SSID field shows nil/empty gracefully (no crash, no placeholder noise)
-  3. Exported JSON and CSV files include the Wi-Fi SSID field, respecting the privacy toggle (stripped when enabled)
-  4. The SwiftData model stores SSID as a queryable field on ConnectivityEvent
-**Plans**: 1 plan
-Plans:
-- [x] 07-01-PLAN.md — Add wifiSSID field to model, SSID capture via NEHotspotNetwork, event detail display, privacy-gated export, entitlements
-**UI hint**: yes
+</details>
 
 ## Progress
 
