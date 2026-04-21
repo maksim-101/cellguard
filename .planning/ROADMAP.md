@@ -4,7 +4,7 @@
 
 - ✅ **v1.0 MVP** — Phases 1-4 (shipped 2026-03-25) — [Archive](milestones/v1.0-ROADMAP.md)
 - ✅ **v1.1 Privacy Export** — Phase 5 (shipped 2026-03-26) — [Archive](milestones/v1.1-ROADMAP.md)
-- 🚧 **v1.2 Persistent Signing & Wi-Fi Context** — Phases 6-7 (in progress)
+- ✅ **v1.2 Persistent Signing & Wi-Fi Context** — Phases 6-7 (shipped 2026-04-21)
 
 ## Phases
 
@@ -25,7 +25,7 @@
 
 </details>
 
-### 🚧 v1.2 Persistent Signing & Wi-Fi Context (In Progress)
+### ✅ v1.2 Persistent Signing & Wi-Fi Context (Shipped 2026-04-21)
 
 **Milestone Goal:** Switch to paid Apple Developer team signing so the app persists indefinitely, and add Wi-Fi SSID capture for richer environmental context in diagnostic logs.
 
