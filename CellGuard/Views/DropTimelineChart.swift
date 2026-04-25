@@ -122,9 +122,17 @@ struct DropTimelineChart: View {
     }
 
     /// Maximum Y value for consistent scaling.
+    /// Uses stacked totals per time slot (sum of all types sharing the same
+    /// bucketStart) because BarMark with foregroundStyle(by:) stacks bars.
     private var yMax: Int {
-        let maxCount = buckets.map(\.count).max() ?? 1
-        return max(maxCount + 1, 3) // At least 3 for readable scale
+        // Group by bucketStart and sum counts across types (Silent + Overt)
+        // to match the stacked bar height Swift Charts actually renders.
+        var stackedTotals: [Date: Int] = [:]
+        for bucket in buckets {
+            stackedTotals[bucket.bucketStart, default: 0] += bucket.count
+        }
+        let maxStacked = stackedTotals.values.max() ?? 1
+        return max(maxStacked + 1, 3) // At least 3 for readable scale
     }
 
     var body: some View {
@@ -187,6 +195,7 @@ struct DropTimelineChart: View {
                     plot.padding(.trailing, 4)
                 }
                 .frame(height: 150)
+                .clipped()
             }
         }
     }
