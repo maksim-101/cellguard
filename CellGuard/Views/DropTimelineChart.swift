@@ -13,6 +13,17 @@ struct DropTimelineChart: View {
     /// Selected time window for the chart.
     @State private var selectedWindow: TimeWindow = .day
 
+    /// Whether silent-failure bars are visible in the chart. Tapping the "Silent"
+    /// legend chip toggles this. Persists via @AppStorage (D-07). Default true (D-06).
+    @AppStorage("chartShowSilent") private var chartShowSilent: Bool = true
+
+    /// Whether overt path-change drop bars are visible. Tapping the "Overt" chip
+    /// toggles this. Persists via @AppStorage (D-07). Default true (D-06).
+    @AppStorage("chartShowOvert") private var chartShowOvert: Bool = true
+
+    /// Drives the (i) info popover anchored to the info Button (D-02).
+    @State private var showInfoPopover: Bool = false
+
     enum TimeWindow: String, CaseIterable {
         case sixHours = "6h"
         case day = "24h"
@@ -106,6 +117,20 @@ struct DropTimelineChart: View {
         return result.sorted { $0.bucketStart < $1.bucketStart }
     }
 
+    /// Same shape as `buckets`, but filtered by the @AppStorage chip flags.
+    /// Toggled-off series are entirely removed from the chart input — D-05 hides
+    /// (does not dim) so the chart literally answers CHART-02 "only silent
+    /// failures remain visible" when overt is off.
+    private var visibleBuckets: [TimeBucket] {
+        buckets.filter { bucket in
+            switch bucket.type {
+            case "Silent": return chartShowSilent
+            case "Overt":  return chartShowOvert
+            default:       return true
+            }
+        }
+    }
+
     /// The x-axis domain. For 7d view, aligns to calendar day boundaries
     /// (start of day 7 days ago through end of today) so weekday labels are clean.
     private var chartDomain: ClosedRange<Date> {
@@ -146,14 +171,26 @@ struct DropTimelineChart: View {
             .pickerStyle(.segmented)
             .controlSize(.mini)
 
+            // Inline legend chips + (i) info button (D-01, D-02, D-04).
+            // The chips ARE the filter — single discoverable surface.
+            legendBar
+
             if dropEvents.isEmpty {
                 Text("No drops in \(selectedWindow.rawValue)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .frame(height: 150)
+            } else if !chartShowSilent && !chartShowOvert {
+                // D-07 edge case: both series toggled off. Show a hint instead
+                // of an empty plot so the user understands why the chart is blank.
+                Text("No series visible — tap a chip to enable")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .frame(height: 150)
             } else {
-                Chart(buckets) { bucket in
+                Chart(visibleBuckets) { bucket in
                     BarMark(
                         x: .value("Time", bucket.bucketStart, unit: selectedWindow.bucketUnit),
                         y: .value("Drops", bucket.count)
@@ -164,6 +201,12 @@ struct DropTimelineChart: View {
                     "Silent": .red,
                     "Overt": .orange
                 ])
+                // REQUIRED (D-04): suppress Swift Charts' implicit auto-legend that
+                // would otherwise render below the plot whenever
+                // chartForegroundStyleScale is set. The custom legendBar chips above
+                // ARE the legend — shipping both creates duplicated UI and contradicts
+                // the "single discoverable surface" decision.
+                .chartLegend(.hidden)
                 .chartXScale(domain: chartDomain)
                 .chartYScale(domain: 0...yMax)
                 .chartXAxis {
@@ -197,6 +240,99 @@ struct DropTimelineChart: View {
                 .frame(height: 150)
                 .clipped()
             }
+        }
+    }
+
+    // MARK: - Legend & Info Popover (D-01, D-02, D-04)
+
+    /// Compact inline legend that doubles as a series filter (D-01, D-04).
+    /// Two color-coded chips + an (i) info Button. Tapping a chip toggles its
+    /// @AppStorage flag; tapping (i) opens the popover with plain-English
+    /// definitions and the "Why this matters for the Apple report" line.
+    private var legendBar: some View {
+        HStack(spacing: 12) {
+            legendChip(label: "Silent", color: .red, isOn: chartShowSilent) {
+                chartShowSilent.toggle()
+            }
+            legendChip(label: "Overt", color: .orange, isOn: chartShowOvert) {
+                chartShowOvert.toggle()
+            }
+            Button {
+                showInfoPopover.toggle()
+            } label: {
+                Image(systemName: "info.circle")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .popover(isPresented: $showInfoPopover, arrowEdge: .top) {
+                infoPopoverContent
+                    .padding(16)
+                    .frame(maxWidth: 320)
+                    .presentationCompactAdaptation(.popover)
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    /// One legend chip — a tappable Button styled as a Capsule with a color swatch.
+    /// "Off" treatment: opacity 0.4 when isOn==false (HIG-aligned de-emphasis).
+    /// The chip remains tappable in the off state so the user can re-enable.
+    private func legendChip(label: String, color: Color, isOn: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(color)
+                    .frame(width: 8, height: 8)
+                Text(label)
+                    .font(.caption)
+                    .foregroundStyle(.primary)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(Color(.tertiarySystemBackground))
+            .clipShape(Capsule())
+            .opacity(isOn ? 1.0 : 0.4)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(label) drops")
+        .accessibilityValue(isOn ? "Visible" : "Hidden")
+        .accessibilityHint("Double-tap to toggle \(label.lowercased()) drops")
+    }
+
+    /// Popover content (D-02). Plain-English Silent/Overt definitions plus a
+    /// rationale line tying the distinction back to the Apple Feedback Assistant
+    /// report (the project's core value — see PROJECT.md core_value).
+    private var infoPopoverContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Drop Types")
+                .font(.headline)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .top, spacing: 6) {
+                    Circle().fill(.red).frame(width: 8, height: 8).padding(.top, 5)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Silent").font(.subheadline).bold()
+                        Text("The modem reports it is connected, but the network probe failed — the \u{201C}attached but unreachable\u{201D} bug.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                HStack(alignment: .top, spacing: 6) {
+                    Circle().fill(.orange).frame(width: 8, height: 8).padding(.top, 5)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Overt").font(.subheadline).bold()
+                        Text("NWPathMonitor reported the connection went down — the system itself acknowledged the drop.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            Divider()
+            Text("Why this matters")
+                .font(.subheadline).bold()
+            Text("Silent failures are the core evidence for the Apple Feedback Assistant report — they prove a modem-side fault that iOS itself does not report.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 }
