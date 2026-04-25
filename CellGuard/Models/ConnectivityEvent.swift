@@ -37,6 +37,18 @@ enum InterfaceType: Int, Codable {
     case unknown = 5
 }
 
+/// VPN tunnel state, mirroring NEVPNStatus vocabulary. Stored as Int rawValue (D-03).
+/// Sourced via CFNetworkCopySystemProxySettings detection (Plan 03), not NEVPNManager --
+/// see 08-RESEARCH.md "Detection Mechanism" for why NEVPNManager is unsuitable.
+enum VPNState: Int, Codable {
+    case invalid = 0
+    case disconnected = 1
+    case connecting = 2
+    case connected = 3
+    case reasserting = 4
+    case disconnecting = 5
+}
+
 // MARK: - ConnectivityEvent Model
 
 /// A single connectivity event captured by CellGuard.
@@ -87,6 +99,19 @@ final class ConnectivityEvent {
 
     /// Wi-Fi SSID at the time of the event. Nil if not connected to Wi-Fi or SSID could not be captured.
     var wifiSSID: String?
+
+    // MARK: VPN metadata
+
+    /// Raw integer storage for VPNState enum. nil for legacy events captured before Phase 8.
+    /// Use `vpnState` computed property for typed access.
+    var vpnStateRaw: Int?
+
+    /// Typed accessor for VPN tunnel state. Optional because legacy events have no VPN metadata
+    /// and because `nil` is a meaningful "we did not capture VPN state for this event" signal.
+    var vpnState: VPNState? {
+        get { vpnStateRaw.flatMap(VPNState.init(rawValue:)) }
+        set { vpnStateRaw = newValue?.rawValue }
+    }
 
     // MARK: Active probe results
 
@@ -152,6 +177,7 @@ final class ConnectivityEvent {
         radioTechnology: String? = nil,
         carrierName: String? = nil,
         wifiSSID: String? = nil,
+        vpnState: VPNState? = nil,
         probeLatencyMs: Double? = nil,
         probeFailureReason: String? = nil,
         latitude: Double? = nil,
@@ -169,6 +195,7 @@ final class ConnectivityEvent {
         self.radioTechnology = radioTechnology
         self.carrierName = carrierName
         self.wifiSSID = wifiSSID
+        self.vpnStateRaw = vpnState?.rawValue
         self.probeLatencyMs = probeLatencyMs
         self.probeFailureReason = probeFailureReason
         self.latitude = latitude
@@ -198,6 +225,7 @@ extension ConnectivityEvent: Codable {
         case longitude
         case locationAccuracy
         case wifiSSID
+        case vpnState
         case dropDurationSeconds
     }
 
@@ -230,6 +258,17 @@ extension ConnectivityEvent: Codable {
             interfaceType = try container.decode(InterfaceType.self, forKey: .interfaceType)
         }
 
+        // VPNState: try String-based encoding first, fall back to Int rawValue for legacy files.
+        // `try?` returns nil on a missing key, which correctly maps to vpnState = nil.
+        let vpnState: VPNState?
+        if let str = try? container.decode(String.self, forKey: .vpnState) {
+            vpnState = VPNState.fromEncodingString(str)
+        } else if let raw = try? container.decode(Int.self, forKey: .vpnState) {
+            vpnState = VPNState(rawValue: raw)
+        } else {
+            vpnState = nil
+        }
+
         self.init(
             timestamp: timestamp,
             eventType: eventType,
@@ -240,6 +279,7 @@ extension ConnectivityEvent: Codable {
             radioTechnology: try container.decodeIfPresent(String.self, forKey: .radioTechnology),
             carrierName: try container.decodeIfPresent(String.self, forKey: .carrierName),
             wifiSSID: try container.decodeIfPresent(String.self, forKey: .wifiSSID),
+            vpnState: vpnState,
             probeLatencyMs: try container.decodeIfPresent(Double.self, forKey: .probeLatencyMs),
             probeFailureReason: try container.decodeIfPresent(String.self, forKey: .probeFailureReason),
             latitude: try container.decodeIfPresent(Double.self, forKey: .latitude),
@@ -270,6 +310,10 @@ extension ConnectivityEvent: Codable {
             try container.encodeIfPresent(longitude, forKey: .longitude)
             try container.encodeIfPresent(locationAccuracy, forKey: .locationAccuracy)
             try container.encodeIfPresent(wifiSSID, forKey: .wifiSSID)
+            // Omit non-meaningful VPN states from export (UI-SPEC §Export -- JSON).
+            if let state = vpnState, state != .disconnected, state != .invalid {
+                try container.encode(state.encodingString, forKey: .vpnState)
+            }
         }
         try container.encodeIfPresent(dropDurationSeconds, forKey: .dropDurationSeconds)
     }
@@ -347,6 +391,33 @@ extension InterfaceType {
         case "loopback": .loopback
         case "other": .other
         case "unknown": .unknown
+        default: nil
+        }
+    }
+}
+
+extension VPNState {
+    /// Stable camelCase identifier for JSON export. Lowercased NEVPNStatus enum names.
+    var encodingString: String {
+        switch self {
+        case .invalid: "invalid"
+        case .disconnected: "disconnected"
+        case .connecting: "connecting"
+        case .connected: "connected"
+        case .reasserting: "reasserting"
+        case .disconnecting: "disconnecting"
+        }
+    }
+
+    /// Decodes from a stable encoding string. Returns nil if the string is unrecognized.
+    static func fromEncodingString(_ string: String) -> VPNState? {
+        switch string {
+        case "invalid": .invalid
+        case "disconnected": .disconnected
+        case "connecting": .connecting
+        case "connected": .connected
+        case "reasserting": .reasserting
+        case "disconnecting": .disconnecting
         default: nil
         }
     }
