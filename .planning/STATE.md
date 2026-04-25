@@ -1,43 +1,40 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: Persistent Signing & Wi-Fi Context
-status: milestone_complete
-stopped_at: v1.2 milestone shipped — all phases verified on device
-last_updated: "2026-04-21T00:00:00.000Z"
-last_activity: 2026-04-21
+milestone: v1.3
+milestone_name: Polish & Analytics
+status: defining_requirements
+stopped_at: Milestone v1.3 started — gathering requirements
+last_updated: "2026-04-25T00:00:00.000Z"
+last_activity: 2026-04-25
 progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 1
-  completed_plans: 1
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-20)
+See: .planning/PROJECT.md (updated 2026-04-25)
 
 **Core value:** Reliably detect and log every cellular connectivity drop — including silent modem failures — to produce irrefutable evidence for Apple's engineering team.
-**Current focus:** Phase 7 — Wi-Fi Context
+**Current focus:** Defining v1.3 requirements (Polish & Analytics)
 
 ## Current Position
 
-Phase: 7 of 7 (Wi-Fi Context) -- COMPLETE
-Plan: 1/1 complete (07-01)
-Status: Phase complete -- v1.2 milestone done
-Last activity: 2026-04-20 — Phase 7 executed
-
-Progress: [██████████] 100%
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-25 — Milestone v1.3 started
 
 ## Performance Metrics
 
-**Velocity:**
+**Velocity (through v1.2):**
 
-- Total plans completed: 10 (v1.0 + v1.1)
-- Average duration: 3.4 min
-- Total execution time: ~34 min
+- Total plans completed: 13 (v1.0 + v1.1 + v1.2)
+- Total phases shipped: 8 (incl. 06.1 polish)
 
 **By Phase (v1.0–v1.1):**
 
@@ -56,13 +53,6 @@ Progress: [██████████] 100%
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
-
-- [v1.2]: Upgrading from free personal team to paid Apple Developer Program (Team VTWHBCCP36)
-- [v1.2]: Adapting ProvisioningProfileService to 1-year certificate expiry (not removing it)
-- [v1.2]: Adding Wi-Fi SSID capture (entitlement now available with paid account)
-- [Phase 7]: NWPath disambiguated as Network.NWPath when both Network and NetworkExtension are imported
-- [Phase 7]: Async SSID capture inside Task block; synchronous metadata captured before Task
 
 ### Pending Todos
 
@@ -74,6 +64,6 @@ None.
 
 ## Session Continuity
 
-Last activity: 2026-04-20
-Stopped at: Phase 7 complete -- v1.2 milestone complete
+Last activity: 2026-04-25
+Stopped at: v1.3 milestone defined — proceeding to requirements
 Resume file: None

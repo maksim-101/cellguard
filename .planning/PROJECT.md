@@ -8,6 +8,17 @@ A lightweight iOS diagnostic app that continuously monitors cellular connectivit
 
 Reliably detect and log every cellular connectivity drop — including the "attached but unreachable" silent modem failure — so there is irrefutable evidence for Apple's engineering team.
 
+## Current Milestone: v1.3 Polish & Analytics
+
+**Goal:** Sharpen the dashboard and reports so the evidence handed to Apple is unambiguous — fix UI lag, capture VPN context, correct misleading metrics, and surface the patterns hidden in 14 location areas.
+
+**Target features:**
+- Chart & dashboard polish (silent/overt legend, filter overt drops, real-time silent-failure refresh)
+- VPN context (capture VPN state on every event, display VPN instead of "Other", privacy-gated export, reclassify probe-failure-during-VPN-handover as silent failure)
+- Phase 3 polish leftovers (HealthDetailSheet live "Last Background Wake", probe deduplication)
+- Summary Report fixes (distinct-day count for monitoring, cellular-only drop ratio)
+- Drop analytics (Location × switchable-axis heatmap, drops-per-location ranked table)
+
 ## Requirements
 
 ### Validated
@@ -30,7 +41,20 @@ Reliably detect and log every cellular connectivity drop — including the "atta
 
 ### Active
 
-(None — all planned requirements validated through v1.2)
+**Milestone v1.3 — Polish & Analytics** (started 2026-04-25)
+
+- [ ] Silent vs overt drop legend in timeline chart
+- [ ] Filter/hide overt path-change drops in chart
+- [ ] Home-screen refreshes immediately when a silent failure is detected (no UI lag)
+- [ ] VPN state captured on every connectivity event (alongside Wi-Fi SSID)
+- [ ] VPN displayed as "VPN" (not "Other") in UI; included in JSON export under privacy toggle
+- [ ] Probe-failure during VPN handover correctly classified as silent failure
+- [ ] HealthDetailSheet "Last Background Wake" updates live while sheet is open
+- [ ] Duplicate probes within the same minute deduplicated
+- [ ] Summary Report "days monitored" counts distinct calendar days with ≥1 event
+- [ ] Summary Report drop ratio uses cellular-only events as denominator
+- [ ] Location × switchable-axis drop heatmap (axes: radio tech / connection type / hour of day)
+- [ ] Drops-per-location ranked table
 
 ### Out of Scope
 
@@ -105,4 +129,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-21 after v1.2 milestone completion*
+*Last updated: 2026-04-25 — v1.3 milestone (Polish & Analytics) started*
