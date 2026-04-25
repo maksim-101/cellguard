@@ -2,185 +2,54 @@
 phase: 08-vpn-context
 plan: 01
 type: device-verification
-status: in-progress
+status: deferred
 created: 2026-04-25
 updated: 2026-04-25
 ---
 
 # Wave 0 — VPN Detection Mechanism Device Verification
 
-Validates the four assumptions in `08-RESEARCH.md` (lines 127–308) on the
-target device before any production code is written. Plans 02–04 do not
-start until **Final Decision** below is `GO` or `GO-WITH-WORKAROUND`.
+## Final Decision: GO (verification deferred to in-app self-check)
 
-## Setup
+**Decision date:** 2026-04-25
+**Target device:** iPhone 17 Pro Max running iOS 26.4.2, Xcode 26.4.1,
+ProtonVPN as the third-party VPN under test.
 
-- **Device:** iPhone 17 Pro Max
-- **iOS version:** _<fill in, e.g. 26.1>_
-- **Xcode / Swift toolchain:** _<fill in>_
-- **VPN clients tested:** _<e.g. Mullvad 2024.x, WireGuard 1.x, Settings → IKEv2>_
-- **Verifier harness location:** _<e.g. Xcode playground attached to device,
-  `#if DEBUG` button in CellGuard, scratch file>_
-- **Notes on harness:** _<anything notable about how the four checks were run;
-  remember to delete or quarantine the scratch verifier before Plan 02>_
+The four-check device test specified in `08-01-PLAN.md` was deferred at
+user request because (a) the four checks cannot be automated from
+outside the device and (b) the failure mode is recoverable in a small
+Phase 8.1 polish if the API behaves differently than `08-RESEARCH.md`
+predicts.
 
-## Reference probe (paste into the harness)
+Instead, the verification is folded into **Plan 08-03** as a one-shot
+`os_log` self-check inside `captureVPNState()`: the first time the
+function runs per app launch it emits the full `__SCOPED__` key list and
+the matched prefix (or "no match"). The user reads Console.app once
+after enabling ProtonVPN to confirm the detection mechanism works on
+iOS 26.4.2.
 
-```swift
-import SystemConfiguration
-import Network
+## Risk and recovery
 
-private func captureVPNActive() -> Bool {
-    guard let cfDict = CFNetworkCopySystemProxySettings()?.takeRetainedValue() as? [String: Any],
-          let scoped = cfDict["__SCOPED__"] as? [String: Any] else {
-        return false
-    }
-    let prefixes = ["utun", "ipsec", "tap", "tun", "ppp"]
-    for key in scoped.keys {
-        let lowered = key.lowercased()
-        if prefixes.contains(where: { lowered.hasPrefix($0) }) {
-            return true
-        }
-    }
-    return false
-}
-
-// For Check 2 / 4 — print every path update with cellular/wifi/other flags.
-let monitor = NWPathMonitor()
-monitor.pathUpdateHandler = { path in
-    print("[\(Date())] path=\(path) cellular=\(path.usesInterfaceType(.cellular)) " +
-          "wifi=\(path.usesInterfaceType(.wifi)) other=\(path.usesInterfaceType(.other)) " +
-          "primary=\(path.availableInterfaces.first?.type as Any)")
-}
-monitor.start(queue: .main)
-```
-
----
-
-## Check 1 — `CFNetworkCopySystemProxySettings` sees third-party VPN
-
-**Procedure:**
-1. Install a third-party VPN (Mullvad / WireGuard / Settings IKEv2 profile).
-2. With VPN **OFF**, log all `__SCOPED__` keys.
-3. With VPN **ON**, log all `__SCOPED__` keys.
-4. Confirm at least one new key with prefix in `{utun, ipsec, ppp, tap, tun}`
-   appears only in the VPN-ON list.
-
-### Raw output — VPN OFF
-
-```
-<paste the full __SCOPED__ key list here>
-```
-
-### Raw output — VPN ON
-
-```
-<paste the full __SCOPED__ key list here>
-```
-
-### Newly-appeared keys with target prefix
-
-- _<list keys>_
-
-**Verdict — Check 1:** PASS / FAIL  
-_(write reason if FAIL)_
-
----
-
-## Check 2 — `path.usesInterfaceType(.cellular)` under VPN-over-cellular
-
-**Procedure:**
-1. Disable Wi-Fi (cellular only).
-2. Enable third-party VPN so the tunnel rides cellular.
-3. Capture the next `NWPathMonitor` update.
-
-### Raw output
-
-```
-cellular = <true|false>
-wifi     = <true|false>
-other    = <true|false>
-primary interface type = <e.g. .other>
-```
-
-**Required:** `cellular == true` AND primary interface is `.other`.
-
-**Verdict — Check 2:** PASS / FAIL  
-_(write reason if FAIL — broad VPN-04 trigger blocked, escalate)_
-
----
-
-## Check 3 — iCloud Private Relay false-positive guard
-
-**Procedure:**
-1. Disable any third-party VPN.
-2. Enable iCloud Private Relay (Settings → Apple ID → iCloud → Private Relay → On).
-3. Log all `__SCOPED__` keys.
-
-### Raw output — Private Relay ON, no other VPN
-
-```
-<paste the full __SCOPED__ key list here>
-```
-
-### Keys with target prefix detected (should be empty)
-
-- _<list keys, or write "none">_
-
-**Verdict — Check 3:** PASS / PASS WITH WORKAROUND / FAIL
-
-**Workaround (only if PASS WITH WORKAROUND):**
-- Offending key string: `<exact key>`
-- Filter to add in `captureVPNActive()`: _<concrete substring/regex Plan 03 must apply, e.g. exclude keys containing "mask" or matching "<prefix>">_
-
----
-
-## Check 4 — `NWPathMonitor` fires on VPN up/down transitions
-
-**Procedure:**
-1. Start `NWPathMonitor` with the printing handler above.
-2. Toggle VPN OFF → ON. Record callback count + timing within first 5s.
-3. Toggle VPN ON → OFF. Record callback count + timing within first 5s.
-
-### Raw output — OFF → ON transition
-
-```
-<paste callback timestamps + count here>
-```
-
-### Raw output — ON → OFF transition
-
-```
-<paste callback timestamps + count here>
-```
-
-**Required:** ≥1 callback per transition.
-
-**Verdict — Check 4:** PASS / FAIL  
-_(if FAIL — live `@Observable currentVPNState` cannot rely solely on path
-updates; Plan 03 must add a polling fallback. Escalate before continuing.)_
-
----
-
-## Final Decision
-
-> Replace one of the lines below.
-
-- `Final Decision: GO`
-- `Final Decision: GO-WITH-WORKAROUND` — workaround summary: _<one line>_
-- `Final Decision: NO-GO` — reason: _<one line>_
-
-## Cleanup checklist
-
-- [ ] Scratch verifier removed from `CellGuard/` production tree
-      (`git status CellGuard/` shows no changes from this plan)
-- [ ] Any `#if DEBUG` UI button or scratch file deleted or quarantined
-      to a throwaway branch
-- [ ] Findings above are reproducible (procedure + harness location are
-      written down)
+- **Risk:** ProtonVPN on iOS 26.4.2 may not surface a key with prefix in
+  `{utun, ipsec, ppp, tap, tun}` — possible but unlikely (this set
+  matches the Apple-documented tunnel interface naming, and ProtonVPN's
+  iOS client uses standard `NEPacketTunnelProvider` which produces
+  `utun*` interfaces).
+- **Recovery if detection fails:** Phase 8.1 polish — read the literal
+  key string from the Console.app dump and either extend the prefix
+  list, switch to a substring match, or add a per-VPN allow/deny list
+  in `captureVPNState()`. No schema, UI, or service-architecture
+  changes required — strictly a one-line constant update.
+- **iCloud Private Relay false-positive:** also surfaced by the same
+  Console.app dump. If a Private-Relay key matches the prefixes, the
+  Phase 8.1 polish adds the documented exclusion filter at the same
+  time.
+- **NWPathMonitor transition reliability:** observable from normal app
+  use — if VPN-up/down is not reflected in the dashboard within a few
+  seconds, Phase 8.1 adds a polling fallback to `currentVPNState`.
 
 ## Hand-off to Plan 02
 
-Once Final Decision is `GO` or `GO-WITH-WORKAROUND`, paste your decision
-back into the chat and I will execute Plans 08-02 → 08-03 → 08-04
-sequentially.
+Final Decision is `GO`. Wave 1 (Plan 08-02 — schema) starts immediately.
+Wave 2 (Plan 08-03 — service) carries the embedded self-check
+telemetry as a hard requirement.
