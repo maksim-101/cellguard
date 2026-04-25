@@ -75,6 +75,19 @@ final class ConnectivityMonitor {
     /// `.reasserting` rather than `.connected`.
     private var vpnReassertingUntil: Date?
 
+    /// Wall-clock timestamp of the most recent probe START. Set immediately after
+    /// the dedup guard passes, before the URLSession await. Used by the dedup guard
+    /// to suppress redundant `.probeSuccess` probes within a sliding 60-second window
+    /// (POLISH-02 / D-13). A probe currently in flight blocks a second concurrent
+    /// probe via this clock alone.
+    private var lastProbeStartedAt: Date?
+
+    /// Outcome of the most recent fully resolved probe. Read by the dedup guard
+    /// (D-12): only `.probeSuccess` triggers suppression — `.probeFailure` and
+    /// `.silentFailure` always allow the next probe to run regardless of recency
+    /// (D-14: failures are the entire evidence stream and must never be suppressed).
+    private var lastProbeOutcome: EventType?
+
     /// One-shot guard for the embedded Wave 0 self-check telemetry (08-VERIFICATION-WAVE-0.md).
     /// On the first `captureVPNDetectorBool()` call per app launch we emit the full
     /// `__SCOPED__` key list and the matched prefix (or "no match") via os_log so the
@@ -262,6 +275,18 @@ final class ConnectivityMonitor {
     /// where path status changes during the request (Pitfall 5 from research).
     @MainActor
     private func runProbe() async {
+        // POLISH-02 dedup guard (D-11..D-15): suppress only redundant successes within a
+        // sliding 60s window. Failures (.probeFailure, .silentFailure) NEVER short-circuit
+        // the next probe — every failure-state moment deserves fresh confirmation.
+        if let started = lastProbeStartedAt,
+           Date().timeIntervalSince(started) < 60,
+           lastProbeOutcome == .probeSuccess {
+            return
+        }
+        // Update probe-START clock BEFORE the await so a concurrent caller is also blocked
+        // by the same window. Outcome is set AFTER each logEvent below.
+        lastProbeStartedAt = Date()
+
         // Pitfall 5: Capture state before awaiting probe to avoid race condition
         let capturedStatus = currentPathStatus
         let capturedInterface = currentInterfaceType
@@ -287,6 +312,7 @@ final class ConnectivityMonitor {
                     probeLatencyMs: latencyMs,
                     vpnState: capturedVPNState
                 )
+                lastProbeOutcome = .probeSuccess
             } else {
                 let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
                 logEvent(
@@ -299,6 +325,7 @@ final class ConnectivityMonitor {
                     probeFailureReason: "HTTP \(statusCode)",
                     vpnState: capturedVPNState
                 )
+                lastProbeOutcome = .probeFailure
             }
         } catch {
             let latencyMs = Date().timeIntervalSince(start) * 1000
@@ -332,6 +359,7 @@ final class ConnectivityMonitor {
                 if dropStartDate == nil {
                     dropStartDate = Date()
                 }
+                lastProbeOutcome = .silentFailure
             } else {
                 logEvent(
                     type: .probeFailure,
@@ -343,6 +371,7 @@ final class ConnectivityMonitor {
                     probeFailureReason: error.localizedDescription,
                     vpnState: capturedVPNState
                 )
+                lastProbeOutcome = .probeFailure
             }
         }
     }
