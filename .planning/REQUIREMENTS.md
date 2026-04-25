@@ -56,4 +56,20 @@
 
 ## Traceability
 
-(To be filled by roadmap — maps each REQ-ID to its phase.)
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| VPN-01 | Phase 8 — VPN Context | Pending |
+| VPN-02 | Phase 8 — VPN Context | Pending |
+| VPN-03 | Phase 8 — VPN Context | Pending |
+| VPN-04 | Phase 8 — VPN Context | Pending |
+| CHART-01 | Phase 9 — Dashboard Polish | Pending |
+| CHART-02 | Phase 9 — Dashboard Polish | Pending |
+| CHART-03 | Phase 9 — Dashboard Polish | Pending |
+| POLISH-01 | Phase 9 — Dashboard Polish | Pending |
+| POLISH-02 | Phase 9 — Dashboard Polish | Pending |
+| REPORT-01 | Phase 10 — Reports & Analytics | Pending |
+| REPORT-02 | Phase 10 — Reports & Analytics | Pending |
+| ANALYTICS-01 | Phase 10 — Reports & Analytics | Pending |
+| ANALYTICS-02 | Phase 10 — Reports & Analytics | Pending |
+
+**Coverage:** 13/13 ✓ — all v1.3 requirements mapped to a phase, no orphans, no duplicates.
