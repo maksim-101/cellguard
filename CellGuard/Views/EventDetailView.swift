@@ -33,6 +33,14 @@ struct EventDetailView: View {
                 }
             }
 
+            if let state = event.vpnState,
+               state != .disconnected,
+               state != .invalid {
+                Section("VPN") {
+                    LabeledContent("State", value: state.displayName)
+                }
+            }
+
             if event.probeLatencyMs != nil || event.probeFailureReason != nil {
                 Section("Probe") {
                     if let latency = event.probeLatencyMs {
@@ -117,6 +125,22 @@ extension InterfaceType {
         case .loopback: "Loopback"
         case .other: "Other"
         case .unknown: "Unknown"
+        }
+    }
+}
+
+extension VPNState {
+    /// Human-readable name for UI display. Per UI-SPEC §Copywriting Contract,
+    /// `Reconnecting` is the human-readable mapping for `.reasserting`; the
+    /// internal Apple-API word "reasserting" is never exposed to users.
+    var displayName: String {
+        switch self {
+        case .invalid: "Invalid"
+        case .disconnected: "Disconnected"
+        case .connecting: "Connecting"
+        case .connected: "Connected"
+        case .reasserting: "Reconnecting"
+        case .disconnecting: "Disconnecting"
         }
     }
 }

@@ -94,7 +94,7 @@ struct DashboardView: View {
             .padding(.bottom, 4)
 
             // Privacy toggle for export (EXPT-01, EXPT-03)
-            Toggle("Omit location and Wi-Fi data", isOn: $omitLocation)
+            Toggle("Omit location, Wi-Fi, and VPN data", isOn: $omitLocation)
                 .font(.subheadline)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
@@ -177,7 +177,7 @@ struct DashboardView: View {
                 Text("Interface")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Text(monitor.currentInterfaceType.displayName)
+                Text(monitor.effectiveInterfaceLabel)
                     .font(.headline)
             }
         }
