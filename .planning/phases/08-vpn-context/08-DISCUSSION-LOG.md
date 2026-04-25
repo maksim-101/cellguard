@@ -81,6 +81,7 @@
 | VPN connecting + recent Wi-Fi loss | Adds previousInterfaceType == .wifi within last N seconds — most literal but adds time-window state | |
 
 **User's choice:** VPN connecting + cellular path.
+**SUPERSEDED 2026-04-25:** During /gsd-plan-phase 8 the user overrode this narrow trigger with a BROAD trigger — reclassify whenever any non-trivial VPN substate is active (`.connected | .reasserting | .connecting | .disconnecting`) over a cellular-effective path AND the probe failed AND the path is satisfied. See Plan 03 step J for the implemented logic.
 
 ### Q6: How should the existing 'capturedInterface == .cellular' silent-failure check interact with VPN tunnels?
 

@@ -287,6 +287,8 @@ private func runProbe() async {
 }
 ```
 > **Phase 8 transformation (D-06 + D-07):** extend the cellularity check to treat `.other` as cellular when a VPN is up AND the path uses cellular. Per RESEARCH.md lines 250-272:
+>
+> **Note (2026-04-25):** D-06 superseded — see Plan 03 BROAD trigger. The implemented `vpnIsUp` set covers `.connected | .reasserting | .connecting | .disconnecting` (broader than the snippet below). The snippet is preserved as the original D-06 reference; Plan 03 step J is canonical.
 > ```swift
 > let effectivelyCellular = capturedInterface == .cellular ||
 >     ((capturedVPNState == .connected

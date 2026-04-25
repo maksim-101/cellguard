@@ -731,26 +731,30 @@ if !omitLocation {
 
 **Recommendation:** A3 should be verified before plan-phase (10-minute manual test). A1, A2, A5 are testable during phase implementation (Wave 0 / first task). A4 and A6 are low-risk and can be assumed.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **D-06 strict (connecting/reasserting only) vs. broader (any VPN up + cellular path)?**
    - What we know: CONTEXT.md D-06 explicitly says "vpnState ∈ {connecting, reasserting}." VPN-04 acceptance text says "Wi-Fi loss while VPN is reconnecting" — narrower wording matches D-06.
    - What's unclear: whether the user wants the **broader** interpretation (any VPN-up + cellular-effective + probe-fail = silent failure, a clean MON-03 extension), or the **narrower** D-06 trigger (only the handover moment).
    - Recommendation: **planner asks the user during plan review** before implementing the catch branch. Both are 5-line changes; the choice affects how much silent-failure signal is captured. My recommendation as researcher is the broader interpretation: it's the cleaner extension of MON-03 and matches the spirit of "the silent-failure branch is the entire reason this app exists" (D-07 rationale).
+   - **RESOLVED:** User chose BROAD trigger during /gsd-plan-phase 8 (2026-04-25). D-06's narrow `vpnState ∈ {connecting, reasserting}` is superseded by the BROAD-trigger override implemented in Plan 03 step J: reclassify as `.silentFailure` whenever (probe failed) AND (path satisfied) AND (effectively cellular), regardless of which non-trivial VPN substate is active. Audit trail preserved in CONTEXT.md, DISCUSSION-LOG.md Q5, and PATTERNS.md.
 
 2. **iCloud Private Relay false positive (A5)?**
    - What we know: iCloud Private Relay creates QUIC tunnels that may register in `__SCOPED__`.
    - What's unclear: whether they appear with `utun*` keys or with non-tunneling-prefix keys.
    - Recommendation: 5-minute test on the iPhone 17 Pro Max with Private Relay toggled on/off. If it triggers detection: document as expected behavior (Private Relay IS a tunnel) or add an exclude list of known-Apple identifiers.
+   - **RESOLVED:** Deferred to Plan 01 Wave 0 Check 3 — verify on iPhone 17 Pro Max during phase implementation. Disposition (accept-as-tunnel vs. exclude-list) is a small UX call to be made when test data lands; does not block plan execution.
 
 3. **Should VPN-04 also fire `.silentFailure` when probe fails on `.wifi` interface AND VPN is `.reasserting`?**
    - What we know: D-07 only treats `.other` as cellular under VPN. Wi-Fi probe failures stay as probe failure.
    - What's unclear: a Wi-Fi-loss-mid-reassert scenario where the path momentarily reports Wi-Fi (briefly satisfied via Wi-Fi before the tunnel reasserts on cellular) followed by a probe failure. Strict reading: classify as probe-failure. User intent: probably silent-failure (VPN-04 is about the handover moment). Edge case; flag for plan review.
+   - **RESOLVED:** Deferred post-deployment. Strict reading (probe-failure on `.wifi`) is implemented; revisit only if real-device data shows the misclassification materially. Edge case is rare enough that adding code now would be premature.
 
 4. **Does `NWPathMonitor` fire a path-update callback when a third-party VPN comes up/goes down?**
    - What we know: the new `utun*` interface joining `availableInterfaces` should trigger an update.
    - What's unclear: whether iOS 26 batches/suppresses these for non-owning apps.
    - Recommendation: verify during Wave 0; if NOT — fall back to also calling `captureVPNState()` from the probe timer (60s cadence is the worst case for VPN-up label latency).
+   - **RESOLVED:** Deferred to Plan 01 Wave 0 Check 4 — verify behavior on iPhone 17 Pro Max with Mullvad toggle. If callback does not fire reliably, fall back to per-probe `captureVPNState()` (worst-case 60s label latency, acceptable for diagnostic use case).
 
 ## Environment Availability
 

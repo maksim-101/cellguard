@@ -28,6 +28,8 @@ Requirements covered: VPN-01, VPN-02, VPN-03, VPN-04.
 
 ### Probe Reclassification (VPN-04)
 
+> **D-06 SUPERSEDED 2026-04-25** — see Plan 03 BROAD-trigger override (user override during /gsd-plan-phase 8). Original narrow trigger preserved below as audit trail. The implemented behavior is: reclassify as `silentFailure` when (probe failed) AND (path satisfied) AND (effectively cellular), with `effectivelyCellular` covering any non-trivial VPN substate (`.connected | .reasserting | .connecting | .disconnecting`) over a cellular path. The narrow handover scenario is a strict subset of the broad rule.
+
 - **D-06:** Reclassify a probe failure as `silentFailure` when **all** of the following hold:
   1. The probe failed (catch branch in `runProbe()`).
   2. `vpnState ∈ {connecting, reasserting}` at probe time (captured before await, same race-safety pattern as `capturedStatus`/`capturedInterface`).
