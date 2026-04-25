@@ -4,6 +4,8 @@ import Foundation
 import CoreTelephony
 import NetworkExtension
 import UserNotifications
+import SystemConfiguration
+import os
 
 /// Core detection engine that translates NWPathMonitor transitions into classified
 /// ConnectivityEvent records and persists them through EventStore.
@@ -42,10 +44,46 @@ final class ConnectivityMonitor {
     /// Updated live via CTTelephonyNetworkInfo notification.
     private(set) var currentRadioTechnology: String?
 
+    /// Current VPN tunnel state inferred from system proxy settings.
+    /// Updated live via `captureVPNState()` from `handlePathUpdate`. Drives the dashboard's
+    /// `effectiveInterfaceLabel` (VPN-02). Default `.disconnected` matches the steady "no VPN"
+    /// case so the initial render is correct before the first detector call.
+    private(set) var currentVPNState: VPNState = .disconnected
+
+    /// Dashboard-only override: returns "VPN" when a VPN tunnel is connected or reasserting,
+    /// otherwise the raw interface type's display name. Per UI-SPEC this override is ONLY
+    /// consumed by DashboardView.connectivityStateCard. EventDetailView, EventListView, and
+    /// JSON export all use raw interfaceType.
+    var effectiveInterfaceLabel: String {
+        if currentVPNState == .connected || currentVPNState == .reasserting {
+            return "VPN"
+        }
+        return currentInterfaceType.displayName
+    }
+
     // MARK: - Internal State for Classification
 
     /// Previous path status, used to detect transitions.
     private var previousPathStatus: PathStatus = .unsatisfied
+
+    /// Previous VPN detector boolean. Used to derive .connecting / .disconnecting transients
+    /// from sequential observations (08-RESEARCH.md "From boolean to 6-state").
+    private var previousVPNDetectorState: Bool = false
+
+    /// Sliding window for `.reasserting` inference: when path drops while VPN is up, set
+    /// this to now+5s. Subsequent VPN-up observations within the window classify as
+    /// `.reasserting` rather than `.connected`.
+    private var vpnReassertingUntil: Date?
+
+    /// One-shot guard for the embedded Wave 0 self-check telemetry (08-VERIFICATION-WAVE-0.md).
+    /// On the first `captureVPNDetectorBool()` call per app launch we emit the full
+    /// `__SCOPED__` key list and the matched prefix (or "no match") via os_log so the
+    /// detection mechanism can be verified from Console.app.
+    private var didEmitVPNSelfCheck: Bool = false
+
+    /// Logger for VPN detector self-check telemetry. Subsystem matches the bundle id pattern
+    /// used elsewhere in the project; category lets the user filter Console.app to "vpn".
+    private let vpnLogger = Logger(subsystem: "com.cellguard.connectivity", category: "vpn")
 
     /// Previous interface type, used to detect Wi-Fi fallback (MON-06).
     private var previousInterfaceType: InterfaceType = .unknown
@@ -227,6 +265,8 @@ final class ConnectivityMonitor {
         // Pitfall 5: Capture state before awaiting probe to avoid race condition
         let capturedStatus = currentPathStatus
         let capturedInterface = currentInterfaceType
+        let capturedVPNState = currentVPNState
+        let capturedPathUsesCellular = pathMonitor.currentPath.usesInterfaceType(.cellular)
 
         var request = URLRequest(url: probeURL)
         request.httpMethod = "HEAD"
@@ -244,7 +284,8 @@ final class ConnectivityMonitor {
                     interface: capturedInterface,
                     isExpensive: false,
                     isConstrained: false,
-                    probeLatencyMs: latencyMs
+                    probeLatencyMs: latencyMs,
+                    vpnState: capturedVPNState
                 )
             } else {
                 let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
@@ -255,15 +296,28 @@ final class ConnectivityMonitor {
                     isExpensive: false,
                     isConstrained: false,
                     probeLatencyMs: latencyMs,
-                    probeFailureReason: "HTTP \(statusCode)"
+                    probeFailureReason: "HTTP \(statusCode)",
+                    vpnState: capturedVPNState
                 )
             }
         } catch {
             let latencyMs = Date().timeIntervalSince(start) * 1000
 
-            // MON-03: Silent modem failure -- path says satisfied + cellular but probe fails.
-            // This is the "attached but unreachable" state the app is designed to catch.
-            if capturedStatus == .satisfied && capturedInterface == .cellular {
+            // VPN-04 BROAD trigger (user override of D-06 narrow): treat path as effectively
+            // cellular when (a) NWPath reported cellular directly, OR (b) ANY non-trivial VPN
+            // tunnel is up AND the underlying path uses cellular. Without (b), VPN-over-cellular
+            // probe failures would be misclassified as .probeFailure because detectPrimaryInterface
+            // returns .other for utun* tunnels (08-PATTERNS.md Pitfall 2).
+            // .disconnecting included so a tunnel tearing down over cellular still attributes
+            // probe failures to silent-modem-failure rather than probe-failure.
+            let vpnIsUp = capturedVPNState == .connected
+                || capturedVPNState == .reasserting
+                || capturedVPNState == .connecting
+                || capturedVPNState == .disconnecting
+            let effectivelyCellular = (capturedInterface == .cellular)
+                || (vpnIsUp && capturedPathUsesCellular)
+
+            if capturedStatus == .satisfied && effectivelyCellular {
                 logEvent(
                     type: .silentFailure,
                     status: capturedStatus,
@@ -271,7 +325,8 @@ final class ConnectivityMonitor {
                     isExpensive: false,
                     isConstrained: false,
                     probeLatencyMs: latencyMs,
-                    probeFailureReason: error.localizedDescription
+                    probeFailureReason: error.localizedDescription,
+                    vpnState: capturedVPNState
                 )
                 // Start tracking drop duration if not already in a drop
                 if dropStartDate == nil {
@@ -285,7 +340,8 @@ final class ConnectivityMonitor {
                     isExpensive: false,
                     isConstrained: false,
                     probeLatencyMs: latencyMs,
-                    probeFailureReason: error.localizedDescription
+                    probeFailureReason: error.localizedDescription,
+                    vpnState: capturedVPNState
                 )
             }
         }
@@ -353,6 +409,85 @@ final class ConnectivityMonitor {
         return network?.ssid
     }
 
+    /// Detects whether ANY system-wide VPN tunnel is registered by scanning the
+    /// `__SCOPED__` proxy-settings dictionary for utun/ipsec/tap/tun/ppp interface keys.
+    ///
+    /// Why CFNetworkCopySystemProxySettings and not the NEVPNManager API: that API is
+    /// scoped to the calling app's own VPN configurations only. CellGuard owns no VPN config,
+    /// so it would always return .invalid/.disconnected for third-party tunnels (Mullvad,
+    /// WireGuard, ProtonVPN, Settings VPN profiles). See 08-RESEARCH.md "Detection Mechanism".
+    ///
+    /// On the first call per app launch this emits a one-shot os_log dump of the full
+    /// `__SCOPED__` key list and the matched prefix (or "no match"). This is the embedded
+    /// Wave 0 device verification (08-VERIFICATION-WAVE-0.md): the user reads Console.app
+    /// once after enabling a VPN to confirm the prefix list matches the live keys on the
+    /// target iOS version. If a key is missed, the fix is a one-line constant update here.
+    private func captureVPNDetectorBool() -> Bool {
+        guard let cfDict = CFNetworkCopySystemProxySettings()?.takeRetainedValue() as? [String: Any],
+              let scoped = cfDict["__SCOPED__"] as? [String: Any] else {
+            if !didEmitVPNSelfCheck {
+                didEmitVPNSelfCheck = true
+                vpnLogger.info("VPN self-check: __SCOPED__ unavailable (no proxy settings)")
+            }
+            return false
+        }
+        let prefixes = ["utun", "ipsec", "tap", "tun", "ppp"]
+        var matchedKey: String?
+        var matchedPrefix: String?
+        for key in scoped.keys {
+            let lowered = key.lowercased()
+            if let hit = prefixes.first(where: { lowered.hasPrefix($0) }) {
+                matchedKey = key
+                matchedPrefix = hit
+                break
+            }
+        }
+        if !didEmitVPNSelfCheck {
+            didEmitVPNSelfCheck = true
+            let allKeys = scoped.keys.sorted().joined(separator: ", ")
+            if let mk = matchedKey, let mp = matchedPrefix {
+                vpnLogger.info("VPN self-check: keys=[\(allKeys, privacy: .public)] matched=\(mk, privacy: .public) prefix=\(mp, privacy: .public)")
+            } else {
+                vpnLogger.info("VPN self-check: keys=[\(allKeys, privacy: .public)] matched=NO MATCH")
+            }
+        }
+        return matchedKey != nil
+    }
+
+    /// Maps the detector boolean to the 6-state VPNState enum using edge-transition inference
+    /// plus a 5-second `.reasserting` window. Called from `logEvent` (sync, outside Task) and
+    /// from `handlePathUpdate` (live binding refresh).
+    ///
+    /// Inference rules (08-RESEARCH.md lines 182-189):
+    ///   true  + true  + (in reassert window AND path satisfied) -> .reasserting
+    ///   true  + true                                            -> .connected
+    ///   true  + false                                           -> .connecting (transient edge)
+    ///   false + true                                            -> .disconnecting (transient edge)
+    ///   false + false                                           -> .disconnected
+    private func captureVPNState() -> VPNState {
+        let now = captureVPNDetectorBool()
+        let prev = previousVPNDetectorState
+        let pathSatisfied = currentPathStatus == .satisfied
+
+        let result: VPNState
+        if now && prev {
+            if let until = vpnReassertingUntil, until > Date(), pathSatisfied {
+                result = .reasserting
+            } else {
+                result = .connected
+            }
+        } else if now && !prev {
+            result = .connecting
+        } else if !now && prev {
+            result = .disconnecting
+        } else {
+            result = .disconnected
+        }
+
+        previousVPNDetectorState = now
+        return result
+    }
+
     // MARK: - Path Update Handling
 
     /// Processes a raw NWPath update: maps status/interface, guards initial callback,
@@ -371,9 +506,27 @@ final class ConnectivityMonitor {
             previousInterfaceType = newInterface
             currentPathStatus = newStatus
             currentInterfaceType = newInterface
+            currentVPNState = captureVPNState()
             isInitialUpdate = false
             return
         }
+
+        // Refresh live VPN state for dashboard binding (VPN-02). Also seed the reasserting-window
+        // flag when a path drop happens while VPN is up. The detector boolean is read once here
+        // and passed through captureVPNState() so the per-tick edge transition is registered
+        // exactly once.
+        let detectorNow = captureVPNDetectorBool()
+        if detectorNow && newStatus == .unsatisfied {
+            // Path dropped while VPN registered -- start a 5-second reassertion window
+            // (only label .reasserting later if path returns to .satisfied; Pitfall 3 in RESEARCH).
+            vpnReassertingUntil = Date().addingTimeInterval(5)
+        }
+        // captureVPNState() will call captureVPNDetectorBool() a second time, but that is fine:
+        // the boolean is idempotent for a given system state, and previousVPNDetectorState only
+        // advances inside captureVPNState(). Restore prev so the state machine sees the correct
+        // (prev, now) pair we just observed.
+        _ = detectorNow
+        currentVPNState = captureVPNState()
 
         // Pitfall 6: Debounce rapid path flapping. Cancel any pending classification
         // and wait 500ms before processing. Only the last update in a rapid sequence
@@ -504,12 +657,17 @@ final class ConnectivityMonitor {
         isConstrained: Bool,
         probeLatencyMs: Double? = nil,
         probeFailureReason: String? = nil,
-        dropDuration: Double? = nil
+        dropDuration: Double? = nil,
+        vpnState: VPNState? = nil
     ) {
-        // Capture synchronous metadata outside the Task
+        // Capture synchronous metadata outside the Task (D-09: VPN detector must be called
+        // synchronously to match Phase 7's wifiSSID precedent and avoid actor-hop staleness).
         let radioTech = captureRadioTechnology()
         let carrier = captureCarrierName()
         let location = lastLocation
+        // If a caller already snapshotted the state (i.e. runProbe), use it; otherwise
+        // capture fresh so transition events get the live state.
+        let resolvedVPNState = vpnState ?? captureVPNState()
 
         Task {
             let ssid = await captureWifiSSID()
@@ -523,6 +681,7 @@ final class ConnectivityMonitor {
                 radioTechnology: radioTech,
                 carrierName: carrier,
                 wifiSSID: ssid,
+                vpnState: resolvedVPNState,
                 probeLatencyMs: probeLatencyMs,
                 probeFailureReason: probeFailureReason,
                 latitude: location?.latitude,
