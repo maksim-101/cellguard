@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Polish & Analytics
-status: roadmap_complete
-stopped_at: Roadmap drafted — ready to plan Phase 8 (VPN Context)
-last_updated: "2026-04-25T00:00:00.000Z"
+status: context_gathered
+stopped_at: Phase 8 context gathered — ready to plan
+last_updated: "2026-04-25T12:00:00.000Z"
 last_activity: 2026-04-25
 progress:
   total_phases: 3
@@ -26,10 +26,10 @@ See: .planning/PROJECT.md (updated 2026-04-25)
 
 ## Current Position
 
-Phase: 8 — VPN Context (not started)
+Phase: 8 — VPN Context (context gathered)
 Plan: —
-Status: Roadmap complete, awaiting `/gsd-plan-phase 8`
-Last activity: 2026-04-25 — Roadmap for v1.3 created (3 phases, 13 reqs mapped)
+Status: CONTEXT.md captured, awaiting `/gsd-plan-phase 8`
+Last activity: 2026-04-25 — Phase 8 discuss complete (3 areas: state model, UI labeling, VPN-handover silent failure)
 
 ## Performance Metrics
 
@@ -73,5 +73,5 @@ None.
 ## Session Continuity
 
 Last activity: 2026-04-25
-Stopped at: v1.3 roadmap complete (3 phases, 13 reqs mapped) — next step is `/gsd-plan-phase 8`
-Resume file: None
+Stopped at: Phase 8 (VPN Context) context gathered — next step is `/gsd-plan-phase 8`
+Resume file: .planning/phases/08-vpn-context/08-CONTEXT.md
