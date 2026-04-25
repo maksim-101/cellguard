@@ -102,14 +102,20 @@ struct HealthDetailSheet: View {
                             .fontWeight(profileService.isExpiringSoon ? .bold : .regular)
                     }
 
-                    // Last background wake
-                    HStack {
-                        Text("Last Background Wake:")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(lastWakeText)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                    // Last background wake — live ticker (POLISH-01 / D-09)
+                    // TimelineView re-renders this subview every 1s while the sheet is visible.
+                    // SwiftUI scopes the re-render to the closure body and stops automatically
+                    // when the view disappears, so there is no Combine subscription or Timer
+                    // lifecycle to manage.
+                    TimelineView(.periodic(from: .now, by: 1)) { _ in
+                        HStack {
+                            Text("Last Background Wake:")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(lastBackgroundWakeText)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
             }
@@ -176,10 +182,17 @@ struct HealthDetailSheet: View {
         }
     }
 
-    private var lastWakeText: String {
-        let lastActive = UserDefaults.standard.double(forKey: "lastActiveTimestamp")
-        guard lastActive > 0 else { return "Never" }
-        let lastDate = Date(timeIntervalSince1970: lastActive)
-        return lastDate.formatted(.dateTime.hour().minute().second())
+    /// Relative-time string for the most recent BACKGROUND wake (POLISH-01 / D-10).
+    /// Reads `lastBackgroundWakeTimestamp` (written only by `LocationService` when
+    /// `applicationState != .active`). When the key is unset / zero, returns the
+    /// locked empty-state copy so the user sees an unambiguous signal that the
+    /// app has not yet been woken in the background.
+    private var lastBackgroundWakeText: String {
+        let raw = UserDefaults.standard.double(forKey: "lastBackgroundWakeTimestamp")
+        guard raw > 0 else { return "Never (no background wake yet)" }
+        let wakeDate = Date(timeIntervalSince1970: raw)
+        return wakeDate.formatted(
+            .relative(presentation: .named, unitsStyle: .abbreviated)
+        )
     }
 }
