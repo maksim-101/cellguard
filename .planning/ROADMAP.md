@@ -37,7 +37,7 @@
 
 ### v1.3 Polish & Analytics (Phases 8-10) — IN PROGRESS
 
-- [ ] **Phase 8: VPN Context** — Capture, display, export, and reclassify connectivity events with VPN state
+- [x] **Phase 8: VPN Context** — Capture, display, export, and reclassify connectivity events with VPN state
 - [ ] **Phase 9: Dashboard Polish** — Live-updating dashboard with probe dedup, silent-failure legend, and overt-drop filter
 - [ ] **Phase 10: Reports & Analytics** — Corrected Summary Report metrics and per-location drop analytics
 
@@ -54,10 +54,10 @@
   4. User loses Wi-Fi while a VPN is reconnecting and the resulting probe failure is logged as a silent modem failure (not a separate "probe failure" category)
 **Plans**: 4 plans
 Plans:
-- [ ] 08-01-PLAN.md — Wave 0: device-test verification of CFNetworkCopySystemProxySettings + path.usesInterfaceType(.cellular) + iCloud Private Relay false-positive guard + NWPath callback firing on VPN transitions
-- [ ] 08-02-PLAN.md — Add VPNState enum, vpnStateRaw storage, init param, CodingKey, decoder, and privacy-gated encoder to ConnectivityEvent.swift
-- [ ] 08-03-PLAN.md — Add CFNetworkCopySystemProxySettings detection, live currentVPNState binding, captureVPNState capture, BROAD VPN-04 silent-failure reclassification, and effectiveInterfaceLabel to ConnectivityMonitor.swift
-- [ ] 08-04-PLAN.md — Add Section("VPN") + VPNState.displayName to EventDetailView; flip dashboard interface label to effectiveInterfaceLabel; update privacy toggle copy to mention VPN
+- [x] 08-01-PLAN.md — Wave 0: deferred to in-app self-check telemetry embedded in Plan 08-03's `captureVPNDetectorBool()` (08-VERIFICATION-WAVE-0.md)
+- [x] 08-02-PLAN.md — Add VPNState enum, vpnStateRaw storage, init param, CodingKey, decoder, and privacy-gated encoder to ConnectivityEvent.swift
+- [x] 08-03-PLAN.md — Add CFNetworkCopySystemProxySettings detection, live currentVPNState binding, captureVPNState capture, BROAD VPN-04 silent-failure reclassification, and effectiveInterfaceLabel to ConnectivityMonitor.swift
+- [x] 08-04-PLAN.md — Add Section("VPN") + VPNState.displayName to EventDetailView; flip dashboard interface label to effectiveInterfaceLabel; update privacy toggle copy to mention VPN
 
 ### Phase 9: Dashboard Polish
 **Goal**: The home screen and HealthDetailSheet stay in sync with reality in real time, the timeline chart distinguishes silent vs overt drops with a legend and an overt-drop filter, and duplicate probes within the same minute no longer pollute the event log.
@@ -99,7 +99,7 @@ Phases execute in numeric order.
 | 6. Persistent Signing | v1.2 | 1/1 | Complete | 2026-04-20 |
 | 6.1 Signing Polish | v1.2 | 1/1 | Complete | 2026-04-20 |
 | 7. Wi-Fi Context | v1.2 | 1/1 | Complete | 2026-04-20 |
-| 8. VPN Context | v1.3 | 0/4 | Planned | - |
+| 8. VPN Context | v1.3 | 4/4 | Complete | 2026-04-25 |
 | 9. Dashboard Polish | v1.3 | 0/? | Not started | - |
 | 10. Reports & Analytics | v1.3 | 0/? | Not started | - |
 

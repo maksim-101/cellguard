@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Polish & Analytics
-status: executing
-stopped_at: Phase 8 UI-SPEC approved
-last_updated: "2026-04-25T12:45:19.994Z"
-last_activity: 2026-04-25 -- Phase 8 execution started
+status: phase-complete
+stopped_at: Phase 8 complete — ready for Phase 9
+last_updated: "2026-04-25T17:30:00.000Z"
+last_activity: 2026-04-25 -- Phase 8 (VPN Context) complete
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
-  completed_plans: 0
-  percent: 0
+  completed_plans: 4
+  percent: 33
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-25)
 
 **Core value:** Reliably detect and log every cellular connectivity drop — including silent modem failures — to produce irrefutable evidence for Apple's engineering team.
-**Current focus:** Phase 8 — VPN Context
+**Current focus:** Phase 9 — Dashboard Polish (next)
 
 ## Current Position
 
-Phase: 8 (VPN Context) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 8
-Last activity: 2026-04-25 -- Phase 8 execution started
+Phase: 8 (VPN Context) — COMPLETE
+Plan: 4 of 4 (all merged on 2026-04-25)
+Status: Phase 8 complete; ready to plan Phase 9
+Last activity: 2026-04-25 -- Phase 8 (VPN Context) complete
 
 ## Performance Metrics
 
@@ -36,6 +36,12 @@ Last activity: 2026-04-25 -- Phase 8 execution started
 
 - Total plans completed: 13 (v1.0 + v1.1 + v1.2)
 - Total phases shipped: 8 (incl. 06.1 polish)
+
+**v1.3 progress:**
+
+- Phase 8 (VPN Context): 4 plans, complete 2026-04-25.
+  - Wave 0 device test deferred to embedded `os_log` self-check in Plan 03 (08-VERIFICATION-WAVE-0.md).
+  - Waves 1–3 executed sequentially with build success at each wave gate.
 
 **By Phase (v1.0–v1.2):**
 
@@ -62,9 +68,15 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - VPN comes first because VPN-01 changes the event pipeline; later phases consume VPN-tagged events without pipeline churn.
 - POLISH-01/02 folded into Phase 9 (Dashboard Polish) rather than a standalone phase — they share the dashboard/reactivity surface with CHART-01/02/03.
 
+**Phase 8 execution decisions:**
+
+- BROAD VPN-04 trigger adopted (user override of CONTEXT.md D-06's narrow trigger). Implemented in `runProbe()` catch branch as `effectivelyCellular = (interface == .cellular) || (vpnIsUp && path.usesInterfaceType(.cellular))`.
+- Wave 0 device verification deferred to in-app `os_log` self-check inside `captureVPNDetectorBool()` (one-shot dump of `__SCOPED__` keys + matched prefix on first invocation per app launch). User reads Console.app once after enabling VPN to confirm detection works on iOS 26.4.2.
+
 ### Pending Todos
 
-None.
+- **Human UAT** of Phase 8 on iPhone 17 Pro Max / iOS 26.4.2 with ProtonVPN — see UAT checklist in `.planning/phases/08-vpn-context/08-04-SUMMARY.md`.
+- **Plan Phase 9** (Dashboard Polish) — requirements CHART-01/02/03 + POLISH-01/02.
 
 ### Blockers/Concerns
 
@@ -73,5 +85,5 @@ None.
 ## Session Continuity
 
 Last activity: 2026-04-25
-Stopped at: Phase 8 UI-SPEC approved
-Resume file: .planning/phases/08-vpn-context/08-UI-SPEC.md
+Stopped at: Phase 8 complete — ready for Phase 9
+Resume file: .planning/phases/08-vpn-context/08-04-SUMMARY.md (or proceed to `/gsd-plan-phase 9`)
