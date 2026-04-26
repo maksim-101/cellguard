@@ -41,20 +41,18 @@ Reliably detect and log every cellular connectivity drop — including the "atta
 
 ### Active
 
-**Milestone v1.3 — Polish & Analytics** (started 2026-04-25)
-
-- [ ] Silent vs overt drop legend in timeline chart
-- [ ] Filter/hide overt path-change drops in chart
-- [ ] Home-screen refreshes immediately when a silent failure is detected (no UI lag)
-- [ ] VPN state captured on every connectivity event (alongside Wi-Fi SSID)
-- [ ] VPN displayed as "VPN" (not "Other") in UI; included in JSON export under privacy toggle
-- [ ] Probe-failure during VPN handover correctly classified as silent failure
-- [ ] HealthDetailSheet "Last Background Wake" updates live while sheet is open
-- [ ] Duplicate probes within the same minute deduplicated
-- [ ] Summary Report "days monitored" counts distinct calendar days with ≥1 event
-- [ ] Summary Report drop ratio uses cellular-only events as denominator
-- [ ] Location × switchable-axis drop heatmap (axes: radio tech / connection type / hour of day)
-- [ ] Drops-per-location ranked table
+- [x] Silent vs overt drop legend in timeline chart — *Validated in Phase 09*
+- [x] Filter/hide overt path-change drops in chart — *Validated in Phase 09*
+- [x] Home-screen refreshes immediately when a silent failure is detected (no UI lag) — *Validated in Phase 09*
+- [x] VPN state captured on every connectivity event (alongside Wi-Fi SSID) — *Validated in Phase 08*
+- [x] VPN displayed as "VPN" (not "Other") in UI; included in JSON export under privacy toggle — *Validated in Phase 08*
+- [x] Probe-failure during VPN handover correctly classified as silent failure — *Validated in Phase 08*
+- [x] HealthDetailSheet "Last Background Wake" updates live while sheet is open — *Validated in Phase 09*
+- [x] Duplicate probes within the same minute deduplicated — *Validated in Phase 09*
+- [x] Summary Report "days monitored" counts distinct calendar days with ≥1 event — *Validated in Phase 10*
+- [x] Summary Report drop ratio uses cellular-only events as denominator — *Validated in Phase 10*
+- [x] Location × switchable-axis drop bar chart (axes: radio tech / connection type / hour of day) — *Validated in Phase 10*
+- [x] Drops-per-location ranked table with resolved place names — *Validated in Phase 10*
 
 ### Out of Scope
 

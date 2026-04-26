@@ -1,5 +1,19 @@
 # Milestones
 
+## v1.3 Polish & Analytics (Shipped: 2026-04-26)
+
+**Phases completed:** 3 phases (8, 9, 10), 10 plans, 22 tasks
+
+**Key accomplishments:**
+
+- **VPN Intelligence:** Every connectivity event now captures VPN state. The UI displays "VPN" instead of "Other", and probe failures during VPN handovers are correctly classified as silent modem failures.
+- **Analytics Dashboard:** Introduced a new "Location Analytics" view with dynamic insight cards, switchable trend charts (Radio Tech, Hour, Interface), and reverse-geocoded location rankings.
+- **Visual Polish:** Centered the home screen layout, fixed text truncation in info popovers, and resolved Y-axis clipping on high-resolution displays.
+- **Metric Correction:** The Summary Report now correctly counts "Days Monitored" by unique calendar days and includes a "Drop Ratio" percentage relative only to cellular attempts.
+- **Data Management:** Added a powerful filter to the Event List (All, Drops, Silent, Overt) to manage large data sets (1000+ events).
+
+---
+
 ## v1.2 Persistent Signing & Wi-Fi Context (Shipped: 2026-04-21)
 
 **Phases completed:** 3 phases (6, 6.1, 7), 3 plans, 5 tasks
