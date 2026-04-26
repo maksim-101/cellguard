@@ -279,11 +279,12 @@ struct DropTimelineChart: View {
             }
             .buttonStyle(.plain)
             .popover(isPresented: $showInfoPopover, arrowEdge: .top) {
-                infoPopoverContent
-                    .padding(32)
-                    .frame(minWidth: 300, idealWidth: 380, maxWidth: 480)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .presentationCompactAdaptation(.popover)
+                ScrollView {
+                    infoPopoverContent
+                        .padding(24)
+                }
+                .frame(width: 320, height: 360)
+                .presentationCompactAdaptation(.popover)
             }
             Spacer(minLength: 0)
         }
