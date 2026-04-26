@@ -5,6 +5,8 @@ struct SummaryReportView: View {
     @Query(sort: \ConnectivityEvent.timestamp, order: .reverse)
     private var allEvents: [ConnectivityEvent]
 
+    @State private var showRatioInfo = false
+
     private var report: SummaryReport {
         SummaryReport.generate(from: allEvents)
     }
@@ -20,7 +22,32 @@ struct SummaryReportView: View {
             }
             Section("Stats") {
                 if let ratio = report.dropRatio {
-                    LabeledContent("Drop Ratio (Cellular)", value: String(format: "%.1f%%", ratio * 100))
+                    HStack {
+                        LabeledContent("Drop Ratio (Cellular)", value: String(format: "%.1f%%", ratio * 100))
+                        Button {
+                            // Logic handled by .popover below
+                        } label: {
+                            Image(systemName: "info.circle")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .popover(isPresented: $showRatioInfo) {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Drop Ratio")
+                                    .font(.headline)
+                                Text("This is the percentage of cellular connectivity attempts that resulted in a drop.")
+                                    .font(.subheadline)
+                                Text("Denominator: Total Cellular Events")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text("Numerator: Total Drops (Silent + Overt)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding()
+                            .presentationCompactAdaptation(.popover)
+                        }
+                    }
                 }
                 LabeledContent("Drops per Day", value: String(format: "%.1f", report.dropsPerDay))
             }

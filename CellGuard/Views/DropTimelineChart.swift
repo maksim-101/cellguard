@@ -187,11 +187,19 @@ struct DropTimelineChart: View {
             legendBar
 
             if dropEvents.isEmpty {
-                Text("No drops in \(selectedWindow.rawValue)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .frame(height: 150)
+                VStack(spacing: 8) {
+                    Text("No drops in last \(selectedWindow.rawValue)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
+                    if selectedWindow == .sixHours && !events.filter({ isDropEvent($0) }).isEmpty {
+                        Text("Switch to 24h or 7d to see older data")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .frame(height: 150)
             } else if !chartShowSilent && !chartShowOvert {
                 // D-07 edge case: both series toggled off. Show a hint instead
                 // of an empty plot so the user understands why the chart is blank.

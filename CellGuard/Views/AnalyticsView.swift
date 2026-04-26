@@ -1,12 +1,14 @@
 import SwiftUI
 import Charts
 import SwiftData
+import CoreLocation
 
 /// Detailed location-based analytics for drop events (ANALYTICS-01, ANALYTICS-02).
 struct AnalyticsView: View {
     let events: [ConnectivityEvent]
 
     @State private var selectedDimension: AnalyticsDimension = .hour
+    @State private var resolvedNames: [String: String] = [:]
 
     enum AnalyticsDimension: String, CaseIterable, Identifiable {
         case hour = "Hour"
@@ -68,7 +70,9 @@ struct AnalyticsView: View {
                 .listRowInsets(EdgeInsets())
                 .padding(.vertical, 8)
             } header: {
-                Text("Heatmap X-Axis")
+                Text("Heatmap Axis")
+            } footer: {
+                Text("Switching dimensions helps identify if drops happen at specific times, on specific radio tech (like NRNSA vs LTE), or interface types.")
             }
 
             Section("Drop Heatmap") {
@@ -83,19 +87,25 @@ struct AnalyticsView: View {
                     Chart(heatmapData) { point in
                         RectangleMark(
                             x: .value("Dimension", point.dimension),
-                            y: .value("Location", point.location),
-                            width: .ratio(1),
-                            height: .ratio(1)
+                            y: .value("Location", displayName(for: point.location)),
+                            width: .ratio(0.9),
+                            height: .ratio(0.9)
                         )
                         .foregroundStyle(by: .value("Drops", point.count))
                     }
                     .chartForegroundStyleScale(
-                        range: Gradient(colors: [.orange.opacity(0.2), .red])
+                        range: Gradient(colors: [.orange.opacity(0.3), .red])
                     )
                     .chartYAxis {
                         AxisMarks(preset: .automatic) { _ in
                             AxisValueLabel()
-                                .font(.system(size: 8, design: .monospaced))
+                                .font(.system(size: 9))
+                        }
+                    }
+                    .chartXAxis {
+                        AxisMarks(preset: .automatic) { _ in
+                            AxisValueLabel()
+                                .font(.system(size: 9))
                         }
                     }
                     .frame(height: 300)
@@ -110,8 +120,14 @@ struct AnalyticsView: View {
                 } else {
                     ForEach(rankedLocations, id: \.location) { item in
                         HStack {
-                            Text(item.location)
-                                .font(.system(.subheadline, design: .monospaced))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(displayName(for: item.location))
+                                    .font(.subheadline)
+                                    .bold()
+                                Text(item.location)
+                                    .font(.system(size: 10, design: .monospaced))
+                                    .foregroundStyle(.secondary)
+                            }
                             Spacer()
                             Text("\(item.count)")
                                 .bold()
@@ -122,6 +138,37 @@ struct AnalyticsView: View {
             }
         }
         .navigationTitle("Location Analytics")
+        .task {
+            await resolveNames()
+        }
+    }
+
+    private func displayName(for cluster: String) -> String {
+        resolvedNames[cluster] ?? cluster
+    }
+
+    private func resolveNames() async {
+        let geocoder = CLGeocoder()
+        for cluster in rankedLocations.map({ $0.location }) {
+            if resolvedNames[cluster] != nil { continue }
+            
+            let components = cluster.components(separatedBy: ", ")
+            guard components.count == 2,
+                  let lat = Double(components[0]),
+                  let lon = Double(components[1]) else { continue }
+            
+            do {
+                let placemarks = try await geocoder.reverseGeocodeLocation(CLLocation(latitude: lat, longitude: lon))
+                if let first = placemarks.first {
+                    let name = [first.locality, first.subLocality].compactMap({ $0 }).joined(separator: ", ")
+                    if !name.isEmpty {
+                        resolvedNames[cluster] = name
+                    }
+                }
+            } catch {
+                // Ignore errors for individual clusters to keep moving
+            }
+        }
     }
 
     private struct HeatmapPoint: Identifiable {
