@@ -18,22 +18,22 @@ struct DashboardView: View {
         VStack(spacing: 0) {
             // Health status bar (tappable, opens detail sheet)
             healthBar
-                .padding(.bottom, 10)
+                .padding(.bottom, 8)
 
             // Current connectivity state
             connectivityStateCard
                 .padding(.horizontal)
-                .padding(.bottom, 10)
+                .padding(.bottom, 8)
 
             // Drop count cards
             dropCountCards
                 .padding(.horizontal)
-                .padding(.bottom, 10)
+                .padding(.bottom, 8)
 
             // Last drop timestamp
             lastDropRow
                 .padding(.horizontal)
-                .padding(.bottom, 10)
+                .padding(.bottom, 8)
 
             // Drop timeline chart (EXP-03)
             VStack(alignment: .leading, spacing: 4) {
@@ -44,7 +44,7 @@ struct DashboardView: View {
                 DropTimelineChart(events: allEvents)
                     .padding(.horizontal)
             }
-            .padding(.bottom, 10)
+            .padding(.bottom, 8)
 
             // Navigation to full event list
             NavigationLink {
@@ -65,7 +65,7 @@ struct DashboardView: View {
                         .foregroundStyle(.secondary)
                 }
                 .padding(.horizontal, 12)
-                .padding(.vertical, 10)
+                .padding(.vertical, 8)
                 .background(Color(.secondarySystemBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
             }
@@ -85,7 +85,7 @@ struct DashboardView: View {
                         .foregroundStyle(.secondary)
                 }
                 .padding(.horizontal, 12)
-                .padding(.vertical, 10)
+                .padding(.vertical, 8)
                 .background(Color(.secondarySystemBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
             }
@@ -97,7 +97,7 @@ struct DashboardView: View {
             Toggle("Omit location, Wi-Fi, and VPN data", isOn: $omitLocation)
                 .font(.subheadline)
                 .padding(.horizontal, 12)
-                .padding(.vertical, 10)
+                .padding(.vertical, 8)
                 .background(Color(.secondarySystemBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
                 .padding(.horizontal)
@@ -113,15 +113,14 @@ struct DashboardView: View {
                     Spacer()
                 }
                 .padding(.horizontal, 12)
-                .padding(.vertical, 10)
+                .padding(.vertical, 8)
                 .background(Color(.secondarySystemBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
             }
             .buttonStyle(.plain)
             .padding(.horizontal)
-            .padding(.bottom, 8)
 
-            Spacer()
+            Spacer(minLength: 20)
         }
         .navigationTitle("CellGuard")
         .sheet(isPresented: $showHealthSheet) {
@@ -157,7 +156,7 @@ struct DashboardView: View {
             .background(Color(.secondarySystemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .padding(.horizontal)
-            .padding(.top, 16)
+            .padding(.top, 4)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
