@@ -39,7 +39,7 @@
 
 - [x] **Phase 8: VPN Context** — Capture, display, export, and reclassify connectivity events with VPN state
 - [x] **Phase 9: Dashboard Polish** — Live-updating dashboard with probe dedup, silent-failure legend, and overt-drop filter
-- [ ] **Phase 10: Reports & Analytics** — Corrected Summary Report metrics and per-location drop analytics
+- [x] **Phase 10: Reports & Analytics** — Corrected Summary Report metrics and per-location drop analytics
 
 ## Phase Details
 
@@ -107,7 +107,7 @@ Phases execute in numeric order.
 | 7. Wi-Fi Context | v1.2 | 1/1 | Complete | 2026-04-20 |
 | 8. VPN Context | v1.3 | 4/4 | Complete | 2026-04-25 |
 | 9. Dashboard Polish | v1.3 | 5/5 | Complete | 2026-04-26 |
-| 10. Reports & Analytics | v1.3 | 0/? | Not started | - |
+| 10. Reports & Analytics | v1.3 | 1/1 | Complete | 2026-04-26 |
 
 ## v1.3 Coverage Map
 

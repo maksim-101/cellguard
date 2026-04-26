@@ -8,6 +8,7 @@ struct SummaryReport {
     let averageDurationSeconds: Double?
     let maxDurationSeconds: Double?
     let dropsPerDay: Double
+    let dropRatio: Double? // New (REPORT-02)
     let monitoringDays: Int
     let totalEvents: Int
     let radioDistribution: [(radio: String, count: Int)]
@@ -25,15 +26,17 @@ struct SummaryReport {
         let avgDuration = durations.isEmpty ? nil : durations.reduce(0, +) / Double(durations.count)
         let maxDuration = durations.max()
 
-        // Days spanned for drops-per-day calculation
-        let timestamps = events.map(\.timestamp).sorted()
-        let daySpan: Int
-        if let first = timestamps.first, let last = timestamps.last {
-            daySpan = max(1, Calendar.current.dateComponents([.day], from: first, to: last).day ?? 1)
-        } else {
-            daySpan = 1
-        }
+        // 1. Correct monitoringDays (REPORT-01): count distinct calendar days with data.
+        // This ignores certification gaps and periods where the app was not running.
+        let calendar = Calendar.current
+        let uniqueDays = Set(events.map { calendar.startOfDay(for: $0.timestamp) })
+        let daySpan = max(uniqueDays.count, 1)
+
         let dropsPerDay = Double(drops.count) / Double(daySpan)
+
+        // 2. Drop Ratio (REPORT-02): drops / cellular events (the meaningful denominator).
+        let cellularEvents = events.filter { $0.interfaceType == .cellular }.count
+        let dropRatio = (cellularEvents > 0) ? Double(drops.count) / Double(cellularEvents) : nil
 
         // Radio technology distribution (strip CTRadioAccessTechnology prefix)
         let radioGroups = Dictionary(grouping: drops) {
@@ -44,8 +47,8 @@ struct SummaryReport {
             .map { (radio: $0.key, count: $0.value.count) }
             .sorted { $0.count > $1.count }
 
-        // Location clusters: count distinct ~1km grid cells (round to 2 decimal places)
-        let locationClusters = countLocationClusters(drops)
+        // Location clusters: count distinct ~1km grid cells
+        let locationClusters = Set(drops.compactMap(\.locationCluster)).count
 
         return SummaryReport(
             totalDrops: drops.count,
@@ -54,23 +57,11 @@ struct SummaryReport {
             averageDurationSeconds: avgDuration,
             maxDurationSeconds: maxDuration,
             dropsPerDay: dropsPerDay,
+            dropRatio: dropRatio,
             monitoringDays: daySpan,
             totalEvents: events.count,
             radioDistribution: radioDistribution,
             locationClusters: locationClusters
         )
-    }
-
-    /// Counts distinct ~1km grid cells containing drop events.
-    /// Rounds lat/lon to 2 decimal places (~1.1km at equator).
-    private static func countLocationClusters(_ events: [ConnectivityEvent]) -> Int {
-        var cells = Set<String>()
-        for event in events {
-            if let lat = event.latitude, let lon = event.longitude {
-                let key = "\(String(format: "%.2f", lat)),\(String(format: "%.2f", lon))"
-                cells.insert(key)
-            }
-        }
-        return cells.count
     }
 }

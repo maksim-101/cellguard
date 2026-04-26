@@ -16,7 +16,13 @@ struct SummaryReportView: View {
                 LabeledContent("Overt Drops", value: "\(report.overtDrops)")
                 LabeledContent("Silent Failures", value: "\(report.silentDrops)")
                 LabeledContent("Total Events", value: "\(report.totalEvents)")
-                LabeledContent("Monitoring Period", value: "\(report.monitoringDays) day\(report.monitoringDays == 1 ? "" : "s")")
+                LabeledContent("Days Monitored", value: "\(report.monitoringDays) day\(report.monitoringDays == 1 ? "" : "s")")
+            }
+            Section("Stats") {
+                if let ratio = report.dropRatio {
+                    LabeledContent("Drop Ratio (Cellular)", value: String(format: "%.1f%%", ratio * 100))
+                }
+                LabeledContent("Drops per Day", value: String(format: "%.1f", report.dropsPerDay))
             }
             Section("Duration") {
                 if let avg = report.averageDurationSeconds {
@@ -25,7 +31,6 @@ struct SummaryReportView: View {
                 if let max = report.maxDurationSeconds {
                     LabeledContent("Max Drop Duration", value: formatDuration(max))
                 }
-                LabeledContent("Drops per Day", value: String(format: "%.1f", report.dropsPerDay))
             }
             Section("Radio Technology") {
                 if report.radioDistribution.isEmpty {

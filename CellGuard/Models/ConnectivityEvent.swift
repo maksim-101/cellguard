@@ -165,6 +165,13 @@ final class ConnectivityEvent {
         return CLLocationCoordinate2D(latitude: lat, longitude: lon)
     }
 
+    /// Generates a stable string key for a ~1.1km grid cell containing this event.
+    /// Used for location-based analytics (ANALYTICS-01, ANALYTICS-02).
+    var locationCluster: String? {
+        guard let lat = latitude, let lon = longitude else { return nil }
+        return "\(String(format: "%.2f", lat)), \(String(format: "%.2f", lon))"
+    }
+
     // MARK: Initializer
 
     init(

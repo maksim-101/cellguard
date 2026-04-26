@@ -93,6 +93,26 @@ struct DashboardView: View {
             .padding(.horizontal)
             .padding(.bottom, 4)
 
+            // Navigation to analytics (ANALYTICS-01)
+            NavigationLink {
+                AnalyticsView(events: allEvents)
+            } label: {
+                HStack {
+                    Label("Location Analytics", systemImage: "chart.bar.xaxis")
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(.secondarySystemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal)
+            .padding(.bottom, 4)
+
             // Privacy toggle for export (EXPT-01, EXPT-03)
             Toggle("Omit location, Wi-Fi, and VPN data", isOn: $omitLocation)
                 .font(.subheadline)
