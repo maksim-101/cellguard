@@ -126,3 +126,16 @@ Phases execute in numeric order.
 | ANALYTICS-02 | Phase 10 |
 
 **Total mapped:** 13/13 v1.3 requirements ✓ — no orphans, no duplicates.
+
+## Backlog
+
+### Phase 999.1: Info-button affordances for technical jargon (BACKLOG)
+
+**Goal:** [Captured for future planning]
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
+**Context:** Device UAT on 2026-04-26 (iPhone 17 Pro Max) flagged that several technical terms surfaced in HealthDetailSheet and elsewhere need short plain-language explanations behind an (i) popover — same pattern as the CHART-01 "Drop Types" popover added in Phase 9. Examples: `expensive`, `constrained`, radio-tech codes (LTE/NRNSA/NR), NWPathMonitor concepts. Scope: cross-view audit for which terms warrant tooltips, define copy, factor a reusable `InfoPopoverButton` view. Larger than a polish ticket — likely its own phase.
