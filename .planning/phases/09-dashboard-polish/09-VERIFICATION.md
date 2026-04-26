@@ -1,8 +1,9 @@
 ---
 phase: 09-dashboard-polish
 verified: 2026-04-25T00:00:00Z
-status: human_needed
-score: 22/22 static must-haves verified; 7 items require on-device confirmation
+device_uat: 2026-04-26
+status: gaps_found
+score: 22/22 static must-haves verified; 3 device UAT gaps confirmed (G1 popover truncation, G2 wake-row clipping, G3 6h axis truncation)
 overrides_applied: 0
 requirement_coverage:
   - id: CHART-01
@@ -59,7 +60,8 @@ human_verification:
 **Phase Goal:** Make the home screen and HealthDetailSheet stay in sync with reality in real time, give the timeline chart a legend that explains "silent" vs "overt" plus an in-chart filter for overt drops, and stop duplicate probes within the same minute from polluting the event log. (Requirements: CHART-01, CHART-02, CHART-03, POLISH-01, POLISH-02.)
 
 **Verified:** 2026-04-25
-**Status:** human_needed
+**Device UAT:** 2026-04-26
+**Status:** gaps_found (3 device UAT defects — see Gaps Summary)
 **Re-verification:** No — initial verification
 
 ## Goal Achievement
@@ -180,14 +182,43 @@ Seven items require on-device confirmation. See the `human_verification` block i
 
 ### Gaps Summary
 
-No static gaps detected. All 22 derived must-haves verified against the codebase via grep, file-content read-through, and `git diff --stat` integrity checks for the read-only files (EventStore.swift, DropClassification.swift). The phase implementation matches the three plans (09-01 / 09-02 / 09-03) and the locked decisions (D-01 through D-15) recorded in 09-CONTEXT.md.
+**3 device UAT gaps confirmed by user on iPhone 17 Pro Max (2026-04-26).** Static verification passed all 22 must-haves; the visible defects are runtime layout/sizing failures of what the plans promised.
 
-What remains is exclusively runtime / device-bound verification — the seven items in `human_verification` above. None of them can be exercised from the CLI sandbox because:
-- `xcodebuild` is not available;
-- The iOS simulator is not available;
-- The behaviors at issue (TimelineView 1 Hz tick, popover anchoring, AppStorage cross-launch persistence, applicationState gating, NWPathMonitor probe firing on real radio events, SwiftData @Query latency) are all runtime-emergent, not statically observable.
+#### G1 — CHART-01 popover truncates body text (Plan 09-03)
 
-Status is therefore `human_needed` (not `passed`) per Step 9 decision tree: even though the gap list is empty and all static must-haves pass, the human-verification list is non-empty.
+- **Symptom:** "Drop Types" popover clips both Silent/Overt definition rows ("The modem reports it is connected,…" and "NWPathMonitor reported the conne…") AND the "Why this matters" paragraph mid-sentence.
+- **Plan promised:** "Popover content explains plain-English definitions plus one short 'Why this matters for the Apple report' line" (D-02). The full text is in the source but never reaches the user.
+- **File:** `CellGuard/Views/DropTimelineChart.swift` — popover content + container sizing.
+- **Likely fix:** Add `.presentationCompactAdaptation(.popover)` to force popover (not sheet) on compact size class, and a `.frame(idealWidth: 320)` or `.fixedSize(horizontal: false, vertical: true)` on the content VStack so text wraps and the container grows. Verify all four Text elements use `.fixedSize(horizontal: false, vertical: true)`.
+- **Severity:** blocking — the popover is the entire mechanism for explaining "Silent" vs "Overt" terminology (D-02).
+
+#### G2 — POLISH-01 "Last Background Wake" row clipped in HealthDetailSheet (Plan 09-02)
+
+- **Symptom:** The wake row text ("Never (no background wake yet)") is cut off at the visible edge of the sheet despite available headroom in the sheet itself. User screenshot 2 shows clear truncation.
+- **Plan promised:** Render the wake row with `Date.RelativeFormatStyle` (or "Never (no background wake yet)" when unset). The text exists but can't be read.
+- **File:** `CellGuard/Views/HealthDetailSheet.swift` — sheet detent and/or row layout.
+- **Likely fix:** Two parts — (a) raise the sheet's detent or switch to `.large` so the bottom row isn't clipped; (b) ensure the wake row's Text uses `.fixedSize(horizontal: false, vertical: true)` and the parent stack doesn't apply `.lineLimit(1)`. Investigate whether the sheet uses `.medium` detent.
+- **Severity:** blocking — POLISH-01's whole observable value is the live wake-time row; it must be readable.
+
+#### G3 — Drop Timeline chart axis labels truncated in 6h view (Plan 09-03 polish)
+
+- **Symptom:** In the 6h zoom of the Drop Timeline chart, X-axis time labels are truncated. (24h view shown in screenshot 1 reads cleanly.)
+- **Plan promised:** Implicitly readable axis at all three zoom levels (6h / 24h / 7d) per the segmented Picker.
+- **File:** `CellGuard/Views/DropTimelineChart.swift` — `.chartXAxis` configuration, lines ~213-228.
+- **Likely fix:** For the 6h domain, reduce mark frequency (e.g., `AxisMarks(values: .stride(by: .hour, count: 1))`) or use a shorter format like `.dateTime.hour()` instead of full timestamps. Possibly a per-domain branch so each zoom picks an appropriate stride.
+- **Severity:** blocking — 6h view is the highest-density inspection mode and is unreadable.
+
+#### Code review fixes to fold in (advisory but cheap to do during this gap pass)
+
+- **MN-01:** Promote `"lastBackgroundWakeTimestamp"` literal to a shared `enum AppDefaultsKeys`. Touched while G2 work modifies `HealthDetailSheet.swift`.
+- **MN-02:** Replace stringly-typed `"Silent"` / `"Overt"` discriminator with `enum DropSeries: String { case silent = "Silent", overt = "Overt" }` across `TimeBucket`, `visibleBuckets`, `chartForegroundStyleScale`, chip labels, and popover content. Touched while G1 + G3 work modifies `DropTimelineChart.swift`.
+- These are eligible because the gap-fix plans naturally modify the same files; folding them in costs ~10 extra minutes and removes a class of typo bug. Other review items (MN-03 `@MainActor` annotations on LocationService; MN-04 deterministic stack ordering; NT-* nits) stay deferred — they touch files unrelated to the gap fixes.
+
+#### Items remaining as runtime-only (not gaps)
+
+The other six human-verification items (POLISH-02 dedup behavior, POLISH-01 1 Hz tick, POLISH-01 background-wake gate, CHART-01 no-duplicate auto-legend, CHART-02 filter behavior + AppStorage persistence, CHART-03 sub-1s reactivity) were observable on-device and are not currently flagged as failing. They will need re-confirmation on the rebuilt app after gap closure.
+
+Status is `gaps_found` after device UAT (originally `human_needed` from static verification).
 
 ---
 
