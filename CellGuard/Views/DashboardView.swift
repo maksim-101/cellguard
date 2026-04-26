@@ -120,6 +120,8 @@ struct DashboardView: View {
             .buttonStyle(.plain)
             .padding(.horizontal)
             .padding(.bottom, 8)
+
+            Spacer()
         }
         .navigationTitle("CellGuard")
         .sheet(isPresented: $showHealthSheet) {
