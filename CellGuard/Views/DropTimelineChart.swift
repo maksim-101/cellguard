@@ -281,9 +281,11 @@ struct DropTimelineChart: View {
             .popover(isPresented: $showInfoPopover, arrowEdge: .top) {
                 ScrollView {
                     infoPopoverContent
-                        .padding(24)
+                        .padding(.horizontal, 24)
+                        .padding(.top, 12) // Reduced top padding to move content up
+                        .padding(.bottom, 24)
                 }
-                .frame(width: 320, height: 360)
+                .frame(width: 320, height: 300) // Reduced height from 360 to better fit content
                 .presentationCompactAdaptation(.popover)
             }
             Spacer(minLength: 0)
