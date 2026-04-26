@@ -58,12 +58,23 @@ struct EventListView: View {
         .navigationTitle("Events")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Picker("Filter", selection: $filter) {
-                    ForEach(EventFilter.allCases) { f in
-                        Text(f.rawValue).tag(f)
+                Menu {
+                    Picker("Filter", selection: $filter) {
+                        ForEach(EventFilter.allCases) { f in
+                            Text(f.rawValue).tag(f)
+                        }
                     }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "line.3.horizontal.decrease.circle")
+                        Text(filter.rawValue)
+                    }
+                    .font(.subheadline)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(Color(.secondarySystemBackground))
+                    .clipShape(Capsule())
                 }
-                .pickerStyle(.menu)
             }
         }
     }
