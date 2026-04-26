@@ -38,7 +38,7 @@
 ### v1.3 Polish & Analytics (Phases 8-10) — IN PROGRESS
 
 - [x] **Phase 8: VPN Context** — Capture, display, export, and reclassify connectivity events with VPN state
-- [ ] **Phase 9: Dashboard Polish** — Live-updating dashboard with probe dedup, silent-failure legend, and overt-drop filter
+- [x] **Phase 9: Dashboard Polish** — Live-updating dashboard with probe dedup, silent-failure legend, and overt-drop filter
 - [ ] **Phase 10: Reports & Analytics** — Corrected Summary Report metrics and per-location drop analytics
 
 ## Phase Details
@@ -74,8 +74,8 @@ Plans:
 - [x] 09-01-PLAN.md — Probe deduplication on ConnectivityMonitor (POLISH-02) + CHART-03 SwiftData reactivity verification
 - [x] 09-02-PLAN.md — lastBackgroundWakeTimestamp UserDefaults write + HealthDetailSheet TimelineView live ticker (POLISH-01)
 - [x] 09-03-PLAN.md — Chart legend chips + (i) popover + @AppStorage hide-by-series filter (CHART-01, CHART-02)
-- [ ] 09-04-PLAN.md — Gap closure 9.1: G1 popover truncation + G3 6h axis truncation + MN-02 DropSeries enum (CHART-01, CHART-02)
-- [ ] 09-05-PLAN.md — Gap closure 9.1: G2 wake row clipping + MN-01 AppDefaultsKeys shared constant (POLISH-01)
+- [x] 09-04-PLAN.md — Gap closure 9.1: G1 popover truncation + G3 6h axis truncation + MN-02 DropSeries enum (CHART-01, CHART-02)
+- [x] 09-05-PLAN.md — Gap closure 9.1: G2 wake row clipping + MN-01 AppDefaultsKeys shared constant (POLISH-01)
 **UI hint**: yes
 
 ### Phase 10: Reports & Analytics
@@ -106,7 +106,7 @@ Phases execute in numeric order.
 | 6.1 Signing Polish | v1.2 | 1/1 | Complete | 2026-04-20 |
 | 7. Wi-Fi Context | v1.2 | 1/1 | Complete | 2026-04-20 |
 | 8. VPN Context | v1.3 | 4/4 | Complete | 2026-04-25 |
-| 9. Dashboard Polish | v1.3 | 0/? | Not started | - |
+| 9. Dashboard Polish | v1.3 | 5/5 | Complete | 2026-04-26 |
 | 10. Reports & Analytics | v1.3 | 0/? | Not started | - |
 
 ## v1.3 Coverage Map

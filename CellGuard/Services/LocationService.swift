@@ -48,11 +48,6 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
     private enum DefaultsKey {
         static let monitoringEnabled = "monitoringEnabled"
         static let lastActiveTimestamp = "lastActiveTimestamp"
-        /// New in Phase 9 (POLISH-01 / D-08): set ONLY when the location callback fires
-        /// while the app is NOT in the active state (background or inactive). The
-        /// existing `lastActiveTimestamp` key continues to be written on every callback
-        /// regardless of app state because `detectAndLogGap` depends on that semantic.
-        static let lastBackgroundWakeTimestamp = "lastBackgroundWakeTimestamp"
     }
 
     // MARK: - Initializer
@@ -132,7 +127,7 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
             if UIApplication.shared.applicationState != .active {
                 UserDefaults.standard.set(
                     Date().timeIntervalSince1970,
-                    forKey: DefaultsKey.lastBackgroundWakeTimestamp
+                    forKey: AppDefaultsKeys.lastBackgroundWakeTimestamp
                 )
             }
         }

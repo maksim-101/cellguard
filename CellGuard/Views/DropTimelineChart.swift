@@ -24,6 +24,15 @@ struct DropTimelineChart: View {
     /// Drives the (i) info popover anchored to the info Button (D-02).
     @State private var showInfoPopover: Bool = false
 
+    /// Single source of truth for the chart's drop-series discriminator (MN-02).
+    /// rawValue strings are the SAME literals previously scattered across 5+ sites.
+    /// Identifiable + CaseIterable so future iteration over series is trivial.
+    private enum DropSeries: String, CaseIterable, Identifiable, Plottable {
+        case silent = "Silent"
+        case overt = "Overt"
+        var id: String { rawValue }
+    }
+
     enum TimeWindow: String, CaseIterable {
         case sixHours = "6h"
         case day = "24h"
@@ -70,7 +79,7 @@ struct DropTimelineChart: View {
     private struct TimeBucket: Identifiable {
         let id = UUID()
         let bucketStart: Date
-        let type: String
+        let type: DropSeries
         let count: Int
     }
 
@@ -78,7 +87,7 @@ struct DropTimelineChart: View {
     private var buckets: [TimeBucket] {
         let calendar = Calendar.current
 
-        var grouped: [Date: [String: Int]] = [:]
+        var grouped: [Date: [DropSeries: Int]] = [:]
         for event in dropEvents {
             let bucketDate: Date
             switch selectedWindow {
@@ -104,7 +113,7 @@ struct DropTimelineChart: View {
                 bucketDate = calendar.date(from: bucketComponents) ?? event.timestamp
             }
 
-            let type = event.eventType == .silentFailure ? "Silent" : "Overt"
+            let type: DropSeries = (event.eventType == .silentFailure) ? .silent : .overt
             grouped[bucketDate, default: [:]][type, default: 0] += 1
         }
 
@@ -114,7 +123,10 @@ struct DropTimelineChart: View {
                 result.append(TimeBucket(bucketStart: bucketStart, type: type, count: count))
             }
         }
-        return result.sorted { $0.bucketStart < $1.bucketStart }
+        return result.sorted { lhs, rhs in
+            if lhs.bucketStart != rhs.bucketStart { return lhs.bucketStart < rhs.bucketStart }
+            return lhs.type.rawValue < rhs.type.rawValue   // deterministic Silent-before-Overt
+        }
     }
 
     /// Same shape as `buckets`, but filtered by the @AppStorage chip flags.
@@ -124,9 +136,8 @@ struct DropTimelineChart: View {
     private var visibleBuckets: [TimeBucket] {
         buckets.filter { bucket in
             switch bucket.type {
-            case "Silent": return chartShowSilent
-            case "Overt":  return chartShowOvert
-            default:       return true
+            case .silent: return chartShowSilent
+            case .overt:  return chartShowOvert
             }
         }
     }
@@ -198,8 +209,8 @@ struct DropTimelineChart: View {
                     .foregroundStyle(by: .value("Type", bucket.type))
                 }
                 .chartForegroundStyleScale([
-                    "Silent": .red,
-                    "Overt": .orange
+                    DropSeries.silent.rawValue: Color.red,
+                    DropSeries.overt.rawValue: Color.orange
                 ])
                 // REQUIRED (D-04): suppress Swift Charts' implicit auto-legend that
                 // would otherwise render below the plot whenever
@@ -212,24 +223,25 @@ struct DropTimelineChart: View {
                 .chartXAxis {
                     switch selectedWindow {
                     case .sixHours:
-                        AxisMarks(values: .stride(by: .hour, count: 1)) { value in
+                        AxisMarks(values: .stride(by: .hour, count: 1)) { _ in
                             AxisGridLine()
-                            AxisValueLabel(format: .dateTime.hour(.defaultDigits(amPM: .abbreviated)))
+                            AxisValueLabel(format: .dateTime.hour(.defaultDigits(amPM: .narrow)))
+                                .font(.caption2)
                         }
                     case .day:
-                        AxisMarks(values: .stride(by: .hour, count: 4)) { value in
+                        AxisMarks(values: .stride(by: .hour, count: 4)) { _ in
                             AxisGridLine()
                             AxisValueLabel(format: .dateTime.hour(.defaultDigits(amPM: .abbreviated)))
                         }
                     case .week:
-                        AxisMarks(values: .stride(by: .day, count: 1)) { value in
+                        AxisMarks(values: .stride(by: .day, count: 1)) { _ in
                             AxisGridLine()
                             AxisValueLabel(format: .dateTime.weekday(.abbreviated))
                         }
                     }
                 }
                 .chartYAxis {
-                    AxisMarks(preset: .automatic) { value in
+                    AxisMarks(preset: .automatic) { _ in
                         AxisGridLine()
                         AxisValueLabel()
                     }
@@ -251,10 +263,10 @@ struct DropTimelineChart: View {
     /// definitions and the "Why this matters for the Apple report" line.
     private var legendBar: some View {
         HStack(spacing: 12) {
-            legendChip(label: "Silent", color: .red, isOn: chartShowSilent) {
+            legendChip(label: DropSeries.silent.rawValue, color: .red, isOn: chartShowSilent) {
                 chartShowSilent.toggle()
             }
-            legendChip(label: "Overt", color: .orange, isOn: chartShowOvert) {
+            legendChip(label: DropSeries.overt.rawValue, color: .orange, isOn: chartShowOvert) {
                 chartShowOvert.toggle()
             }
             Button {
@@ -268,7 +280,7 @@ struct DropTimelineChart: View {
             .popover(isPresented: $showInfoPopover, arrowEdge: .top) {
                 infoPopoverContent
                     .padding(16)
-                    .frame(maxWidth: 320)
+                    .frame(idealWidth: 320, maxWidth: 360)
                     .presentationCompactAdaptation(.popover)
             }
             Spacer(minLength: 0)
@@ -311,19 +323,21 @@ struct DropTimelineChart: View {
                 HStack(alignment: .top, spacing: 6) {
                     Circle().fill(.red).frame(width: 8, height: 8).padding(.top, 5)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Silent").font(.subheadline).bold()
+                        Text(DropSeries.silent.rawValue).font(.subheadline).bold()
                         Text("The modem reports it is connected, but the network probe failed — the \u{201C}attached but unreachable\u{201D} bug.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
                 HStack(alignment: .top, spacing: 6) {
                     Circle().fill(.orange).frame(width: 8, height: 8).padding(.top, 5)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Overt").font(.subheadline).bold()
+                        Text(DropSeries.overt.rawValue).font(.subheadline).bold()
                         Text("NWPathMonitor reported the connection went down — the system itself acknowledged the drop.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
@@ -333,6 +347,7 @@ struct DropTimelineChart: View {
             Text("Silent failures are the core evidence for the Apple Feedback Assistant report — they prove a modem-side fault that iOS itself does not report.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

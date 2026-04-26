@@ -7,6 +7,8 @@ struct HealthDetailSheet: View {
     @Environment(ProvisioningProfileService.self) private var profileService
     @Environment(\.dismiss) private var dismiss
 
+    @State private var sheetDetent: PresentationDetent = .large
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -108,14 +110,17 @@ struct HealthDetailSheet: View {
                     // when the view disappears, so there is no Combine subscription or Timer
                     // lifecycle to manage.
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
-                        HStack {
+                        VStack(alignment: .leading, spacing: 2) {
                             Text("Last Background Wake:")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                             Text(lastBackgroundWakeText)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .multilineTextAlignment(.leading)
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
             }
@@ -132,7 +137,7 @@ struct HealthDetailSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.medium, .large], selection: $sheetDetent)
         .presentationDragIndicator(.visible)
     }
 
@@ -188,7 +193,7 @@ struct HealthDetailSheet: View {
     /// locked empty-state copy so the user sees an unambiguous signal that the
     /// app has not yet been woken in the background.
     private var lastBackgroundWakeText: String {
-        let raw = UserDefaults.standard.double(forKey: "lastBackgroundWakeTimestamp")
+        let raw = UserDefaults.standard.double(forKey: AppDefaultsKeys.lastBackgroundWakeTimestamp)
         guard raw > 0 else { return "Never (no background wake yet)" }
         let wakeDate = Date(timeIntervalSince1970: raw)
         return wakeDate.formatted(

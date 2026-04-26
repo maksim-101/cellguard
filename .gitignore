@@ -13,3 +13,5 @@ DerivedData/
 # Swift Package Manager
 .build/
 Packages/
+\n# Gemini CLI session history\n.remember/
+\n# Gemini CLI session history\n.remember/
