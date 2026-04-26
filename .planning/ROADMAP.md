@@ -139,3 +139,14 @@ Plans:
 - [ ] TBD (promote with /gsd-review-backlog when ready)
 
 **Context:** Device UAT on 2026-04-26 (iPhone 17 Pro Max) flagged that several technical terms surfaced in HealthDetailSheet and elsewhere need short plain-language explanations behind an (i) popover — same pattern as the CHART-01 "Drop Types" popover added in Phase 9. Examples: `expensive`, `constrained`, radio-tech codes (LTE/NRNSA/NR), NWPathMonitor concepts. Scope: cross-view audit for which terms warrant tooltips, define copy, factor a reusable `InfoPopoverButton` view. Larger than a polish ticket — likely its own phase.
+
+### Phase 999.2: Label NRNSA radio-tech tag as "NRNSA (5G)" on dashboard (BACKLOG)
+
+**Goal:** [Captured for future planning]
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
+**Context:** Device UAT on 2026-04-26 noted that the bare `NRNSA` radio-tech tag on the dashboard top row is opaque to non-technical readers reviewing the Apple Feedback Assistant report. Appending `(5G)` clarifies that this is 5G non-standalone (LTE anchor + NR cell). Small string-mapping change in whichever view renders the radio-tech badge — likely a one-liner in the dashboard top row's `CTRadioAccessTechnology` display path. Could be folded into 999.1 (info-button phase) when that lands, or shipped standalone.
