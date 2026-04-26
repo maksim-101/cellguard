@@ -155,6 +155,7 @@ struct DashboardView: View {
             .background(Color(.secondarySystemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .padding(.horizontal)
+            .padding(.top, 16)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

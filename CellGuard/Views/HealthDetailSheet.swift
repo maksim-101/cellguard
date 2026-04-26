@@ -119,6 +119,11 @@ struct HealthDetailSheet: View {
                                 .foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .multilineTextAlignment(.leading)
+                            
+                            Text("Records wakes from Significant Location Changes while the app is in the background.")
+                                .font(.system(size: 10))
+                                .foregroundStyle(.tertiary)
+                                .padding(.top, 2)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }

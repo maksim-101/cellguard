@@ -249,6 +249,7 @@ struct DropTimelineChart: View {
                 .chartPlotStyle { plot in
                     plot.padding(.trailing, 4)
                 }
+                .padding(.top, 8) // Fix Y-axis clipping at the top
                 .frame(height: 150)
                 .clipped()
             }
@@ -279,8 +280,8 @@ struct DropTimelineChart: View {
             .buttonStyle(.plain)
             .popover(isPresented: $showInfoPopover, arrowEdge: .top) {
                 infoPopoverContent
-                    .padding(16)
-                    .frame(idealWidth: 320, maxWidth: 360)
+                    .padding(24)
+                    .frame(idealWidth: 340, maxWidth: 400)
                     .presentationCompactAdaptation(.popover)
             }
             Spacer(minLength: 0)
