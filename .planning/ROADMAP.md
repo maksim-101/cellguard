@@ -69,11 +69,13 @@ Plans:
   3. User triggers a silent failure (or one occurs) and the home-screen drop count and chart update within 1 second without manual refresh
   4. User opens HealthDetailSheet and watches "Last Background Wake" tick forward live while the sheet stays open
   5. User reviews the event log and finds no two probe entries in the same minute (timer + app-resume probes within 60s collapse to one)
-**Plans**: 3 plans
+**Plans**: 5 plans (3 original + 2 gap-closure 9.1)
 Plans:
 - [x] 09-01-PLAN.md — Probe deduplication on ConnectivityMonitor (POLISH-02) + CHART-03 SwiftData reactivity verification
 - [x] 09-02-PLAN.md — lastBackgroundWakeTimestamp UserDefaults write + HealthDetailSheet TimelineView live ticker (POLISH-01)
 - [x] 09-03-PLAN.md — Chart legend chips + (i) popover + @AppStorage hide-by-series filter (CHART-01, CHART-02)
+- [ ] 09-04-PLAN.md — Gap closure 9.1: G1 popover truncation + G3 6h axis truncation + MN-02 DropSeries enum (CHART-01, CHART-02)
+- [ ] 09-05-PLAN.md — Gap closure 9.1: G2 wake row clipping + MN-01 AppDefaultsKeys shared constant (POLISH-01)
 **UI hint**: yes
 
 ### Phase 10: Reports & Analytics
