@@ -10,16 +10,39 @@ struct EventListView: View {
     @Query(sort: \ConnectivityEvent.timestamp, order: .reverse)
     private var events: [ConnectivityEvent]
 
+    @State private var filter: EventFilter = .all
+
+    enum EventFilter: String, CaseIterable, Identifiable {
+        case all = "All"
+        case drops = "Drops"
+        case silent = "Silent"
+        case overt = "Overt"
+        var id: String { rawValue }
+    }
+
+    private var filteredEvents: [ConnectivityEvent] {
+        switch filter {
+        case .all:
+            return events
+        case .drops:
+            return events.filter { isDropEvent($0) }
+        case .silent:
+            return events.filter { $0.eventType == .silentFailure }
+        case .overt:
+            return events.filter { isDropEvent($0) && $0.eventType != .silentFailure }
+        }
+    }
+
     var body: some View {
         Group {
-            if events.isEmpty {
+            if filteredEvents.isEmpty {
                 ContentUnavailableView(
-                    "No Events",
-                    systemImage: "antenna.radiowaves.left.and.right.slash",
-                    description: Text("Events will appear here when monitoring starts.")
+                    filter == .all ? "No Events" : "No Matching Events",
+                    systemImage: filter == .all ? "antenna.radiowaves.left.and.right.slash" : "line.3.horizontal.decrease.circle",
+                    description: Text(filter == .all ? "Events will appear here when monitoring starts." : "Try changing the filter to see more events.")
                 )
             } else {
-                List(events) { event in
+                List(filteredEvents) { event in
                     NavigationLink {
                         EventDetailView(event: event)
                     } label: {
@@ -33,6 +56,16 @@ struct EventListView: View {
             }
         }
         .navigationTitle("Events")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Picker("Filter", selection: $filter) {
+                    ForEach(EventFilter.allCases) { f in
+                        Text(f.rawValue).tag(f)
+                    }
+                }
+                .pickerStyle(.menu)
+            }
+        }
     }
 
     // MARK: - Event Row Views

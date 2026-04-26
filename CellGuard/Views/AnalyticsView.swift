@@ -3,16 +3,16 @@ import Charts
 import SwiftData
 import CoreLocation
 
-/// Detailed location-based analytics for drop events (ANALYTICS-01, ANALYTICS-02).
+/// Refined analytics for identifying patterns in connectivity drops (ANALYTICS-01, ANALYTICS-02).
 struct AnalyticsView: View {
     let events: [ConnectivityEvent]
 
-    @State private var selectedDimension: AnalyticsDimension = .hour
+    @State private var selectedDimension: AnalyticsDimension = .radio
     @State private var resolvedNames: [String: String] = [:]
 
     enum AnalyticsDimension: String, CaseIterable, Identifiable {
-        case hour = "Hour"
         case radio = "Radio"
+        case hour = "Hour"
         case interface = "Interface"
         var id: String { rawValue }
     }
@@ -21,112 +21,181 @@ struct AnalyticsView: View {
         events.filter { isDropEvent($0) }
     }
 
-    /// Aggregates drops by [Location: [Dimension: Count]]
-    private var heatmapData: [HeatmapPoint] {
-        var counts: [String: [String: Int]] = [:]
+    // MARK: - Key Drivers (Actionable Insights)
+
+    private var insightFacts: [(icon: String, text: String, value: String)] {
+        guard !dropEvents.isEmpty else { return [] }
+        
+        var facts: [(icon: String, text: String, value: String)] = []
+        
+        // 1. Silent Failure % (Dynamic calculation of % of total drops)
+        let silentCount = dropEvents.filter { $0.eventType == .silentFailure }.count
+        let silentPct = (Double(silentCount) / Double(dropEvents.count)) * 100
+        facts.append(("waveform.path.badge.minus", "Silent Failures (of total drops)", String(format: "%.0f%%", silentPct)))
+        
+        // 2. NRNSA (5G) % (Dynamic calculation of % of total drops)
+        let nrnsaCount = dropEvents.filter { $0.radioTechnology?.contains("NRNSA") == true }.count
+        let nrnsaPct = (Double(nrnsaCount) / Double(dropEvents.count)) * 100
+        if nrnsaPct > 0 {
+            facts.append(("antenna.radiowaves.left.and.right", "Occurred on 5G (of total drops)", String(format: "%.0f%%", nrnsaPct)))
+        }
+        
+        // 3. Peak Hour (Dynamic)
+        let hours = dropEvents.map { Calendar.current.component(.hour, from: $0.timestamp) }
+        if let peakHour = Dictionary(grouping: hours, by: { $0 }).max(by: { $0.value.count < $1.value.count })?.key {
+            facts.append(("clock", "Peak Drop Time", String(format: "%02d:00", peakHour)))
+        }
+        
+        return facts
+    }
+
+    // MARK: - Trend Data (1D Bar Chart)
+
+    private struct TrendPoint: Identifiable {
+        let id = UUID()
+        let label: String
+        let count: Int
+    }
+
+    private var trendData: [TrendPoint] {
+        var counts: [String: Int] = [:]
         
         for event in dropEvents {
-            guard let cluster = event.locationCluster else { continue }
-            let dimensionValue: String
-            
+            let label: String
             switch selectedDimension {
             case .hour:
                 let hour = Calendar.current.component(.hour, from: event.timestamp)
-                dimensionValue = String(format: "%02d", hour)
+                label = String(format: "%02d", hour)
             case .radio:
-                dimensionValue = event.radioTechnology?.replacingOccurrences(of: "CTRadioAccessTechnology", with: "") ?? "Unknown"
+                label = event.radioTechnology?.replacingOccurrences(of: "CTRadioAccessTechnology", with: "") ?? "Unknown"
             case .interface:
-                dimensionValue = event.interfaceType.encodingString
+                // Map 'Other' to 'VPN' for actionable intelligence (POLISH-03)
+                let type = event.interfaceType.encodingString.lowercased()
+                label = (type == "other") ? "VPN" : type.capitalized
             }
-            
-            counts[cluster, default: [:]][dimensionValue, default: 0] += 1
+            counts[label, default: 0] += 1
         }
         
-        var points: [HeatmapPoint] = []
-        for (cluster, dims) in counts {
-            for (dim, count) in dims {
-                points.append(HeatmapPoint(location: cluster, dimension: dim, count: count))
-            }
-        }
-        return points
+        return counts.map { TrendPoint(label: $0.key, count: $0.value) }
+            .sorted { $0.label < $1.label }
     }
 
-    private var rankedLocations: [(location: String, count: Int)] {
-        let groups = Dictionary(grouping: dropEvents.compactMap(\.locationCluster)) { $0 }
-        return groups.map { (location: $0.key, count: $0.value.count) }
-            .sorted { $0.count > $1.count }
+    // MARK: - Ranked Locations (Enhanced)
+
+    private struct LocationInsight {
+        let cluster: String
+        let count: Int
+        let dominantTech: String?
     }
+
+    private var rankedLocations: [LocationInsight] {
+        let groups = Dictionary(grouping: dropEvents) { $0.locationCluster ?? "Unknown" }
+        
+        return groups.map { cluster, clusterEvents in
+            // Determine dominant tech for this cluster
+            let techs = clusterEvents.compactMap { $0.radioTechnology?.replacingOccurrences(of: "CTRadioAccessTechnology", with: "") }
+            let dominant = Dictionary(grouping: techs, by: { $0 }).max(by: { $0.value.count < $1.value.count })?.key
+            
+            return LocationInsight(cluster: cluster, count: clusterEvents.count, dominantTech: dominant)
+        }
+        .filter { $0.cluster != "Unknown" }
+        .sorted { $0.count > $1.count }
+    }
+
+    // MARK: - Body
 
     var body: some View {
         List {
-            Section {
-                Picker("Dimension", selection: $selectedDimension) {
-                    ForEach(AnalyticsDimension.allCases) { dim in
-                        Text(dim.rawValue).tag(dim)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets())
-                .padding(.vertical, 8)
-            } header: {
-                Text("Heatmap Axis")
-            } footer: {
-                Text("Switching dimensions helps identify if drops happen at specific times, on specific radio tech (like NRNSA vs LTE), or interface types.")
-            }
-
-            Section("Drop Heatmap") {
-                if heatmapData.isEmpty {
+            if dropEvents.isEmpty {
+                Section {
                     ContentUnavailableView(
-                        "No Location Data",
-                        systemImage: "map",
-                        description: Text("Drop events must have location data to appear here.")
+                        "No Data Available",
+                        systemImage: "chart.pie",
+                        description: Text("Analyze drops after they have been recorded with location data.")
                     )
-                    .frame(height: 200)
-                } else {
-                    Chart(heatmapData) { point in
-                        RectangleMark(
-                            x: .value("Dimension", point.dimension),
-                            y: .value("Location", displayName(for: point.location)),
-                            width: .ratio(0.9),
-                            height: .ratio(0.9)
-                        )
-                        .foregroundStyle(by: .value("Drops", point.count))
-                    }
-                    .chartForegroundStyleScale(
-                        range: Gradient(colors: [.orange.opacity(0.3), .red])
-                    )
-                    .chartYAxis {
-                        AxisMarks(preset: .automatic) { _ in
-                            AxisValueLabel()
-                                .font(.system(size: 9))
-                        }
-                    }
-                    .chartXAxis {
-                        AxisMarks(preset: .automatic) { _ in
-                            AxisValueLabel()
-                                .font(.system(size: 9))
-                        }
-                    }
-                    .frame(height: 300)
-                    .padding(.vertical)
                 }
-            }
+            } else {
+                // Section 1: Actionable Insights
+                Section("Key Drivers") {
+                    ForEach(insightFacts, id: \.text) { fact in
+                        HStack(spacing: 12) {
+                            Image(systemName: fact.icon)
+                                .foregroundStyle(.blue)
+                                .frame(width: 24)
+                            Text(fact.text)
+                                .font(.subheadline)
+                            Spacer()
+                            Text(fact.value)
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
 
-            Section("Ranked Locations") {
-                if rankedLocations.isEmpty {
-                    Text("No location data available")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(rankedLocations, id: \.location) { item in
+                // Section 2: Trends Chart (Replaces Heatmap)
+                Section {
+                    VStack(alignment: .leading, spacing: 16) {
+                        Picker("Dimension", selection: $selectedDimension) {
+                            ForEach(AnalyticsDimension.allCases) { dim in
+                                Text(dim.rawValue).tag(dim)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+
+                        Chart(trendData) { point in
+                            BarMark(
+                                x: .value("Dimension", point.label),
+                                y: .value("Drops", point.count)
+                            )
+                            .foregroundStyle(Color.red.gradient)
+                            .cornerRadius(4)
+                        }
+                        .frame(height: 200)
+                        .chartYAxis {
+                            AxisMarks(preset: .automatic)
+                        }
+                        .chartXAxis {
+                            if selectedDimension == .hour {
+                                AxisMarks(values: ["00", "04", "08", "12", "16", "20", "23"]) { value in
+                                    AxisGridLine()
+                                    AxisValueLabel()
+                                        .font(.system(size: 9))
+                                }
+                            } else {
+                                AxisMarks(preset: .automatic) { _ in
+                                    AxisGridLine()
+                                    AxisValueLabel()
+                                        .font(.system(size: 9))
+                                }
+                            }
+                        }
+                    }
+                    .padding(.vertical, 8)
+                } header: {
+                    Text("Drop Trends")
+                } footer: {
+                    Text("Identify if drops are correlated with specific radio tech or times of day.")
+                }
+
+                // Section 3: Problem Areas
+                Section("Ranked Locations") {
+                    ForEach(rankedLocations, id: \.cluster) { item in
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(displayName(for: item.location))
+                                Text(displayName(for: item.cluster))
                                     .font(.subheadline)
                                     .bold()
-                                Text(item.location)
-                                    .font(.system(size: 10, design: .monospaced))
-                                    .foregroundStyle(.secondary)
+                                HStack(spacing: 4) {
+                                    Text(item.cluster)
+                                        .font(.system(size: 10, design: .monospaced))
+                                    if let tech = item.dominantTech {
+                                        Text("•")
+                                        Text("Primarily \(tech)")
+                                            .font(.caption2)
+                                    }
+                                }
+                                .foregroundStyle(.secondary)
                             }
                             Spacer()
                             Text("\(item.count)")
@@ -149,10 +218,10 @@ struct AnalyticsView: View {
 
     private func resolveNames() async {
         let geocoder = CLGeocoder()
-        for cluster in rankedLocations.map({ $0.location }) {
-            if resolvedNames[cluster] != nil { continue }
+        for item in rankedLocations {
+            if resolvedNames[item.cluster] != nil { continue }
             
-            let components = cluster.components(separatedBy: ", ")
+            let components = item.cluster.components(separatedBy: ", ")
             guard components.count == 2,
                   let lat = Double(components[0]),
                   let lon = Double(components[1]) else { continue }
@@ -162,19 +231,12 @@ struct AnalyticsView: View {
                 if let first = placemarks.first {
                     let name = [first.locality, first.subLocality].compactMap({ $0 }).joined(separator: ", ")
                     if !name.isEmpty {
-                        resolvedNames[cluster] = name
+                        resolvedNames[item.cluster] = name
                     }
                 }
             } catch {
-                // Ignore errors for individual clusters to keep moving
+                // Ignore geocoding errors to keep UI responsive
             }
         }
-    }
-
-    private struct HeatmapPoint: Identifiable {
-        let id = UUID()
-        let location: String
-        let dimension: String
-        let count: Int
     }
 }

@@ -25,7 +25,7 @@ struct SummaryReportView: View {
                     HStack {
                         LabeledContent("Drop Ratio (Cellular)", value: String(format: "%.1f%%", ratio * 100))
                         Button {
-                            // Logic handled by .popover below
+                            showRatioInfo.toggle()
                         } label: {
                             Image(systemName: "info.circle")
                                 .font(.caption)
@@ -35,16 +35,19 @@ struct SummaryReportView: View {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("Drop Ratio")
                                     .font(.headline)
-                                Text("This is the percentage of cellular connectivity attempts that resulted in a drop.")
+                                Text("The percentage of cellular connectivity attempts that resulted in a drop.")
                                     .font(.subheadline)
-                                Text("Denominator: Total Cellular Events")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Text("Numerator: Total Drops (Silent + Overt)")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Denominator: Total Cellular Events")
+                                    Text("Numerator: Total Drops (Silent + Overt)")
+                                }
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                             }
-                            .padding()
+                            .padding(20)
+                            .frame(idealWidth: 280, maxWidth: 320)
                             .presentationCompactAdaptation(.popover)
                         }
                     }
