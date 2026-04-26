@@ -212,7 +212,9 @@ Seven items require on-device confirmation. See the `human_verification` block i
 
 - **MN-01:** Promote `"lastBackgroundWakeTimestamp"` literal to a shared `enum AppDefaultsKeys`. Touched while G2 work modifies `HealthDetailSheet.swift`.
 - **MN-02:** Replace stringly-typed `"Silent"` / `"Overt"` discriminator with `enum DropSeries: String { case silent = "Silent", overt = "Overt" }` across `TimeBucket`, `visibleBuckets`, `chartForegroundStyleScale`, chip labels, and popover content. Touched while G1 + G3 work modifies `DropTimelineChart.swift`.
-- These are eligible because the gap-fix plans naturally modify the same files; folding them in costs ~10 extra minutes and removes a class of typo bug. Other review items (MN-03 `@MainActor` annotations on LocationService; MN-04 deterministic stack ordering; NT-* nits) stay deferred — they touch files unrelated to the gap fixes.
+- **MN-04:** Make the bucket sort comparator deterministic (Silent-before-Overt within the same `bucketStart`). Folded into Plan 09-04 Task 1 because the comparator is already being touched there.
+- **NT-03:** Replace 4× `value in` → `_ in` in DropTimelineChart axis closures (3 chartXAxis branches + 1 chartYAxis). Folded into Plan 09-04 Task 2 because those AxisMarks blocks are already being modified for G3.
+- These five (MN-01, MN-02, MN-04, NT-03 above + the popover/wake/axis fixes) are eligible because the gap-fix plans naturally modify the same files; folding them in costs ~10 extra minutes and removes a class of typo bug. Other review items (MN-03 `@MainActor` annotations on LocationService; NT-01, NT-02, NT-04, NT-05, NT-06 nits) stay deferred — they touch files unrelated to the gap fixes.
 
 #### Items remaining as runtime-only (not gaps)
 
