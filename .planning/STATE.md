@@ -75,8 +75,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 ### Pending Todos
 
-- **Human UAT** of Phase 8 on iPhone 17 Pro Max / iOS 26.4.2 with ProtonVPN — see UAT checklist in `.planning/phases/08-vpn-context/08-04-SUMMARY.md`.
-- **Plan Phase 9** (Dashboard Polish) — requirements CHART-01/02/03 + POLISH-01/02.
+- **Replace deprecated CLGeocoder with MKReverseGeocodingRequest** in `AnalyticsView.swift:220, :230` — see `.planning/todos/pending/2026-05-03-replace-clgeocoder-with-mkreversegeocoding.md`.
+- **Add TimeToLive sanity check to ProvisioningProfileService** — surface a visible warning when profile TTL < 30 days. See `.planning/todos/pending/2026-05-03-add-timetolive-sanity-check-to-provisioning-profile-service.md`.
 
 ### Blockers/Concerns
 

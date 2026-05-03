@@ -15,3 +15,7 @@ DerivedData/
 Packages/
 \n# Gemini CLI session history\n.remember/
 \n# Gemini CLI session history\n.remember/
+
+# Personal cellular data exports and Apple Feedback reports (local-only)
+cellguard-export-*.json
+reports/
