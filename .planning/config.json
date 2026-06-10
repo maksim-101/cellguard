@@ -29,5 +29,7 @@
     "context_warnings": true
   },
   "mode": "yolo",
-  "granularity": "coarse"
+  "granularity": "coarse",
+  "runtime": "claude",
+  "resolve_model_ids": true
 }
