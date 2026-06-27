@@ -87,6 +87,7 @@ None.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260627-r9c | VPN A/B instrumentation + probe hardening (GET+body validation, restrictedState, vpnInterface, vpnStateChange events, in-app self-check button) | 2026-06-27 | 771b8fc | [260627-r9c-vpn-ab-instrumentation](./quick/260627-r9c-vpn-ab-instrumentation/) |
+| 260627-rtr | Explicit VPN status in event detail (show Disconnected/None) + self-check UI explanation & verdict | 2026-06-27 | a92552e | [260627-rtr-vpn-detail-and-selfcheck-ui](./quick/260627-rtr-vpn-detail-and-selfcheck-ui/) |
 
 ## Session Continuity
 
