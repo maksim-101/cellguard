@@ -91,6 +91,24 @@ None.
 
 ## Session Continuity
 
-Last activity: 2026-06-27 — Completed quick task 260627-r9c (VPN instrumentation + probe hardening); debug session probe-false-silent-failures (ad991b7) fixed the stale-socket false-positive bug. Build green on iOS Simulator. Awaiting on-device verification + VPN A/B experiment.
-Stopped at: v1.3 shipped; field-debugging the live probe/VPN instrumentation
+**Last activity:** 2026-06-27 — paused for user to collect on-device data.
+
+**What this session did (field-debugging the live cellular issue, not v1.3 work):**
+- Diagnosed & fixed a false-positive `silentFailure` bug: probe reused one URLSession → stale cellular sockets hung to 10s timeout. Fix = per-probe ephemeral session + two-host (Apple + Cloudflare) confirmation. Debug session: `.planning/debug/probe-false-silent-failures.md` (commit `ad991b7`).
+- Quick `260627-r9c`: GET+body-validation probe, `CTCellularData.restrictedState`, per-event `vpnInterface`, dedicated `vpnStateChange` events, in-app VPN self-check button (HealthDetailSheet). Commits `d3b79b3`→`771b8fc`.
+- Quick `260627-rtr`: event detail always shows VPN status (Disconnected/None); self-check UI explanation + verdict. `a92552e`.
+- Cleanup `bef2239`: removed dead Carrier row; gated Cellular Data Access to show only when meaningful.
+- All builds green on iOS Simulator. User reinstalled on device; confirmed a NEW-build two-host-confirmed Silent Failure on **NRNSA with no VPN**.
+
+**DIAGNOSIS (well-supported, see memory `project_connectivity_root_causes`):** It is the **iPhone 17 Pro Max + iOS 26 baseband (5G NR-NSA data stall)**. Eliminated by user: 3 units, 3 SIMs (physical/home eSIM/German travel eSIM), 2 carriers, 2 countries, with/without VPN, with/without restored backup, carrier confirms no other reports. VPNs fully exonerated.
+
+**Deliverable written:** `apple-support-dossier-2026-06-27.md` (in repo root AND `~/code/flashtype-workspace/`) — full evidence/escalation/remediation reference for senior Apple support. Backed by 8 research reports in this session's scratchpad.
+
+**RESUME HERE — waiting on user's on-device data. Next actions in priority order:**
+1. **5G Auto/LTE A/B** (highest value): does forcing Settings→Cellular→Voice&Data→5G Auto/LTE drop the confirmed NRNSA silent failures? Clean-on-LTE = pinpoints the NR-NSA subsystem for Apple.
+2. Read the user's exported CellGuard CSV/JSON: compute confirmed-silentFailure **rate** per window (baseline vs 5G-Auto; later Tailscale/Proton windows — VPN windows are now low-value).
+3. Optional offers still open: render the dossier to **PDF**; **iOS 26.6 / iOS 27 public-beta** test (NOT dev beta); capture a **sysdiagnose** timed to a failure + file **Feedback Assistant** report.
+
+**Git:** branch `feature/apple-support-script`, **needs push** (commits since `2240e0e`). Pre-existing unrelated uncommitted `project.pbxproj` (M) and `apple-support-script-2026-05-23.html` (untracked) were NOT touched this session — leave them.
+
 Resume file: .planning/debug/probe-false-silent-failures.md
