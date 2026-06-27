@@ -36,14 +36,13 @@ struct EventDetailView: View {
                 }
             }
 
-            if let state = event.vpnState,
-               state != .disconnected,
-               state != .invalid {
+            // Show VPN section for any event that captured VPN state (Phase 8+).
+            // Legacy events with vpnState == nil (never captured) are omitted.
+            // Disconnected events show explicitly so absence is unambiguous in evidence logs.
+            if let state = event.vpnState {
                 Section("VPN") {
                     LabeledContent("State", value: state.displayName)
-                    if let iface = event.vpnInterface {
-                        LabeledContent("Interface", value: iface)
-                    }
+                    LabeledContent("Interface", value: event.vpnInterface ?? "None")
                 }
             }
 
