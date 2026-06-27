@@ -131,17 +131,23 @@ final class ConnectivityMonitor {
     /// Interval between probe firings. 60 seconds balances detection speed with battery.
     private let probeInterval: TimeInterval = 60
 
-    /// Reusable URLSession for probes. One session for all probes (not per-probe).
-    /// `waitsForConnectivity = false` ensures immediate failure when network is down,
-    /// which is essential for detecting silent modem failures.
-    /// Note: Cannot use `lazy` with @Observable macro, so we use nonisolated(unsafe)
-    /// static factory instead.
-    private let probeSession: URLSession = {
-        let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 10
+    /// Confirmation URL for two-host silentFailure validation. Independent of Apple's endpoint
+    /// so a stale-socket or single-host DNS fluke on the primary probe cannot trigger a
+    /// false-positive silentFailure classification. Cloudflare /cdn-cgi/trace returns HTTP 200
+    /// to a GET from any reachable network.
+    private let confirmationURL = URL(string: "https://cloudflare.com/cdn-cgi/trace")!
+
+    /// Creates a fresh ephemeral URLSession for each probe. Per-probe sessions prevent stale
+    /// HTTP keep-alive connections (caused by cellular NAT binding expiry or IP rotation) from
+    /// hanging to the full 10s timeout and being misclassified as silentFailure on an otherwise
+    /// healthy link. `waitsForConnectivity = false` ensures immediate failure when the path is
+    /// genuinely down, which is essential for detecting silent modem failures.
+    private func makeProbeSession() -> URLSession {
+        let config = URLSessionConfiguration.ephemeral
+        config.timeoutIntervalForRequest = probeTimeout
         config.waitsForConnectivity = false
         return URLSession(configuration: config)
-    }()
+    }
 
     // MARK: - CoreTelephony (MON-04, MON-05)
 
@@ -298,8 +304,13 @@ final class ConnectivityMonitor {
 
         let start = Date()
 
+        // Fresh ephemeral session per probe: prevents stale keep-alive connections from
+        // hanging to the 10s timeout after cellular NAT rotation (false-positive silentFailure).
+        let session = makeProbeSession()
+        defer { session.finishTasksAndInvalidate() }
+
         do {
-            let (_, response) = try await probeSession.data(for: request)
+            let (_, response) = try await session.data(for: request)
             let latencyMs = Date().timeIntervalSince(start) * 1000
 
             if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
@@ -345,21 +356,45 @@ final class ConnectivityMonitor {
                 || (vpnIsUp && capturedPathUsesCellular)
 
             if capturedStatus == .satisfied && effectivelyCellular {
-                logEvent(
-                    type: .silentFailure,
-                    status: capturedStatus,
-                    interface: capturedInterface,
-                    isExpensive: false,
-                    isConstrained: false,
-                    probeLatencyMs: latencyMs,
-                    probeFailureReason: error.localizedDescription,
-                    vpnState: capturedVPNState
-                )
-                // Start tracking drop duration if not already in a drop
-                if dropStartDate == nil {
-                    dropStartDate = Date()
+                // Two-host confirmation before classifying silentFailure: a stale-socket
+                // or single-host fluke will only fail captive.apple.com; a genuine modem
+                // failure ("attached but unreachable") fails every host. Probe an independent
+                // non-Apple host and require both to fail before logging silentFailure.
+                // If the confirmation host succeeds, the primary failure was a fluke →
+                // log probeSuccess so the false positive is suppressed by the dedup guard
+                // on the next cycle (D-12). Dedup semantics (D-11..D-15) are preserved:
+                // a fluke-induced probeSuccess here is correct — connectivity is real.
+                let bothFailed = await confirmSilentFailure()
+
+                if bothFailed {
+                    logEvent(
+                        type: .silentFailure,
+                        status: capturedStatus,
+                        interface: capturedInterface,
+                        isExpensive: false,
+                        isConstrained: false,
+                        probeLatencyMs: latencyMs,
+                        probeFailureReason: error.localizedDescription,
+                        vpnState: capturedVPNState
+                    )
+                    // Start tracking drop duration if not already in a drop
+                    if dropStartDate == nil {
+                        dropStartDate = Date()
+                    }
+                    lastProbeOutcome = .silentFailure
+                } else {
+                    // Confirmation host reachable — primary probe failure was a single-host fluke.
+                    logEvent(
+                        type: .probeSuccess,
+                        status: capturedStatus,
+                        interface: capturedInterface,
+                        isExpensive: false,
+                        isConstrained: false,
+                        probeLatencyMs: latencyMs,
+                        vpnState: capturedVPNState
+                    )
+                    lastProbeOutcome = .probeSuccess
                 }
-                lastProbeOutcome = .silentFailure
             } else {
                 logEvent(
                     type: .probeFailure,
@@ -373,6 +408,30 @@ final class ConnectivityMonitor {
                 )
                 lastProbeOutcome = .probeFailure
             }
+        }
+    }
+
+    /// Probes an independent host (Cloudflare) to confirm a suspected silent modem failure.
+    ///
+    /// Returns `true` if the confirmation host is also unreachable (both hosts failed →
+    /// genuine modem failure). Returns `false` if the confirmation host responds with HTTP 200
+    /// (primary probe failure was a single-host fluke → connectivity is real).
+    ///
+    /// Uses a fresh ephemeral session so it is not affected by the same stale socket that
+    /// may have caused the primary probe to fail.
+    @MainActor
+    private func confirmSilentFailure() async -> Bool {
+        let session = makeProbeSession()
+        defer { session.finishTasksAndInvalidate() }
+
+        do {
+            let (_, response) = try await session.data(for: URLRequest(url: confirmationURL))
+            if let http = response as? HTTPURLResponse, http.statusCode == 200 {
+                return false  // Confirmation host reachable — primary failure was a fluke
+            }
+            return true  // Confirmation host returned non-200 — both hosts failed
+        } catch {
+            return true  // Confirmation host also unreachable — both hosts failed
         }
     }
 
