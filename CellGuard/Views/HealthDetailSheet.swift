@@ -96,15 +96,36 @@ struct HealthDetailSheet: View {
                 // VPN detection self-check (Task 5)
                 // Runs the same CFNetworkCopySystemProxySettings scan as the monitoring loop
                 // so the user can verify VPN detection on-device without Console.app.
-                Button("Run VPN Detection Self-Check") {
-                    vpnSelfCheckResult = monitor.vpnDetectionSelfCheck()
-                    showVPNSelfCheck = true
-                }
-                .buttonStyle(.bordered)
-                .alert("VPN Detection Result", isPresented: $showVPNSelfCheck) {
-                    Button("OK", role: .cancel) {}
-                } message: {
-                    Text(vpnSelfCheckResult ?? "")
+                VStack(alignment: .leading, spacing: 8) {
+                    Button("Run VPN Detection Self-Check") {
+                        vpnSelfCheckResult = monitor.vpnDetectionSelfCheck()
+                        showVPNSelfCheck = true
+                    }
+                    .buttonStyle(.bordered)
+                    .alert("VPN Detection Result", isPresented: $showVPNSelfCheck) {
+                        Button("OK", role: .cancel) {}
+                    } message: {
+                        Text(vpnSelfCheckVerdict + "\n\nRaw: " + (vpnSelfCheckResult ?? ""))
+                    }
+
+                    Text("Verifies that CellGuard can actually see an active VPN tunnel on this device and iOS version. Connect a VPN first, then tap to confirm detection works before trusting VPN-tagged data.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Outcomes:")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text("• Matched (e.g. utun3): VPN tunnel detected — VPN tagging is reliable.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text("• No match: proxy settings exist but no VPN tunnel was recognized — detection may be blind to this VPN.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text("• No proxy settings: no VPN tunnel active. Expected when no VPN is connected; a problem if a VPN IS connected.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 // Footer metadata
@@ -188,6 +209,19 @@ struct HealthDetailSheet: View {
             "Background monitoring may miss events due to:"
         case .paused:
             "Monitoring is not running. Tap \"Start Monitoring\" to begin."
+        }
+    }
+
+    /// Derives a plain-language verdict from the raw vpnDetectionSelfCheck() result string.
+    private var vpnSelfCheckVerdict: String {
+        guard let result = vpnSelfCheckResult else { return "" }
+        if result.hasPrefix("matched=") {
+            return "VPN tunnel detected — VPN tagging is reliable."
+        } else if result.hasPrefix("NO MATCH") {
+            return "Proxy settings found but no VPN tunnel recognized — detection may be blind to this VPN."
+        } else {
+            // "no proxy settings"
+            return "No VPN tunnel active. Expected if no VPN is connected; a problem if VPN IS connected."
         }
     }
 
