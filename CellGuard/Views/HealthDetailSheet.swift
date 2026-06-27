@@ -8,6 +8,8 @@ struct HealthDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var sheetDetent: PresentationDetent = .large
+    @State private var vpnSelfCheckResult: String?
+    @State private var showVPNSelfCheck: Bool = false
 
     var body: some View {
         NavigationStack {
@@ -89,6 +91,20 @@ struct HealthDetailSheet: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color(.tertiarySystemBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+
+                // VPN detection self-check (Task 5)
+                // Runs the same CFNetworkCopySystemProxySettings scan as the monitoring loop
+                // so the user can verify VPN detection on-device without Console.app.
+                Button("Run VPN Detection Self-Check") {
+                    vpnSelfCheckResult = monitor.vpnDetectionSelfCheck()
+                    showVPNSelfCheck = true
+                }
+                .buttonStyle(.bordered)
+                .alert("VPN Detection Result", isPresented: $showVPNSelfCheck) {
+                    Button("OK", role: .cancel) {}
+                } message: {
+                    Text(vpnSelfCheckResult ?? "")
                 }
 
                 // Footer metadata

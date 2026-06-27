@@ -262,6 +262,31 @@ final class ConnectivityMonitor {
         lastLocation = (latitude: latitude, longitude: longitude, accuracy: accuracy)
     }
 
+    // MARK: - VPN Detection Self-Check (Task 5)
+
+    /// Performs an on-demand VPN detection self-check by running the same
+    /// CFNetworkCopySystemProxySettings scan as the monitoring loop and returning a
+    /// human-readable result string suitable for in-app display.
+    ///
+    /// Result format:
+    ///   "matched=utun3 (prefix utun)"   — tunnel detected
+    ///   "NO MATCH — keys=[ap0, en0]"    — no tunnel keys found
+    ///   "no proxy settings"             — __SCOPED__ dict unavailable
+    ///
+    /// The once-per-launch os_log self-check from captureVPNDetectorBool() is preserved
+    /// and independent of this method; both serve different audiences (Console.app vs. UI).
+    func vpnDetectionSelfCheck() -> String {
+        let detection = detectVPNInterface()
+        if detection.sortedKeys.isEmpty {
+            return "no proxy settings"
+        }
+        if let mk = detection.matchedKey, let mp = detection.matchedPrefix {
+            return "matched=\(mk) (prefix \(mp))"
+        }
+        let keyList = detection.sortedKeys.joined(separator: ", ")
+        return "NO MATCH — keys=[\(keyList)]"
+    }
+
     // MARK: - Probe Timer Management
 
     /// Starts (or restarts) the 60-second HEAD probe timer.
