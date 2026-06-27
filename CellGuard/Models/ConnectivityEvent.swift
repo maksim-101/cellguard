@@ -95,6 +95,14 @@ final class ConnectivityEvent {
     /// Carrier name from CTTelephonyNetworkInfo. May be nil due to CTCarrier deprecation on iOS 16.4+.
     var carrierName: String?
 
+    // MARK: Cellular restriction metadata
+
+    /// Cellular data access restriction state at the time of the event.
+    /// Possible values: "restricted", "notRestricted", "unknown". Nil for legacy events
+    /// captured before Task 2. Sourced from CTCellularData.restrictedState via the
+    /// cellularDataRestrictionDidUpdateNotifier; "unknown" until the first notifier callback.
+    var cellularDataRestricted: String?
+
     // MARK: Wi-Fi metadata
 
     /// Wi-Fi SSID at the time of the event. Nil if not connected to Wi-Fi or SSID could not be captured.
@@ -183,6 +191,7 @@ final class ConnectivityEvent {
         isConstrained: Bool = false,
         radioTechnology: String? = nil,
         carrierName: String? = nil,
+        cellularDataRestricted: String? = nil,
         wifiSSID: String? = nil,
         vpnState: VPNState? = nil,
         probeLatencyMs: Double? = nil,
@@ -201,6 +210,7 @@ final class ConnectivityEvent {
         self.isConstrained = isConstrained
         self.radioTechnology = radioTechnology
         self.carrierName = carrierName
+        self.cellularDataRestricted = cellularDataRestricted
         self.wifiSSID = wifiSSID
         self.vpnStateRaw = vpnState?.rawValue
         self.probeLatencyMs = probeLatencyMs
@@ -226,6 +236,7 @@ extension ConnectivityEvent: Codable {
         case isConstrained
         case radioTechnology
         case carrierName
+        case cellularDataRestricted
         case probeLatencyMs
         case probeFailureReason
         case latitude
@@ -285,6 +296,7 @@ extension ConnectivityEvent: Codable {
             isConstrained: try container.decode(Bool.self, forKey: .isConstrained),
             radioTechnology: try container.decodeIfPresent(String.self, forKey: .radioTechnology),
             carrierName: try container.decodeIfPresent(String.self, forKey: .carrierName),
+            cellularDataRestricted: try container.decodeIfPresent(String.self, forKey: .cellularDataRestricted),
             wifiSSID: try container.decodeIfPresent(String.self, forKey: .wifiSSID),
             vpnState: vpnState,
             probeLatencyMs: try container.decodeIfPresent(Double.self, forKey: .probeLatencyMs),
@@ -309,6 +321,7 @@ extension ConnectivityEvent: Codable {
         try container.encode(isConstrained, forKey: .isConstrained)
         try container.encodeIfPresent(radioTechnology, forKey: .radioTechnology)
         try container.encodeIfPresent(carrierName, forKey: .carrierName)
+        try container.encodeIfPresent(cellularDataRestricted, forKey: .cellularDataRestricted)
         try container.encodeIfPresent(probeLatencyMs, forKey: .probeLatencyMs)
         try container.encodeIfPresent(probeFailureReason, forKey: .probeFailureReason)
         let omitLocation = encoder.userInfo[.omitLocation] as? Bool ?? false

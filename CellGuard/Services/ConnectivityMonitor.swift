@@ -161,6 +161,15 @@ final class ConnectivityMonitor {
     /// NotificationCenter observer token for radio tech changes, stored for cleanup on stop.
     private var radioTechObserver: (any NSObjectProtocol)?
 
+    /// Retained CTCellularData instance for monitoring cellular data access restriction.
+    /// The notifier closure (set in startMonitoring) populates `cellularDataRestrictedState`
+    /// asynchronously; `.restrictedStateUnknown` is the value before the first callback.
+    private let cellularData = CTCellularData()
+
+    /// Current cellular data restriction state as last delivered by CTCellularData notifier.
+    /// Initialized to .restrictedStateUnknown; updated on every notifier callback.
+    private var cellularDataRestrictedState: CTCellularDataRestrictedState = .restrictedStateUnknown
+
     // MARK: - Dependencies
 
     /// The NWPathMonitor instance that delivers path change callbacks.
@@ -202,7 +211,16 @@ final class ConnectivityMonitor {
         setupRadioTechObserver()
         currentRadioTechnology = CTTelephonyNetworkInfo().serviceCurrentRadioAccessTechnology?.values.first
 
-        // Start the 60-second HEAD probe cycle
+        // CTCellularData: install notifier to track whether cellular data is restricted (Task 2).
+        // The notifier fires immediately with the current state and again on any change. We retain
+        // `cellularData` as an instance property so the notifier is not released early.
+        cellularData.cellularDataRestrictionDidUpdateNotifier = { [weak self] state in
+            Task { @MainActor in
+                self?.cellularDataRestrictedState = state
+            }
+        }
+
+        // Start the 60-second GET probe cycle
         startProbeTimer()
 
         // Request notification authorization for drop alerts (MON-07)
@@ -515,6 +533,19 @@ final class ConnectivityMonitor {
         nil
     }
 
+    /// Reads the current CTCellularData restriction state as a human-readable string.
+    /// Returns "restricted", "notRestricted", or "unknown" (the .restrictedStateUnknown
+    /// case, which persists until the cellularDataRestrictionDidUpdateNotifier fires for
+    /// the first time after startMonitoring()).
+    private func captureCellularDataRestriction() -> String {
+        switch cellularDataRestrictedState {
+        case .restricted: return "restricted"
+        case .notRestricted: return "notRestricted"
+        case .restrictedStateUnknown: return "unknown"
+        @unknown default: return "unknown"
+        }
+    }
+
     /// Captures the current Wi-Fi SSID if available.
     /// Returns nil when not on Wi-Fi, missing entitlement, or in restricted background context.
     private func captureWifiSSID() async -> String? {
@@ -777,6 +808,7 @@ final class ConnectivityMonitor {
         // synchronously to match Phase 7's wifiSSID precedent and avoid actor-hop staleness).
         let radioTech = captureRadioTechnology()
         let carrier = captureCarrierName()
+        let cellularRestriction = captureCellularDataRestriction()
         let location = lastLocation
         // If a caller already snapshotted the state (i.e. runProbe), use it; otherwise
         // capture fresh so transition events get the live state.
@@ -793,6 +825,7 @@ final class ConnectivityMonitor {
                 isConstrained: isConstrained,
                 radioTechnology: radioTech,
                 carrierName: carrier,
+                cellularDataRestricted: cellularRestriction,
                 wifiSSID: ssid,
                 vpnState: resolvedVPNState,
                 probeLatencyMs: probeLatencyMs,

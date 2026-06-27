@@ -25,6 +25,9 @@ struct EventDetailView: View {
             Section("Cellular") {
                 LabeledContent("Radio Tech", value: radioTechDisplay)
                 LabeledContent("Carrier", value: event.carrierName ?? "Unknown")
+                if let restriction = event.cellularDataRestricted {
+                    LabeledContent("Cellular Data Access", value: restriction)
+                }
             }
 
             if event.wifiSSID != nil {
