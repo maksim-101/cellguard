@@ -24,8 +24,7 @@ struct EventDetailView: View {
 
             Section("Cellular") {
                 LabeledContent("Radio Tech", value: radioTechDisplay)
-                LabeledContent("Carrier", value: event.carrierName ?? "Unknown")
-                if let restriction = event.cellularDataRestricted {
+                if let restriction = event.cellularDataRestricted, restriction != "unknown" {
                     LabeledContent("Cellular Data Access", value: restriction)
                 }
             }

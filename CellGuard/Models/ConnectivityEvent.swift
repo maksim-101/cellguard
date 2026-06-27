@@ -334,7 +334,11 @@ extension ConnectivityEvent: Codable {
         try container.encode(isConstrained, forKey: .isConstrained)
         try container.encodeIfPresent(radioTechnology, forKey: .radioTechnology)
         try container.encodeIfPresent(carrierName, forKey: .carrierName)
-        try container.encodeIfPresent(cellularDataRestricted, forKey: .cellularDataRestricted)
+        // Omit "unknown" cellular restriction state from export — same noise-reduction principle
+        // as the vpnState guard below; only meaningful values reach the export file.
+        if let restriction = cellularDataRestricted, restriction != "unknown" {
+            try container.encode(restriction, forKey: .cellularDataRestricted)
+        }
         try container.encodeIfPresent(probeLatencyMs, forKey: .probeLatencyMs)
         try container.encodeIfPresent(probeFailureReason, forKey: .probeFailureReason)
         let omitLocation = encoder.userInfo[.omitLocation] as? Bool ?? false
