@@ -17,6 +17,7 @@ struct EventListView: View {
         case drops = "Drops"
         case silent = "Silent"
         case overt = "Overt"
+        case vpn = "VPN"
         var id: String { rawValue }
     }
 
@@ -30,6 +31,8 @@ struct EventListView: View {
             return events.filter { $0.eventType == .silentFailure }
         case .overt:
             return events.filter { isDropEvent($0) && $0.eventType != .silentFailure }
+        case .vpn:
+            return events.filter { $0.eventType == .vpnStateChange }
         }
     }
 

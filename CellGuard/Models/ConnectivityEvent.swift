@@ -18,6 +18,10 @@ enum EventType: Int, Codable, CaseIterable {
     case probeFailure = 3
     case connectivityRestored = 4
     case monitoringGap = 5
+    /// Logged when the VPN tunnel crosses the absent↔present boundary (disconnected/invalid ↔
+    /// connecting/connected/reasserting/disconnecting). Not a drop — no notification is sent.
+    /// Explicit rawValue 6 prevents accidental re-assignment if cases are reordered (migration safety).
+    case vpnStateChange = 6
 }
 
 /// Network path status as reported by NWPathMonitor.
@@ -362,6 +366,7 @@ extension EventType {
         case .probeFailure: "probeFailure"
         case .connectivityRestored: "connectivityRestored"
         case .monitoringGap: "monitoringGap"
+        case .vpnStateChange: "vpnStateChange"
         }
     }
 
@@ -374,6 +379,7 @@ extension EventType {
         case "probeFailure": .probeFailure
         case "connectivityRestored": .connectivityRestored
         case "monitoringGap": .monitoringGap
+        case "vpnStateChange": .vpnStateChange
         default: nil
         }
     }
@@ -466,6 +472,7 @@ extension EventType {
         case .probeFailure: "Probe Failure"
         case .connectivityRestored: "Connectivity Restored"
         case .monitoringGap: "Monitoring Gap"
+        case .vpnStateChange: "VPN State Change"
         }
     }
 }

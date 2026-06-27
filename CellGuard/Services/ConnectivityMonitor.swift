@@ -99,6 +99,12 @@ final class ConnectivityMonitor {
     /// detection mechanism can be verified from Console.app.
     private var didEmitVPNSelfCheck: Bool = false
 
+    /// Tracks the previous VPN tunnel boundary side for vpnStateChange events (Task 4).
+    /// false = absent side (disconnected / invalid); true = present side (connecting /
+    /// connected / reasserting / disconnecting). Only the absent↔present crossing is logged,
+    /// not state-machine micro-transitions within the same side (e.g. connecting→connected).
+    private var previousVPNBoundarySide: Bool = false
+
     /// Logger for VPN detector self-check telemetry. Subsystem matches the bundle id pattern
     /// used elsewhere in the project; category lets the user filter Console.app to "vpn".
     private let vpnLogger = Logger(subsystem: "com.cellguard.connectivity", category: "vpn")
@@ -689,6 +695,27 @@ final class ConnectivityMonitor {
         currentVPNState = captureVPNState()
         // Set currentVPNInterface alongside currentVPNState so both are from the same scan tick.
         currentVPNInterface = detectVPNInterface().matchedKey
+
+        // VPN boundary detection (Task 4): log a vpnStateChange event only when the tunnel
+        // crosses the absent↔present boundary. "absent" = disconnected or invalid (no active
+        // tunnel); "present" = connecting / connected / reasserting / disconnecting (a tunnel
+        // negotiation or teardown is in progress or complete). This avoids logging spam for
+        // micro-transitions within the same boundary side (e.g. connecting→connected).
+        // vpnStateChange is NOT a drop — scheduleDropNotification ignores it because its guard
+        // only matches silentFailure and pathChange-to-unsatisfied.
+        let vpnIsPresent = currentVPNState != .disconnected && currentVPNState != .invalid
+        if vpnIsPresent != previousVPNBoundarySide {
+            previousVPNBoundarySide = vpnIsPresent
+            logEvent(
+                type: .vpnStateChange,
+                status: newStatus,
+                interface: newInterface,
+                isExpensive: isExpensive,
+                isConstrained: isConstrained,
+                vpnState: currentVPNState,
+                vpnInterface: currentVPNInterface
+            )
+        }
 
         // Pitfall 6: Debounce rapid path flapping. Cancel any pending classification
         // and wait 500ms before processing. Only the last update in a rapid sequence
