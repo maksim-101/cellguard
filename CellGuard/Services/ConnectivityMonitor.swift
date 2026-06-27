@@ -117,7 +117,7 @@ final class ConnectivityMonitor {
 
     // MARK: - Probe Properties (MON-02)
 
-    /// Timer that fires the HEAD probe every 60 seconds in foreground.
+    /// Timer that fires the GET probe every 60 seconds in foreground.
     /// Paused in background (iOS suspends timers). Phase 3 adds wake-then-probe.
     private var probeTimer: Timer?
 
@@ -272,10 +272,15 @@ final class ConnectivityMonitor {
 
     // MARK: - HEAD Probe (MON-02, MON-03)
 
-    /// Performs a single HEAD request to Apple's captive portal to verify actual connectivity.
+    /// Performs a single GET request to Apple's captive portal to verify actual connectivity.
     ///
     /// Detects silent modem failures (MON-03): when the probe fails but NWPathMonitor still
     /// reports the path as satisfied on cellular, the modem is "attached but unreachable."
+    ///
+    /// Uses GET (not HEAD) so the response body can be validated. Apple's captive portal
+    /// returns a body containing "Success" on a clean connection; a transparent proxy or
+    /// login portal substitutes its own HTML, making the 200 response unreliable without
+    /// the body check.
     ///
     /// Captures path state BEFORE awaiting the probe result to avoid the race condition
     /// where path status changes during the request (Pitfall 5 from research).
@@ -300,7 +305,7 @@ final class ConnectivityMonitor {
         let capturedPathUsesCellular = pathMonitor.currentPath.usesInterfaceType(.cellular)
 
         var request = URLRequest(url: probeURL)
-        request.httpMethod = "HEAD"
+        request.httpMethod = "GET"
 
         let start = Date()
 
@@ -310,20 +315,40 @@ final class ConnectivityMonitor {
         defer { session.finishTasksAndInvalidate() }
 
         do {
-            let (_, response) = try await session.data(for: request)
+            let (data, response) = try await session.data(for: request)
             let latencyMs = Date().timeIntervalSince(start) * 1000
 
             if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
-                logEvent(
-                    type: .probeSuccess,
-                    status: capturedStatus,
-                    interface: capturedInterface,
-                    isExpensive: false,
-                    isConstrained: false,
-                    probeLatencyMs: latencyMs,
-                    vpnState: capturedVPNState
-                )
-                lastProbeOutcome = .probeSuccess
+                // Body validation: Apple's captive portal endpoint returns a document containing
+                // "Success" on a genuine open connection. A transparent proxy or captive login
+                // page returns 200 with different body text (e.g. a redirect page), which would
+                // produce false-positive probeSuccess events. Require "Success" in the body.
+                let body = String(data: data, encoding: .utf8) ?? ""
+                if body.contains("Success") {
+                    logEvent(
+                        type: .probeSuccess,
+                        status: capturedStatus,
+                        interface: capturedInterface,
+                        isExpensive: false,
+                        isConstrained: false,
+                        probeLatencyMs: latencyMs,
+                        vpnState: capturedVPNState
+                    )
+                    lastProbeOutcome = .probeSuccess
+                } else {
+                    // 200 but wrong body -- transparent proxy or captive portal intercepting.
+                    logEvent(
+                        type: .probeFailure,
+                        status: capturedStatus,
+                        interface: capturedInterface,
+                        isExpensive: false,
+                        isConstrained: false,
+                        probeLatencyMs: latencyMs,
+                        probeFailureReason: "unexpected body (captive portal?)",
+                        vpnState: capturedVPNState
+                    )
+                    lastProbeOutcome = .probeFailure
+                }
             } else {
                 let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
                 logEvent(
