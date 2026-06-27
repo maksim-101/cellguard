@@ -82,8 +82,14 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 None.
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260627-r9c | VPN A/B instrumentation + probe hardening (GET+body validation, restrictedState, vpnInterface, vpnStateChange events, in-app self-check button) | 2026-06-27 | 771b8fc | [260627-r9c-vpn-ab-instrumentation](./quick/260627-r9c-vpn-ab-instrumentation/) |
+
 ## Session Continuity
 
-Last activity: 2026-04-25
-Stopped at: Phase 8 complete — ready for Phase 9
-Resume file: .planning/phases/08-vpn-context/08-04-SUMMARY.md (or proceed to `/gsd-plan-phase 9`)
+Last activity: 2026-06-27 — Completed quick task 260627-r9c (VPN instrumentation + probe hardening); debug session probe-false-silent-failures (ad991b7) fixed the stale-socket false-positive bug. Build green on iOS Simulator. Awaiting on-device verification + VPN A/B experiment.
+Stopped at: v1.3 shipped; field-debugging the live probe/VPN instrumentation
+Resume file: .planning/debug/probe-false-silent-failures.md
