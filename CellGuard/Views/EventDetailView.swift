@@ -41,6 +41,9 @@ struct EventDetailView: View {
                state != .invalid {
                 Section("VPN") {
                     LabeledContent("State", value: state.displayName)
+                    if let iface = event.vpnInterface {
+                        LabeledContent("Interface", value: iface)
+                    }
                 }
             }
 

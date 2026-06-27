@@ -121,6 +121,11 @@ final class ConnectivityEvent {
         set { vpnStateRaw = newValue?.rawValue }
     }
 
+    /// Matched tunnel interface key at the time of the event (e.g. "utun3"). Nil when no
+    /// VPN tunnel was detected or for legacy events before Task 3. Export-gated alongside
+    /// vpnState (omitted when encoder userInfo has omitLocation = true).
+    var vpnInterface: String?
+
     // MARK: Active probe results
 
     /// Round-trip latency of the connectivity probe in milliseconds. Nil if probe was not performed.
@@ -194,6 +199,7 @@ final class ConnectivityEvent {
         cellularDataRestricted: String? = nil,
         wifiSSID: String? = nil,
         vpnState: VPNState? = nil,
+        vpnInterface: String? = nil,
         probeLatencyMs: Double? = nil,
         probeFailureReason: String? = nil,
         latitude: Double? = nil,
@@ -213,6 +219,7 @@ final class ConnectivityEvent {
         self.cellularDataRestricted = cellularDataRestricted
         self.wifiSSID = wifiSSID
         self.vpnStateRaw = vpnState?.rawValue
+        self.vpnInterface = vpnInterface
         self.probeLatencyMs = probeLatencyMs
         self.probeFailureReason = probeFailureReason
         self.latitude = latitude
@@ -244,6 +251,7 @@ extension ConnectivityEvent: Codable {
         case locationAccuracy
         case wifiSSID
         case vpnState
+        case vpnInterface
         case dropDurationSeconds
     }
 
@@ -299,6 +307,7 @@ extension ConnectivityEvent: Codable {
             cellularDataRestricted: try container.decodeIfPresent(String.self, forKey: .cellularDataRestricted),
             wifiSSID: try container.decodeIfPresent(String.self, forKey: .wifiSSID),
             vpnState: vpnState,
+            vpnInterface: try container.decodeIfPresent(String.self, forKey: .vpnInterface),
             probeLatencyMs: try container.decodeIfPresent(Double.self, forKey: .probeLatencyMs),
             probeFailureReason: try container.decodeIfPresent(String.self, forKey: .probeFailureReason),
             latitude: try container.decodeIfPresent(Double.self, forKey: .latitude),
@@ -334,6 +343,8 @@ extension ConnectivityEvent: Codable {
             if let state = vpnState, state != .disconnected, state != .invalid {
                 try container.encode(state.encodingString, forKey: .vpnState)
             }
+            // Export vpnInterface alongside vpnState (same omitLocation gate).
+            try container.encodeIfPresent(vpnInterface, forKey: .vpnInterface)
         }
         try container.encodeIfPresent(dropDurationSeconds, forKey: .dropDurationSeconds)
     }
