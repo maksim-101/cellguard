@@ -794,6 +794,15 @@ final class ConnectivityMonitor {
             previousInterfaceType = newInterface
             currentPathStatus = newStatus
             currentInterfaceType = newInterface
+            // Seed the VPN edge-detector with the tunnel state observed AT LAUNCH so an
+            // already-established VPN (e.g. Tailscale connected before the app started) is
+            // classified .connected on first sighting -- not a spurious false->true .connecting
+            // edge for a connection the app never witnessed begin. Without this seed,
+            // previousVPNDetectorState starts false; because currentVPNState only refreshes on
+            // path changes, a stable post-launch path would leave every probe reporting the stale
+            // .connecting. Transitions that occur WHILE the app runs (off->on, on->off) still
+            // register as .connecting/.disconnecting -- those are genuine observed edges.
+            previousVPNDetectorState = captureVPNDetectorBool()
             currentVPNState = captureVPNState()
             currentVPNInterface = detectVPNInterface().matchedKey
             isInitialUpdate = false
