@@ -22,6 +22,9 @@ enum EventType: Int, Codable, CaseIterable {
     /// connecting/connected/reasserting/disconnecting). Not a drop — no notification is sent.
     /// Explicit rawValue 6 prevents accidental re-assignment if cases are reordered (migration safety).
     case vpnStateChange = 6
+    /// Logged when a cellular download-throughput measurement falls below slowThroughputThresholdKbps.
+    /// Not a drop — no notification is sent. Explicit rawValue 7 for migration safety.
+    case slowThroughput = 7
 }
 
 /// Network path status as reported by NWPathMonitor.
@@ -139,6 +142,10 @@ final class ConnectivityEvent {
     /// Round-trip latency of the connectivity probe in milliseconds. Nil if probe was not performed.
     var probeLatencyMs: Double?
 
+    /// Measured cellular download rate in Kbps for throughput-sampling events.
+    /// Nil when no throughput was measured for this event.
+    var throughputKbps: Double?
+
     /// Reason the connectivity probe failed. Nil if probe succeeded or was not performed.
     var probeFailureReason: String?
 
@@ -210,6 +217,7 @@ final class ConnectivityEvent {
         vpnState: VPNState? = nil,
         vpnInterface: String? = nil,
         probeLatencyMs: Double? = nil,
+        throughputKbps: Double? = nil,
         probeFailureReason: String? = nil,
         latitude: Double? = nil,
         longitude: Double? = nil,
@@ -231,6 +239,7 @@ final class ConnectivityEvent {
         self.vpnStateRaw = vpnState?.rawValue
         self.vpnInterface = vpnInterface
         self.probeLatencyMs = probeLatencyMs
+        self.throughputKbps = throughputKbps
         self.probeFailureReason = probeFailureReason
         self.latitude = latitude
         self.longitude = longitude
@@ -256,6 +265,7 @@ extension ConnectivityEvent: Codable {
         case carrierName
         case cellularDataRestricted
         case probeLatencyMs
+        case throughputKbps
         case probeFailureReason
         case latitude
         case longitude
@@ -323,6 +333,7 @@ extension ConnectivityEvent: Codable {
             vpnState: vpnState,
             vpnInterface: try container.decodeIfPresent(String.self, forKey: .vpnInterface),
             probeLatencyMs: try container.decodeIfPresent(Double.self, forKey: .probeLatencyMs),
+            throughputKbps: try container.decodeIfPresent(Double.self, forKey: .throughputKbps),
             probeFailureReason: try container.decodeIfPresent(String.self, forKey: .probeFailureReason),
             latitude: try container.decodeIfPresent(Double.self, forKey: .latitude),
             longitude: try container.decodeIfPresent(Double.self, forKey: .longitude),
@@ -351,6 +362,7 @@ extension ConnectivityEvent: Codable {
             try container.encode(restriction, forKey: .cellularDataRestricted)
         }
         try container.encodeIfPresent(probeLatencyMs, forKey: .probeLatencyMs)
+        try container.encodeIfPresent(throughputKbps, forKey: .throughputKbps)
         try container.encodeIfPresent(probeFailureReason, forKey: .probeFailureReason)
         let omitLocation = encoder.userInfo[.omitLocation] as? Bool ?? false
         if !omitLocation {
@@ -382,6 +394,7 @@ extension EventType {
         case .connectivityRestored: "connectivityRestored"
         case .monitoringGap: "monitoringGap"
         case .vpnStateChange: "vpnStateChange"
+        case .slowThroughput: "slowThroughput"
         }
     }
 
@@ -395,6 +408,7 @@ extension EventType {
         case "connectivityRestored": .connectivityRestored
         case "monitoringGap": .monitoringGap
         case "vpnStateChange": .vpnStateChange
+        case "slowThroughput": .slowThroughput
         default: nil
         }
     }
@@ -488,6 +502,7 @@ extension EventType {
         case .connectivityRestored: "Connectivity Restored"
         case .monitoringGap: "Monitoring Gap"
         case .vpnStateChange: "VPN State Change"
+        case .slowThroughput: "Slow Throughput"
         }
     }
 }
