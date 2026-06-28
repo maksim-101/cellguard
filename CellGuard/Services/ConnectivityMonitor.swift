@@ -148,6 +148,24 @@ final class ConnectivityMonitor {
     /// to a GET from any reachable network.
     private let confirmationURL = URL(string: "https://cloudflare.com/cdn-cgi/trace")!
 
+    /// URL for the cellular throughput probe. Returns exactly 100 KB with no auth — deterministic
+    /// for data budgeting. Cloudflare is already the trusted second probe host in confirmSilentFailure.
+    /// At ~12 samples/hr × 24h × 100 KB ≈ 29 MB/day — the agreed cellular data budget.
+    /// Tunable: swap this endpoint to change payload size or host.
+    private let throughputProbeURL = URL(string: "https://speed.cloudflare.com/__down?bytes=102400")!
+
+    /// Run the throughput measurement once every Nth 60s reachability cycle (≈ 5 min at N=5).
+    /// Tunable: lower N means more samples and more data; raise to reduce cellular usage.
+    private let throughputCycleInterval = 5
+
+    /// Throughput below this threshold (in Kbps) is classified as .slowThroughput.
+    /// 1000 Kbps = 1 Mbps is a conservative starting value for a degraded 5G NR-NSA data stall.
+    /// Tunable: lower for stricter flagging, raise to reduce noise on marginal connections.
+    private let slowThroughputThresholdKbps: Double = 1000
+
+    /// Counts completed reachability cycles to schedule the every-Nth-cycle throughput measurement.
+    private var throughputCycleCounter = 0
+
     /// Creates a fresh ephemeral URLSession for each probe. Per-probe sessions prevent stale
     /// HTTP keep-alive connections (caused by cellular NAT binding expiry or IP rotation) from
     /// hanging to the full 10s timeout and being misclassified as silentFailure on an otherwise
@@ -506,6 +524,26 @@ final class ConnectivityMonitor {
                 lastProbeOutcome = .probeFailure
             }
         }
+
+        // Piggyback throughput measurement on the existing 60s reachability cycle.
+        // Measure actual download bandwidth only on cellular and only when reachability
+        // succeeded this cycle — a connectivity failure is already captured as silentFailure
+        // or probeFailure, and Wi-Fi throughput is irrelevant to the cellular-modem evidence.
+        // The 60s timer is the dominant caller so this is foreground-driven in practice.
+        throughputCycleCounter += 1
+        if throughputCycleCounter % throughputCycleInterval == 0
+            && capturedInterface == .cellular
+            && lastProbeOutcome == .probeSuccess {
+            await measureThroughput(
+                status: capturedStatus,
+                interface: capturedInterface,
+                isExpensive: capturedIsExpensive,
+                isConstrained: capturedIsConstrained,
+                lowPowerMode: capturedLowPowerMode,
+                vpnState: capturedVPNState,
+                vpnInterface: capturedVPNInterface
+            )
+        }
     }
 
     /// Probes an independent host (Cloudflare) to confirm a suspected silent modem failure.
@@ -529,6 +567,54 @@ final class ConnectivityMonitor {
             return true  // Confirmation host returned non-200 — both hosts failed
         } catch {
             return true  // Confirmation host also unreachable — both hosts failed
+        }
+    }
+
+    /// Fetches a fixed 100 KB payload from Cloudflare to measure cellular download throughput.
+    ///
+    /// Calls logEvent directly (never routes through runProbe) so its event is always written,
+    /// inherently bypassing the runProbe dedup guard. Does NOT touch lastProbeOutcome or
+    /// lastProbeStartedAt so it cannot extend the reachability dedup window.
+    @MainActor
+    private func measureThroughput(
+        status: PathStatus,
+        interface: InterfaceType,
+        isExpensive: Bool,
+        isConstrained: Bool,
+        lowPowerMode: Bool,
+        vpnState: VPNState,
+        vpnInterface: String?
+    ) async {
+        let session = makeProbeSession()
+        defer { session.finishTasksAndInvalidate() }
+
+        let start = Date()
+        do {
+            let (data, response) = try await session.data(for: URLRequest(url: throughputProbeURL))
+            let elapsed = Date().timeIntervalSince(start)
+
+            // Guard against divide-by-zero and absurdly short elapsed times producing
+            // meaningless astronomical rates. Also guard non-200 responses.
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200,
+                  elapsed > 0.001 else { return }
+
+            let kbps = (Double(data.count) * 8.0) / 1000.0 / elapsed
+            let eventType: EventType = kbps < slowThroughputThresholdKbps ? .slowThroughput : .probeSuccess
+            logEvent(
+                type: eventType,
+                status: status,
+                interface: interface,
+                isExpensive: isExpensive,
+                isConstrained: isConstrained,
+                lowPowerMode: lowPowerMode,
+                throughputKbps: kbps,
+                vpnState: vpnState,
+                vpnInterface: vpnInterface
+            )
+        } catch {
+            // A throughput fetch failure is not a connectivity failure — this cycle's
+            // reachability probe already succeeded. Log nothing to avoid spurious events.
+            return
         }
     }
 
@@ -893,6 +979,7 @@ final class ConnectivityMonitor {
         isConstrained: Bool,
         lowPowerMode: Bool = false,
         probeLatencyMs: Double? = nil,
+        throughputKbps: Double? = nil,
         probeFailureReason: String? = nil,
         dropDuration: Double? = nil,
         vpnState: VPNState? = nil,
@@ -928,6 +1015,7 @@ final class ConnectivityMonitor {
                 vpnState: resolvedVPNState,
                 vpnInterface: resolvedVPNInterface,
                 probeLatencyMs: probeLatencyMs,
+                throughputKbps: throughputKbps,
                 probeFailureReason: probeFailureReason,
                 latitude: location?.latitude,
                 longitude: location?.longitude,
