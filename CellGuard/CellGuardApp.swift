@@ -15,6 +15,16 @@ struct CellGuardApp: App {
     init() {
         let container = try! ModelContainer(for: ConnectivityEvent.self)
         self.container = container
+
+        #if DEBUG
+        // Visual-verification harness: launch with `--seed-mock-data` to replace the store with a
+        // deterministic spread covering every event/failure mode, so screens can be screenshotted
+        // without waiting for live captures. Never present in release builds.
+        if ProcessInfo.processInfo.arguments.contains("--seed-mock-data") {
+            MockData.seed(into: container.mainContext)
+        }
+        #endif
+
         let store = EventStore(modelContainer: container)
         let monitor = ConnectivityMonitor(eventStore: store)
         _monitor = State(initialValue: monitor)
