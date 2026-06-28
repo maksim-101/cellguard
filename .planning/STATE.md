@@ -5,7 +5,7 @@ milestone_name: Polish & Analytics
 status: complete
 stopped_at: v1.3 complete
 last_updated: "2026-04-26T12:00:00.000Z"
-last_activity: 2026-04-26 -- v1.3 complete (Phase 10 verified)
+last_activity: 2026-06-28 -- quick 260628-8tr: Low Data Mode fix + Low Power Mode capture
 progress:
   total_phases: 3
   completed_phases: 3
@@ -88,6 +88,7 @@ None.
 |---|-------------|------|--------|-----------|
 | 260627-r9c | VPN A/B instrumentation + probe hardening (GET+body validation, restrictedState, vpnInterface, vpnStateChange events, in-app self-check button) | 2026-06-27 | 771b8fc | [260627-r9c-vpn-ab-instrumentation](./quick/260627-r9c-vpn-ab-instrumentation/) |
 | 260627-rtr | Explicit VPN status in event detail (show Disconnected/None) + self-check UI explanation & verdict | 2026-06-27 | a92552e | [260627-rtr-vpn-detail-and-selfcheck-ui](./quick/260627-rtr-vpn-detail-and-selfcheck-ui/) |
+| 260628-8tr | Capture Low Data Mode (fix probe-path hardcoded `false` bug) + new per-event Low Power Mode field (model, capture, EventDetailView, JSON export) | 2026-06-28 | 880d680 | [260628-8tr-capture-low-data-mode-fix-hardcoded-fals](./quick/260628-8tr-capture-low-data-mode-fix-hardcoded-fals/) |
 
 ## Session Continuity
 
