@@ -237,12 +237,14 @@ struct DashboardView: View {
             Text("Last 24 h")
                 .foregroundStyle(.secondary)
             Spacer()
-            (Text("\(counts24h.probes) probes · ")
-             + Text("\(counts24h.drops)").foregroundStyle(.red)
-             + Text(" drops · ")
-             + Text("\(counts24h.degraded)").foregroundStyle(.yellow)
-             + Text(" degraded"))
-                .font(.subheadline)
+            HStack(spacing: 0) {
+                Text("\(counts24h.probes) probes · ")
+                Text("\(counts24h.drops)").foregroundStyle(.red)
+                Text(" drops · ")
+                Text("\(counts24h.degraded)").foregroundStyle(.yellow)
+                Text(" degraded")
+            }
+            .font(.subheadline)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)

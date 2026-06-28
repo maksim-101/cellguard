@@ -88,6 +88,13 @@ struct AnalyticsView: View {
         let silentPct = (Double(silentCount) / Double(dropEvents.count)) * 100
         facts.append(("waveform.path.badge.minus", "Silent Failures (of total drops)", String(format: "%.0f%%", silentPct)))
 
+        // 1b. Data Stalls — severeThroughput events are included in dropEvents via isDropEvent
+        let stallCount = dropEvents.filter { $0.eventType == .severeThroughput }.count
+        if stallCount > 0 {
+            let stallPct = Double(stallCount) / Double(dropEvents.count) * 100
+            facts.append(("bolt.horizontal.circle", "Data Stalls (of total drops)", String(format: "%.0f%%", stallPct)))
+        }
+
         // 2. NRNSA (5G) % (Dynamic calculation of % of total drops)
         let nrnsaCount = dropEvents.filter { $0.radioTechnology?.contains("NRNSA") == true }.count
         let nrnsaPct = (Double(nrnsaCount) / Double(dropEvents.count)) * 100
@@ -226,6 +233,13 @@ struct AnalyticsView: View {
                 }
 
                 if !dropEvents.isEmpty {
+                    // Drop Timeline — embedded chart (mirrors Dashboard before Option H)
+                    Section {
+                        DropTimelineChart(events: events)
+                    } header: {
+                        Text("Drop Timeline")
+                    }
+
                     // Section 1: Actionable Insights
                     Section("Key Drivers") {
                         ForEach(insightFacts, id: \.text) { fact in

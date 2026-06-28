@@ -21,6 +21,9 @@ struct DropTimelineChart: View {
     /// toggles this. Persists via @AppStorage (D-07). Default true (D-06).
     @AppStorage("chartShowOvert") private var chartShowOvert: Bool = true
 
+    /// Whether severe-throughput (data stall) bars are visible. Same pattern as siblings (D-07). Default true.
+    @AppStorage("chartShowStall") private var chartShowStall: Bool = true
+
     /// Drives the (i) info popover anchored to the info Button (D-02).
     @State private var showInfoPopover: Bool = false
 
@@ -30,6 +33,7 @@ struct DropTimelineChart: View {
     private enum DropSeries: String, CaseIterable, Identifiable, Plottable {
         case silent = "Silent"
         case overt = "Overt"
+        case stall = "Stall"
         var id: String { rawValue }
     }
 
@@ -113,7 +117,12 @@ struct DropTimelineChart: View {
                 bucketDate = calendar.date(from: bucketComponents) ?? event.timestamp
             }
 
-            let type: DropSeries = (event.eventType == .silentFailure) ? .silent : .overt
+            let type: DropSeries
+            switch event.eventType {
+            case .silentFailure:     type = .silent
+            case .severeThroughput:  type = .stall
+            default:                 type = .overt
+            }
             grouped[bucketDate, default: [:]][type, default: 0] += 1
         }
 
@@ -125,7 +134,7 @@ struct DropTimelineChart: View {
         }
         return result.sorted { lhs, rhs in
             if lhs.bucketStart != rhs.bucketStart { return lhs.bucketStart < rhs.bucketStart }
-            return lhs.type.rawValue < rhs.type.rawValue   // deterministic Silent-before-Overt
+            return lhs.type.rawValue < rhs.type.rawValue   // deterministic: Overt < Silent < Stall
         }
     }
 
@@ -138,6 +147,7 @@ struct DropTimelineChart: View {
             switch bucket.type {
             case .silent: return chartShowSilent
             case .overt:  return chartShowOvert
+            case .stall:  return chartShowStall
             }
         }
     }
@@ -200,7 +210,7 @@ struct DropTimelineChart: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
                 .frame(height: 150)
-            } else if !chartShowSilent && !chartShowOvert {
+            } else if !chartShowSilent && !chartShowOvert && !chartShowStall {
                 // D-07 edge case: both series toggled off. Show a hint instead
                 // of an empty plot so the user understands why the chart is blank.
                 Text("No series visible — tap a chip to enable")
@@ -218,7 +228,8 @@ struct DropTimelineChart: View {
                 }
                 .chartForegroundStyleScale([
                     DropSeries.silent.rawValue: Color.red,
-                    DropSeries.overt.rawValue: Color.orange
+                    DropSeries.overt.rawValue: Color.orange,
+                    DropSeries.stall.rawValue: Color(.systemPurple)
                 ])
                 // REQUIRED (D-04): suppress Swift Charts' implicit auto-legend that
                 // would otherwise render below the plot whenever
@@ -277,6 +288,9 @@ struct DropTimelineChart: View {
             }
             legendChip(label: DropSeries.overt.rawValue, color: .orange, isOn: chartShowOvert) {
                 chartShowOvert.toggle()
+            }
+            legendChip(label: DropSeries.stall.rawValue, color: Color(.systemPurple), isOn: chartShowStall) {
+                chartShowStall.toggle()
             }
             Button {
                 showInfoPopover.toggle()
@@ -348,6 +362,16 @@ struct DropTimelineChart: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(DropSeries.overt.rawValue).font(.subheadline).bold()
                         Text("NWPathMonitor reported the connection went down — the system itself acknowledged the drop.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                HStack(alignment: .top, spacing: 6) {
+                    Circle().fill(Color(.systemPurple)).frame(width: 8, height: 8).padding(.top, 5)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(DropSeries.stall.rawValue).font(.subheadline).bold()
+                        Text("Reachable, but data throughput is effectively dead — the 5G NR-NSA data stall.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
