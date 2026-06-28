@@ -13,12 +13,20 @@ struct SummaryReportView: View {
 
     var body: some View {
         List {
-            Section("Overview") {
+            Section {
                 LabeledContent("Total Drops", value: "\(report.totalDrops)")
                 LabeledContent("Overt Drops", value: "\(report.overtDrops)")
                 LabeledContent("Silent Failures", value: "\(report.silentDrops)")
+                LabeledContent("Data Stalls", value: "\(report.stallDrops)")
                 LabeledContent("Total Events", value: "\(report.totalEvents)")
                 LabeledContent("Days Monitored", value: "\(report.monitoringDays) day\(report.monitoringDays == 1 ? "" : "s")")
+            } header: {
+                Text("Overview")
+            } footer: {
+                Text("Total Drops = Overt + Silent + Data Stalls. Degraded events (below) are slow but not lost, so they are not counted as drops.")
+            }
+            Section("Degraded (not drops)") {
+                LabeledContent("Slow / degraded probes", value: "\(report.degradedCount)")
             }
             Section("Stats") {
                 if let ratio = report.dropRatio {
@@ -40,8 +48,8 @@ struct SummaryReportView: View {
                                     .fixedSize(horizontal: false, vertical: true)
                                 
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("Denominator: Total Cellular Events")
-                                    Text("Numerator: Total Drops (Silent + Overt)")
+                                    Text("Denominator: cellular probe attempts + overt drops")
+                                    Text("Numerator: Total Drops (Silent + Overt + Data Stalls)")
                                 }
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -51,6 +59,9 @@ struct SummaryReportView: View {
                             .presentationCompactAdaptation(.popover)
                         }
                     }
+                }
+                if let degradedRatio = report.degradedRatio {
+                    LabeledContent("Degraded Ratio (Cellular)", value: String(format: "%.1f%%", degradedRatio * 100))
                 }
                 LabeledContent("Drops per Day", value: String(format: "%.1f", report.dropsPerDay))
             }
