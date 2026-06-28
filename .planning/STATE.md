@@ -92,6 +92,7 @@ None.
 | 260628-ope | Low-data cellular throughput probe (100KB Cloudflare `__down` every 5th probe cycle, cellular-only) → `throughputKbps` field + `.slowThroughput` event (<1Mbps); catches "attached but slow" NR-NSA stalls the reachability probe misses | 2026-06-28 | 2f2c68b | [260628-ope-add-low-data-cellular-throughput-probe-1](./quick/260628-ope-add-low-data-cellular-throughput-probe-1/) |
 | fast | Count only cellular path-change drops, exclude Wi-Fi handover gaps (overt-drop event records lost interface; isDropEvent gates on cellular) + SwiftData migration fix for `lowPowerMode` declaration default (crash 134110) | 2026-06-28 | a4b92ea | — |
 | fast | Seed VPN edge-detector at launch so a pre-existing VPN (Tailscale already connected) reads `.connected` not stale `.connecting` on first probe | 2026-06-28 | c819cd6 | — |
+| fast | Probe Latency analytics section — side-by-side Successful vs Failed min/median/mean/max/count (failed = probeFailure + silentFailure); surfaces slow successful probes | 2026-06-28 | 6bb2ab6 | — |
 
 ## Session Continuity
 
