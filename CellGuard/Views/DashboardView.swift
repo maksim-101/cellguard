@@ -1,9 +1,9 @@
 import SwiftUI
 import SwiftData
-import Charts
 
-/// Main landing screen showing monitoring status, connectivity state,
-/// drop counts (24h/7d/total), and last drop timestamp (UI-01, UI-04).
+/// Main landing screen — Option H "Cellular Health" layout.
+/// Shows two ScoreRings (Overall + Last 24h), a verdict pill, a 24h probe-count row,
+/// and a failure-mode breakdown, followed by the standard navigation links.
 struct DashboardView: View {
     @Environment(ConnectivityMonitor.self) private var monitor
     @Environment(MonitoringHealthService.self) private var healthService
@@ -14,37 +14,46 @@ struct DashboardView: View {
     @State private var showHealthSheet = false
     @AppStorage("omitLocationData") private var omitLocation = false
 
+    // MARK: - HealthScore Derived Values
+
+    private var overall: Double? {
+        HealthScore.score(events: allEvents, since: nil)
+    }
+
+    private var last24h: Double? {
+        HealthScore.score(events: allEvents, since: HealthScore.since24h())
+    }
+
+    private var counts24h: HealthScore.FailureCounts {
+        HealthScore.failureCounts(events: allEvents, since: HealthScore.since24h())
+    }
+
+    private var verdict: (text: String, symbol: String, color: Color)? {
+        HealthScore.verdict(last24h: last24h, overall: overall)
+    }
+
+    // MARK: - Body
+
     var body: some View {
         VStack(spacing: 0) {
             // Health status bar (tappable, opens detail sheet)
             healthBar
                 .padding(.bottom, 6)
 
-            // Current connectivity state
-            connectivityStateCard
+            // Card 1: Cellular Health — two ScoreRings + verdict pill
+            cellularHealthCard
                 .padding(.horizontal)
                 .padding(.bottom, 6)
 
-            // Drop count cards
-            dropCountCards
+            // Card 2: 24h probe/drop/degraded count row
+            probeCountRow
                 .padding(.horizontal)
                 .padding(.bottom, 6)
 
-            // Last drop timestamp
-            lastDropRow
+            // Card 3: 24h failure-mode breakdown
+            failureModeCard
                 .padding(.horizontal)
                 .padding(.bottom, 6)
-
-            // Drop timeline chart (EXP-03)
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Drop Timeline")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal)
-                DropTimelineChart(events: allEvents)
-                    .padding(.horizontal)
-            }
-            .padding(.bottom, 6)
 
             // Navigation to full event list
             NavigationLink {
@@ -183,85 +192,99 @@ struct DashboardView: View {
         .accessibilityLabel("Monitoring \(healthAccessibilityLabel), tap for details")
     }
 
-    // MARK: - Connectivity State Card
+    // MARK: - Cellular Health Card (Card 1)
 
-    private var connectivityStateCard: some View {
+    private var cellularHealthCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Cellular Health")
+                    .font(.headline)
+                Spacer()
+                Text("Wi-Fi excluded")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            HStack(spacing: 0) {
+                Spacer()
+                ScoreRing(score: overall, label: "Overall")
+                Spacer()
+                ScoreRing(score: last24h, label: "Last 24h")
+                Spacer()
+            }
+
+            if let v = verdict {
+                HStack {
+                    Spacer()
+                    Label(v.text, systemImage: v.symbol)
+                        .foregroundStyle(v.color)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Capsule().fill(v.color.opacity(0.15)))
+                    Spacer()
+                }
+            }
+        }
+        .padding()
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    // MARK: - Probe Count Row (Card 2)
+
+    private var probeCountRow: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Current Status")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(monitor.currentPathStatus.displayName)
-                    .font(.headline)
-            }
-            Spacer()
-            VStack(alignment: .trailing, spacing: 4) {
-                Text("Interface")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(monitor.effectiveInterfaceLabel)
-                    .font(.headline)
-            }
-        }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-    }
-
-    // MARK: - Drop Count Cards
-
-    private var dropCountCards: some View {
-        let dropEvents = allEvents.filter { isDropEvent($0) }
-        let now = Date.now
-
-        let count24h = dropEvents.filter { $0.timestamp >= now.addingTimeInterval(-86400) }.count
-        let count7d = dropEvents.filter { $0.timestamp >= now.addingTimeInterval(-604800) }.count
-        let countTotal = dropEvents.count
-
-        return HStack(spacing: 12) {
-            dropStatCard(count: count24h, label: "24h")
-            dropStatCard(count: count7d, label: "7d")
-            dropStatCard(count: countTotal, label: "Total")
-        }
-    }
-
-    private func dropStatCard(count: Int, label: String) -> some View {
-        VStack(spacing: 4) {
-            Text("\(count)")
-                .font(.largeTitle)
-                .bold()
-            Text(label)
-                .font(.caption)
+            Text("Last 24 h")
                 .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-    }
-
-    // MARK: - Last Drop Row
-
-    private var lastDropRow: some View {
-        let lastDrop = allEvents.first(where: { isDropEvent($0) })
-
-        return HStack {
-            Text("Last Drop")
+            Spacer()
+            (Text("\(counts24h.probes) probes · ")
+             + Text("\(counts24h.drops)").foregroundStyle(.red)
+             + Text(" drops · ")
+             + Text("\(counts24h.degraded)").foregroundStyle(.yellow)
+             + Text(" degraded"))
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
-            Spacer()
-            if let drop = lastDrop {
-                Text(drop.timestamp, format: .dateTime)
-                    .font(.subheadline)
-            } else {
-                Text("No drops recorded")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
         }
-        .padding()
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    // MARK: - Failure Mode Card (Card 3)
+
+    private var failureModeCard: some View {
+        VStack(spacing: 8) {
+            failureRow(color: .red,             name: "Silent",   subtitle: "unreachable",     count: counts24h.silent)
+            Divider()
+            failureRow(color: .orange,          name: "Overt",    subtitle: "system loss",     count: counts24h.overt)
+            Divider()
+            failureRow(color: Color(.systemPurple), name: "Stall", subtitle: "data dead",      count: counts24h.stall)
+            Divider()
+            failureRow(color: .yellow,          name: "Degraded", subtitle: "slow, not a drop", count: counts24h.degraded)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func failureRow(color: Color, name: String, subtitle: String, count: Int) -> some View {
+        HStack(spacing: 10) {
+            Circle()
+                .fill(color)
+                .frame(width: 8, height: 8)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(name)
+                    .font(.subheadline)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Text("\(count)")
+                .font(.subheadline)
+                .bold()
+        }
     }
 
     // MARK: - Health Helpers
@@ -287,6 +310,51 @@ struct DashboardView: View {
         case .active: "active"
         case .degraded: "degraded"
         case .paused: "paused"
+        }
+    }
+}
+
+// MARK: - ScoreRing
+
+private struct ScoreRing: View {
+    let score: Double?
+    let label: String
+
+    private var band: (label: String, color: Color)? {
+        score.map { HealthScore.band(for: $0) }
+    }
+
+    var body: some View {
+        VStack(spacing: 4) {
+            ZStack {
+                Circle()
+                    .stroke(Color(.systemGray5), lineWidth: 10)
+                if let score, let band {
+                    Circle()
+                        .trim(from: 0, to: CGFloat(score) / 100)
+                        .stroke(band.color, style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                    VStack(spacing: 2) {
+                        Text("\(Int(score.rounded()))")
+                            .font(.title.bold())
+                        Text(band.label)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    VStack(spacing: 2) {
+                        Text("—")
+                            .font(.title.bold())
+                        Text("No data")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .frame(width: 88, height: 88)
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 }
