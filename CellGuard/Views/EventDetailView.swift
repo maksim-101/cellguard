@@ -28,6 +28,9 @@ struct EventDetailView: View {
                 if let restriction = event.cellularDataRestricted, restriction != "unknown" {
                     LabeledContent("Cellular Data Access", value: restriction)
                 }
+                if let kbps = event.throughputKbps {
+                    LabeledContent("Throughput", value: String(format: "%.1f Mbps", kbps / 1000))
+                }
             }
 
             if event.wifiSSID != nil {
