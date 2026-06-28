@@ -878,10 +878,15 @@ final class ConnectivityMonitor {
         // Case 1 -- Overt drop: path was satisfied, now unsatisfied or requiresConnection
         if previousPathStatus == .satisfied && (newStatus == .unsatisfied || newStatus == .requiresConnection) {
             dropStartDate = Date()
+            // Record the interface that was LOST, not the post-drop interface. On an overt drop the
+            // path has no available interfaces, so detectPrimaryInterface returns .unknown -- which
+            // would make every cellular and Wi-Fi drop indistinguishable. previousInterfaceType is the
+            // interface we were connected on, letting drop classification attribute the loss to cellular
+            // vs a Wi-Fi handover gap (see isDropEvent in DropClassification.swift).
             logEvent(
                 type: .pathChange,
                 status: newStatus,
-                interface: newInterface,
+                interface: previousInterfaceType,
                 isExpensive: isExpensive,
                 isConstrained: isConstrained,
                 lowPowerMode: lowPowerMode

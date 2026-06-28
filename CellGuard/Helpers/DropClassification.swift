@@ -5,14 +5,21 @@ import Foundation
 ///
 /// Classification:
 /// - silentFailure (eventTypeRaw == 1) -> always a drop
-/// - pathChange (eventTypeRaw == 0) with pathStatus unsatisfied (1) or requiresConnection (2) -> drop
+/// - pathChange (eventTypeRaw == 0) with pathStatus unsatisfied (1) or requiresConnection (2)
+///   -> drop ONLY when it was a cellular loss (interfaceType cellular, or legacy .unknown).
+///   Wi-Fi handover gaps record interfaceType .wifi and are excluded so they don't inflate
+///   the cellular-drop count.
 /// - All other event types (probeSuccess, probeFailure, connectivityRestored, monitoringGap) -> NOT drops
 func isDropEvent(_ event: ConnectivityEvent) -> Bool {
     switch event.eventType {
     case .silentFailure:
         return true
     case .pathChange:
-        return event.pathStatus == .unsatisfied || event.pathStatus == .requiresConnection
+        guard event.pathStatus == .unsatisfied || event.pathStatus == .requiresConnection else { return false }
+        // Only count cellular drops; exclude Wi-Fi handover gaps. New overt-drop events record the
+        // dropped interface (previousInterfaceType); legacy events recorded .unknown for any unsatisfied
+        // path, so treat .unknown as countable to preserve historical drop counts.
+        return event.interfaceType == .cellular || event.interfaceType == .unknown
     default:
         return false
     }
