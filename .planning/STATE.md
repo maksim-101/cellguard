@@ -90,6 +90,7 @@ None.
 | 260627-rtr | Explicit VPN status in event detail (show Disconnected/None) + self-check UI explanation & verdict | 2026-06-27 | a92552e | [260627-rtr-vpn-detail-and-selfcheck-ui](./quick/260627-rtr-vpn-detail-and-selfcheck-ui/) |
 | 260628-8tr | Capture Low Data Mode (fix probe-path hardcoded `false` bug) + new per-event Low Power Mode field (model, capture, EventDetailView, JSON export) | 2026-06-28 | 880d680 | [260628-8tr-capture-low-data-mode-fix-hardcoded-fals](./quick/260628-8tr-capture-low-data-mode-fix-hardcoded-fals/) |
 | 260628-ope | Low-data cellular throughput probe (100KB Cloudflare `__down` every 5th probe cycle, cellular-only) → `throughputKbps` field + `.slowThroughput` event (<1Mbps); catches "attached but slow" NR-NSA stalls the reachability probe misses | 2026-06-28 | 2f2c68b | [260628-ope-add-low-data-cellular-throughput-probe-1](./quick/260628-ope-add-low-data-cellular-throughput-probe-1/) |
+| fast | Count only cellular path-change drops, exclude Wi-Fi handover gaps (overt-drop event records lost interface; isDropEvent gates on cellular) + SwiftData migration fix for `lowPowerMode` declaration default (crash 134110) | 2026-06-28 | a4b92ea | — |
 
 ## Session Continuity
 
