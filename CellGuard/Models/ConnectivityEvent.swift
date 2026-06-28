@@ -106,6 +106,13 @@ final class ConnectivityEvent {
     /// adding this non-optional attribute crashes on launch with a 134110 migration error.
     var lowPowerMode: Bool = false
 
+    /// Whether the underlying network path used a cellular interface at the time of the event.
+    /// Source: `NWPath.usesInterfaceType(.cellular)`. This is the RELIABLE cellular discriminator
+    /// for health scoring: unlike `isExpensive` (which reads false through a VPN tunnel), this stays
+    /// true for cellular-backed traffic even when a VPN like Tailscale is active. Declaration default
+    /// `= false` is REQUIRED for SwiftData lightweight migration (see lowPowerMode note above).
+    var pathUsesCellular: Bool = false
+
     // MARK: Cellular metadata
 
     /// Radio access technology string, e.g. "CTRadioAccessTechnologyNR" for 5G. Nil if unknown.
@@ -218,6 +225,7 @@ final class ConnectivityEvent {
         isExpensive: Bool = false,
         isConstrained: Bool = false,
         lowPowerMode: Bool = false,
+        pathUsesCellular: Bool = false,
         radioTechnology: String? = nil,
         carrierName: String? = nil,
         cellularDataRestricted: String? = nil,
@@ -240,6 +248,7 @@ final class ConnectivityEvent {
         self.isExpensive = isExpensive
         self.isConstrained = isConstrained
         self.lowPowerMode = lowPowerMode
+        self.pathUsesCellular = pathUsesCellular
         self.radioTechnology = radioTechnology
         self.carrierName = carrierName
         self.cellularDataRestricted = cellularDataRestricted
@@ -269,6 +278,7 @@ extension ConnectivityEvent: Codable {
         case isExpensive
         case isConstrained
         case lowPowerMode
+        case pathUsesCellular
         case radioTechnology
         case carrierName
         case cellularDataRestricted
@@ -334,6 +344,7 @@ extension ConnectivityEvent: Codable {
             // decodeIfPresent ?? false: legacy export files lacking this key still decode cleanly
             // (differs from isConstrained's non-optional decode, which was written before migration-safety mattered)
             lowPowerMode: try container.decodeIfPresent(Bool.self, forKey: .lowPowerMode) ?? false,
+            pathUsesCellular: try container.decodeIfPresent(Bool.self, forKey: .pathUsesCellular) ?? false,
             radioTechnology: try container.decodeIfPresent(String.self, forKey: .radioTechnology),
             carrierName: try container.decodeIfPresent(String.self, forKey: .carrierName),
             cellularDataRestricted: try container.decodeIfPresent(String.self, forKey: .cellularDataRestricted),
@@ -362,6 +373,7 @@ extension ConnectivityEvent: Codable {
         try container.encode(isExpensive, forKey: .isExpensive)
         try container.encode(isConstrained, forKey: .isConstrained)
         try container.encode(lowPowerMode, forKey: .lowPowerMode)
+        try container.encode(pathUsesCellular, forKey: .pathUsesCellular)
         try container.encodeIfPresent(radioTechnology, forKey: .radioTechnology)
         try container.encodeIfPresent(carrierName, forKey: .carrierName)
         // Omit "unknown" cellular restriction state from export — same noise-reduction principle

@@ -24,7 +24,7 @@ enum MockData {
         for (i, latency) in stride(from: 90.0, through: 430.0, by: 28.0).enumerated() {
             events.append(ConnectivityEvent(
                 timestamp: ago(Double(i) * 33 + 5), eventType: .probeSuccess, pathStatus: .satisfied,
-                interfaceType: .cellular, isExpensive: true, radioTechnology: nr, carrierName: "Swisscom",
+                interfaceType: .cellular, isExpensive: true, pathUsesCellular: true, radioTechnology: nr, carrierName: "Swisscom",
                 vpnState: .connected, vpnInterface: "utun6", probeLatencyMs: latency,
                 latitude: clusterA.lat, longitude: clusterA.lon, locationAccuracy: 65))
         }
@@ -32,7 +32,7 @@ enum MockData {
         for (i, latency) in [3200.0, 6100.0, 9300.0].enumerated() {
             events.append(ConnectivityEvent(
                 timestamp: ago(Double(i) * 80 + 40), eventType: .probeSuccess, pathStatus: .satisfied,
-                interfaceType: .cellular, isExpensive: true, radioTechnology: nr, carrierName: "Swisscom",
+                interfaceType: .cellular, isExpensive: true, pathUsesCellular: true, radioTechnology: nr, carrierName: "Swisscom",
                 vpnState: .connected, vpnInterface: "utun6", probeLatencyMs: latency,
                 latitude: clusterA.lat, longitude: clusterA.lon, locationAccuracy: 65))
         }
@@ -40,7 +40,7 @@ enum MockData {
         for (i, kbps) in [42000.0, 31000.0, 18500.0, 9200.0].enumerated() {
             events.append(ConnectivityEvent(
                 timestamp: ago(Double(i) * 120 + 20), eventType: .probeSuccess, pathStatus: .satisfied,
-                interfaceType: .cellular, isExpensive: true, radioTechnology: nr, vpnState: .connected, vpnInterface: "utun6",
+                interfaceType: .cellular, isExpensive: true, pathUsesCellular: true, radioTechnology: nr, vpnState: .connected, vpnInterface: "utun6",
                 throughputKbps: kbps, latitude: clusterA.lat, longitude: clusterA.lon, locationAccuracy: 65))
         }
         // Silent failures (headline evidence)
@@ -48,7 +48,7 @@ enum MockData {
             let cl = i % 3 == 0 ? clusterB : clusterA
             events.append(ConnectivityEvent(
                 timestamp: ago(Double(i) * 95 + 25), eventType: .silentFailure, pathStatus: .satisfied,
-                interfaceType: .cellular, isExpensive: true, radioTechnology: nr, carrierName: "Swisscom",
+                interfaceType: .cellular, isExpensive: true, pathUsesCellular: true, radioTechnology: nr, carrierName: "Swisscom",
                 vpnState: .connected, vpnInterface: "utun6", probeLatencyMs: 10000 + Double(i),
                 latitude: cl.lat, longitude: cl.lon, locationAccuracy: 70, dropDurationSeconds: Double(40 + i * 12)))
         }
@@ -56,7 +56,7 @@ enum MockData {
         for i in 0..<4 {
             events.append(ConnectivityEvent(
                 timestamp: ago(Double(i) * 160 + 60), eventType: .pathChange, pathStatus: .unsatisfied,
-                interfaceType: .cellular, isExpensive: true, radioTechnology: nr,
+                interfaceType: .cellular, isExpensive: true, pathUsesCellular: true, radioTechnology: nr,
                 latitude: clusterA.lat, longitude: clusterA.lon, locationAccuracy: 70, dropDurationSeconds: Double(8 + i * 5)))
         }
         // Wi-Fi handover gaps (NOT drops — interface wifi)
@@ -69,7 +69,7 @@ enum MockData {
         for (i, kbps) in [870.0, 540.0, 300.0].enumerated() {
             events.append(ConnectivityEvent(
                 timestamp: ago(Double(i) * 140 + 50), eventType: .slowThroughput, pathStatus: .satisfied,
-                interfaceType: .cellular, isExpensive: true, radioTechnology: nr, vpnState: .connected, vpnInterface: "utun6",
+                interfaceType: .cellular, isExpensive: true, pathUsesCellular: true, radioTechnology: nr, vpnState: .connected, vpnInterface: "utun6",
                 throughputKbps: kbps, latitude: clusterA.lat, longitude: clusterA.lon, locationAccuracy: 65))
         }
         // Severe throughput (NEW — counts as a drop)
@@ -77,14 +77,14 @@ enum MockData {
             let cl = i % 2 == 0 ? clusterA : clusterB
             events.append(ConnectivityEvent(
                 timestamp: ago(Double(i) * 110 + 35), eventType: .severeThroughput, pathStatus: .satisfied,
-                interfaceType: .cellular, isExpensive: true, radioTechnology: nr, vpnState: .connected, vpnInterface: "utun6",
+                interfaceType: .cellular, isExpensive: true, pathUsesCellular: true, radioTechnology: nr, vpnState: .connected, vpnInterface: "utun6",
                 throughputKbps: kbps, latitude: cl.lat, longitude: cl.lon, locationAccuracy: 65))
         }
         // Probe failures
         for i in 0..<2 {
             events.append(ConnectivityEvent(
                 timestamp: ago(Double(i) * 175 + 80), eventType: .probeFailure, pathStatus: .satisfied,
-                interfaceType: .cellular, isExpensive: true, radioTechnology: nr, probeLatencyMs: 10000 + Double(i * 5),
+                interfaceType: .cellular, isExpensive: true, pathUsesCellular: true, radioTechnology: nr, probeLatencyMs: 10000 + Double(i * 5),
                 probeFailureReason: "timeout"))
         }
 

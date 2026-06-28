@@ -431,6 +431,7 @@ final class ConnectivityMonitor {
                         isExpensive: capturedIsExpensive,
                         isConstrained: capturedIsConstrained,
                         lowPowerMode: capturedLowPowerMode,
+                        pathUsesCellular: capturedPathUsesCellular,
                         probeLatencyMs: latencyMs,
                         vpnState: capturedVPNState,
                         vpnInterface: capturedVPNInterface
@@ -445,6 +446,7 @@ final class ConnectivityMonitor {
                         isExpensive: capturedIsExpensive,
                         isConstrained: capturedIsConstrained,
                         lowPowerMode: capturedLowPowerMode,
+                        pathUsesCellular: capturedPathUsesCellular,
                         probeLatencyMs: latencyMs,
                         probeFailureReason: "unexpected body (captive portal?)",
                         vpnState: capturedVPNState,
@@ -504,6 +506,7 @@ final class ConnectivityMonitor {
                         isExpensive: capturedIsExpensive,
                         isConstrained: capturedIsConstrained,
                         lowPowerMode: capturedLowPowerMode,
+                        pathUsesCellular: capturedPathUsesCellular,
                         probeLatencyMs: latencyMs,
                         probeFailureReason: error.localizedDescription,
                         vpnState: capturedVPNState,
@@ -523,6 +526,7 @@ final class ConnectivityMonitor {
                         isExpensive: capturedIsExpensive,
                         isConstrained: capturedIsConstrained,
                         lowPowerMode: capturedLowPowerMode,
+                        pathUsesCellular: capturedPathUsesCellular,
                         probeLatencyMs: latencyMs,
                         vpnState: capturedVPNState,
                         vpnInterface: capturedVPNInterface
@@ -552,8 +556,10 @@ final class ConnectivityMonitor {
         // or probeFailure, and Wi-Fi throughput is irrelevant to the cellular-modem evidence.
         // The 60s timer is the dominant caller so this is foreground-driven in practice.
         throughputCycleCounter += 1
+        // Gate on pathUsesCellular, NOT interface == .cellular: under a VPN the detected interface
+        // is .other (utun), so an interface check would never run the throughput probe on cellular.
         if throughputCycleCounter % throughputCycleInterval == 0
-            && capturedInterface == .cellular
+            && capturedPathUsesCellular
             && lastProbeOutcome == .probeSuccess {
             await measureThroughput(
                 status: capturedStatus,
@@ -561,6 +567,7 @@ final class ConnectivityMonitor {
                 isExpensive: capturedIsExpensive,
                 isConstrained: capturedIsConstrained,
                 lowPowerMode: capturedLowPowerMode,
+                pathUsesCellular: capturedPathUsesCellular,
                 vpnState: capturedVPNState,
                 vpnInterface: capturedVPNInterface
             )
@@ -603,6 +610,7 @@ final class ConnectivityMonitor {
         isExpensive: Bool,
         isConstrained: Bool,
         lowPowerMode: Bool,
+        pathUsesCellular: Bool,
         vpnState: VPNState,
         vpnInterface: String?
     ) async {
@@ -638,6 +646,7 @@ final class ConnectivityMonitor {
                 isExpensive: isExpensive,
                 isConstrained: isConstrained,
                 lowPowerMode: lowPowerMode,
+                pathUsesCellular: pathUsesCellular,
                 throughputKbps: kbps,
                 vpnState: vpnState,
                 vpnInterface: vpnInterface
@@ -1023,6 +1032,7 @@ final class ConnectivityMonitor {
         isExpensive: Bool,
         isConstrained: Bool,
         lowPowerMode: Bool = false,
+        pathUsesCellular: Bool? = nil,
         probeLatencyMs: Double? = nil,
         throughputKbps: Double? = nil,
         probeFailureReason: String? = nil,
@@ -1042,6 +1052,10 @@ final class ConnectivityMonitor {
         // Same pattern for vpnInterface: use the pre-await snapshot if provided, otherwise
         // read from currentVPNInterface (set alongside currentVPNState in handlePathUpdate).
         let resolvedVPNInterface = vpnInterface ?? currentVPNInterface
+        // Use the caller's pre-await snapshot when provided (probe/throughput paths capture it before
+        // the await to avoid the Pitfall 5 race); otherwise read the live path (path-change events).
+        // usesInterfaceType(.cellular) is true for cellular even through a VPN tunnel, unlike isExpensive.
+        let resolvedUsesCellular = pathUsesCellular ?? pathMonitor.currentPath.usesInterfaceType(.cellular)
 
         Task {
             let ssid = await captureWifiSSID()
@@ -1053,6 +1067,7 @@ final class ConnectivityMonitor {
                 isExpensive: isExpensive,
                 isConstrained: isConstrained,
                 lowPowerMode: lowPowerMode,
+                pathUsesCellular: resolvedUsesCellular,
                 radioTechnology: radioTech,
                 carrierName: carrier,
                 cellularDataRestricted: cellularRestriction,

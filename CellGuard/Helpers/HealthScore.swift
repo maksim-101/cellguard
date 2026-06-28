@@ -38,16 +38,15 @@ enum HealthScore {
     /// Returns nil when fewer than `minCellularProbesForScore` cellular probes are present
     /// (not enough evidence for a reliable grade).
     ///
-    /// Why `isExpensive` instead of `interfaceType` for the Wi-Fi filter:
-    /// NWPath marks the cellular interface expensive. When the phone is on Wi-Fi, the same
-    /// probe runs over the Wi-Fi link and `isExpensive` is false. A VPN tunnel does NOT flip
-    /// `isExpensive` — the tunnel runs on top of the expensive cellular interface, so the flag
-    /// correctly identifies the underlying bearer regardless of VPN presence. `interfaceType`
-    /// reports .other for VPN traffic and would misclassify those probes as non-cellular;
-    /// `isExpensive` avoids that misclassification entirely.
+    /// Why `pathUsesCellular` (NWPath.usesInterfaceType(.cellular)) for the Wi-Fi filter:
+    /// `interfaceType` reports .other for VPN traffic, and — contrary to an earlier assumption —
+    /// `isExpensive` reads FALSE through a VPN tunnel (the utun interface isn't marked expensive),
+    /// so on a device with an always-on VPN like Tailscale BOTH would misclassify every cellular
+    /// probe as non-cellular and the score would show "No data". `usesInterfaceType(.cellular)`
+    /// stays true for cellular-backed traffic even under a VPN, so it is the reliable bearer signal.
     static func score(events: [ConnectivityEvent], since: Date?) -> Double? {
         let w = windowed(events, since: since)
-        let probes = w.filter { probeOutcomeTypes.contains($0.eventType) && $0.isExpensive }
+        let probes = w.filter { probeOutcomeTypes.contains($0.eventType) && $0.pathUsesCellular }
         guard probes.count >= minCellularProbesForScore else { return nil }
         // Clean is a strict subset of cellular probes: probeSuccess with latency within threshold.
         // Always filter the probe set — never raw events — so the denominator is consistent.
@@ -111,22 +110,22 @@ enum HealthScore {
     static func failureCounts(events: [ConnectivityEvent], since: Date?) -> FailureCounts {
         let w = windowed(events, since: since)
 
-        let silent = w.filter { $0.eventType == .silentFailure && $0.isExpensive }.count
+        let silent = w.filter { $0.eventType == .silentFailure && $0.pathUsesCellular }.count
 
         // `isDropEvent` already gates pathChange drops on cellular interface, so no additional
         // `isExpensive` check is needed — the function's own cellular discrimination is reused.
         let overt = w.filter { $0.eventType == .pathChange && isDropEvent($0) }.count
 
-        let stall = w.filter { $0.eventType == .severeThroughput && $0.isExpensive }.count
+        let stall = w.filter { $0.eventType == .severeThroughput && $0.pathUsesCellular }.count
 
-        let degradedSlow = w.filter { $0.eventType == .slowThroughput && $0.isExpensive }.count
+        let degradedSlow = w.filter { $0.eventType == .slowThroughput && $0.pathUsesCellular }.count
         let degradedSlowSuccess = w.filter {
-            $0.eventType == .probeSuccess && $0.isExpensive
+            $0.eventType == .probeSuccess && $0.pathUsesCellular
                 && ($0.probeLatencyMs ?? 0) > slowLatencyThresholdMs
         }.count
         let degraded = degradedSlow + degradedSlowSuccess
 
-        let probes = w.filter { probeOutcomeTypes.contains($0.eventType) && $0.isExpensive }.count
+        let probes = w.filter { probeOutcomeTypes.contains($0.eventType) && $0.pathUsesCellular }.count
 
         return FailureCounts(
             silent: silent,
