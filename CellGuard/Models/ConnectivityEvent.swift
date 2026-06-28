@@ -91,6 +91,10 @@ final class ConnectivityEvent {
     /// Whether the network path is constrained (e.g., Low Data Mode)
     var isConstrained: Bool
 
+    /// Whether Low Power Mode was enabled at the time of the event.
+    /// Source: `ProcessInfo.processInfo.isLowPowerModeEnabled`.
+    var lowPowerMode: Bool
+
     // MARK: Cellular metadata
 
     /// Radio access technology string, e.g. "CTRadioAccessTechnologyNR" for 5G. Nil if unknown.
@@ -198,6 +202,7 @@ final class ConnectivityEvent {
         interfaceType: InterfaceType,
         isExpensive: Bool = false,
         isConstrained: Bool = false,
+        lowPowerMode: Bool = false,
         radioTechnology: String? = nil,
         carrierName: String? = nil,
         cellularDataRestricted: String? = nil,
@@ -218,6 +223,7 @@ final class ConnectivityEvent {
         self.interfaceTypeRaw = interfaceType.rawValue
         self.isExpensive = isExpensive
         self.isConstrained = isConstrained
+        self.lowPowerMode = lowPowerMode
         self.radioTechnology = radioTechnology
         self.carrierName = carrierName
         self.cellularDataRestricted = cellularDataRestricted
@@ -245,6 +251,7 @@ extension ConnectivityEvent: Codable {
         case interfaceType
         case isExpensive
         case isConstrained
+        case lowPowerMode
         case radioTechnology
         case carrierName
         case cellularDataRestricted
@@ -306,6 +313,9 @@ extension ConnectivityEvent: Codable {
             interfaceType: interfaceType,
             isExpensive: try container.decode(Bool.self, forKey: .isExpensive),
             isConstrained: try container.decode(Bool.self, forKey: .isConstrained),
+            // decodeIfPresent ?? false: legacy export files lacking this key still decode cleanly
+            // (differs from isConstrained's non-optional decode, which was written before migration-safety mattered)
+            lowPowerMode: try container.decodeIfPresent(Bool.self, forKey: .lowPowerMode) ?? false,
             radioTechnology: try container.decodeIfPresent(String.self, forKey: .radioTechnology),
             carrierName: try container.decodeIfPresent(String.self, forKey: .carrierName),
             cellularDataRestricted: try container.decodeIfPresent(String.self, forKey: .cellularDataRestricted),
@@ -332,6 +342,7 @@ extension ConnectivityEvent: Codable {
         try container.encode(interfaceType.encodingString, forKey: .interfaceType)
         try container.encode(isExpensive, forKey: .isExpensive)
         try container.encode(isConstrained, forKey: .isConstrained)
+        try container.encode(lowPowerMode, forKey: .lowPowerMode)
         try container.encodeIfPresent(radioTechnology, forKey: .radioTechnology)
         try container.encodeIfPresent(carrierName, forKey: .carrierName)
         // Omit "unknown" cellular restriction state from export — same noise-reduction principle
