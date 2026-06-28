@@ -20,6 +20,7 @@ struct EventDetailView: View {
                 LabeledContent("Interface", value: event.interfaceType.displayName)
                 LabeledContent("Expensive", value: event.isExpensive ? "Yes" : "No")
                 LabeledContent("Constrained", value: event.isConstrained ? "Yes" : "No")
+                LabeledContent("Low Power Mode", value: event.lowPowerMode ? "On" : "Off")
             }
 
             Section("Cellular") {
