@@ -139,6 +139,22 @@ final class ConnectivityMonitor {
     /// Timeout for each HEAD probe request. 10 seconds is generous but catches slow failures.
     private let probeTimeout: TimeInterval = 10
 
+    /// Ceiling for a valid measured probe latency. A probe's ACTIVE duration cannot exceed
+    /// probeTimeout (it would time out first), so a wall-clock latency beyond this means the app
+    /// was suspended in the background mid-probe and the elapsed time includes the frozen period.
+    /// Such samples are measurement artifacts (e.g. a "successful" probe reading 900+ seconds),
+    /// not real network latency, so they are recorded as nil rather than poisoning the stats.
+    /// Computed (not stored) so it tracks probeTimeout; the +2s absorbs scheduling slop.
+    private var maxValidProbeLatencyMs: Double { (probeTimeout + 2) * 1000 }
+
+    /// Wall-clock latency since `start` in ms, or nil if it exceeds `maxValidProbeLatencyMs`.
+    /// A nil means the probe spanned a background suspension and its latency is meaningless --
+    /// the probe outcome (success/failure) is still logged, only the bogus latency is dropped.
+    private func validatedProbeLatencyMs(since start: Date) -> Double? {
+        let ms = Date().timeIntervalSince(start) * 1000
+        return ms <= maxValidProbeLatencyMs ? ms : nil
+    }
+
     /// Interval between probe firings. 60 seconds balances detection speed with battery.
     private let probeInterval: TimeInterval = 60
 
@@ -394,7 +410,7 @@ final class ConnectivityMonitor {
 
         do {
             let (data, response) = try await session.data(for: request)
-            let latencyMs = Date().timeIntervalSince(start) * 1000
+            let latencyMs = validatedProbeLatencyMs(since: start)
 
             if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
                 // Body validation: Apple's captive portal endpoint returns a document containing
@@ -448,7 +464,7 @@ final class ConnectivityMonitor {
                 lastProbeOutcome = .probeFailure
             }
         } catch {
-            let latencyMs = Date().timeIntervalSince(start) * 1000
+            let latencyMs = validatedProbeLatencyMs(since: start)
 
             // VPN-04 BROAD trigger (user override of D-06 narrow): treat path as effectively
             // cellular when (a) NWPath reported cellular directly, OR (b) ANY non-trivial VPN
@@ -594,9 +610,12 @@ final class ConnectivityMonitor {
             let elapsed = Date().timeIntervalSince(start)
 
             // Guard against divide-by-zero and absurdly short elapsed times producing
-            // meaningless astronomical rates. Also guard non-200 responses.
+            // meaningless astronomical rates. Also guard non-200 responses. The upper bound
+            // (elapsed <= probeTimeout + 2) drops downloads that spanned a background suspension:
+            // their wall-clock includes the frozen period, so the computed kbps would be a
+            // false-slow artifact and would log a spurious .slowThroughput event.
             guard let http = response as? HTTPURLResponse, http.statusCode == 200,
-                  elapsed > 0.001 else { return }
+                  elapsed > 0.001, elapsed <= probeTimeout + 2 else { return }
 
             let kbps = (Double(data.count) * 8.0) / 1000.0 / elapsed
             let eventType: EventType = kbps < slowThroughputThresholdKbps ? .slowThroughput : .probeSuccess

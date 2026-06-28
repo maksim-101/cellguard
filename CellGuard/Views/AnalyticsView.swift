@@ -23,9 +23,16 @@ struct AnalyticsView: View {
 
     // MARK: - Probe Latency
 
+    /// The reachability probe times out at 10s, so any recorded latency well beyond that is an
+    /// app-suspension artifact (wall-clock measured across a background suspension, e.g. 900+ s).
+    /// Excluded from the stats. 15s keeps legitimate ~10s timeout failures while dropping artifacts.
+    private let maxDisplayLatencyMs: Double = 15_000
+
     /// Round-trip latencies (ms) of successful reachability probes.
     private var successLatencies: [Double] {
-        events.filter { $0.eventType == .probeSuccess }.compactMap { $0.probeLatencyMs }
+        events.filter { $0.eventType == .probeSuccess }
+            .compactMap { $0.probeLatencyMs }
+            .filter { $0 <= maxDisplayLatencyMs }
     }
 
     /// Round-trip latencies (ms) of failed probes — both probeFailure and silentFailure
@@ -33,6 +40,7 @@ struct AnalyticsView: View {
     private var failedLatencies: [Double] {
         events.filter { $0.eventType == .probeFailure || $0.eventType == .silentFailure }
             .compactMap { $0.probeLatencyMs }
+            .filter { $0 <= maxDisplayLatencyMs }
     }
 
     private var hasLatencyData: Bool {
