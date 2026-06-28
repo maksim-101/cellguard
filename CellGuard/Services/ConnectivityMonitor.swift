@@ -358,6 +358,11 @@ final class ConnectivityMonitor {
         let capturedVPNState = currentVPNState
         let capturedVPNInterface = currentVPNInterface
         let capturedPathUsesCellular = pathMonitor.currentPath.usesInterfaceType(.cellular)
+        // Capture live path flags and Low Power Mode before the await (Pitfall 5 race-avoidance).
+        // Previously these were hardcoded to false in every probe-path logEvent call -- the bug.
+        let capturedIsExpensive = pathMonitor.currentPath.isExpensive
+        let capturedIsConstrained = pathMonitor.currentPath.isConstrained
+        let capturedLowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
 
         var request = URLRequest(url: probeURL)
         request.httpMethod = "GET"
@@ -384,8 +389,9 @@ final class ConnectivityMonitor {
                         type: .probeSuccess,
                         status: capturedStatus,
                         interface: capturedInterface,
-                        isExpensive: false,
-                        isConstrained: false,
+                        isExpensive: capturedIsExpensive,
+                        isConstrained: capturedIsConstrained,
+                        lowPowerMode: capturedLowPowerMode,
                         probeLatencyMs: latencyMs,
                         vpnState: capturedVPNState,
                         vpnInterface: capturedVPNInterface
@@ -397,8 +403,9 @@ final class ConnectivityMonitor {
                         type: .probeFailure,
                         status: capturedStatus,
                         interface: capturedInterface,
-                        isExpensive: false,
-                        isConstrained: false,
+                        isExpensive: capturedIsExpensive,
+                        isConstrained: capturedIsConstrained,
+                        lowPowerMode: capturedLowPowerMode,
                         probeLatencyMs: latencyMs,
                         probeFailureReason: "unexpected body (captive portal?)",
                         vpnState: capturedVPNState,
@@ -412,8 +419,9 @@ final class ConnectivityMonitor {
                     type: .probeFailure,
                     status: capturedStatus,
                     interface: capturedInterface,
-                    isExpensive: false,
-                    isConstrained: false,
+                    isExpensive: capturedIsExpensive,
+                    isConstrained: capturedIsConstrained,
+                    lowPowerMode: capturedLowPowerMode,
                     probeLatencyMs: latencyMs,
                     probeFailureReason: "HTTP \(statusCode)",
                     vpnState: capturedVPNState,
@@ -454,8 +462,9 @@ final class ConnectivityMonitor {
                         type: .silentFailure,
                         status: capturedStatus,
                         interface: capturedInterface,
-                        isExpensive: false,
-                        isConstrained: false,
+                        isExpensive: capturedIsExpensive,
+                        isConstrained: capturedIsConstrained,
+                        lowPowerMode: capturedLowPowerMode,
                         probeLatencyMs: latencyMs,
                         probeFailureReason: error.localizedDescription,
                         vpnState: capturedVPNState,
@@ -472,8 +481,9 @@ final class ConnectivityMonitor {
                         type: .probeSuccess,
                         status: capturedStatus,
                         interface: capturedInterface,
-                        isExpensive: false,
-                        isConstrained: false,
+                        isExpensive: capturedIsExpensive,
+                        isConstrained: capturedIsConstrained,
+                        lowPowerMode: capturedLowPowerMode,
                         probeLatencyMs: latencyMs,
                         vpnState: capturedVPNState,
                         vpnInterface: capturedVPNInterface
@@ -485,8 +495,9 @@ final class ConnectivityMonitor {
                     type: .probeFailure,
                     status: capturedStatus,
                     interface: capturedInterface,
-                    isExpensive: false,
-                    isConstrained: false,
+                    isExpensive: capturedIsExpensive,
+                    isConstrained: capturedIsConstrained,
+                    lowPowerMode: capturedLowPowerMode,
                     probeLatencyMs: latencyMs,
                     probeFailureReason: error.localizedDescription,
                     vpnState: capturedVPNState,
@@ -688,6 +699,7 @@ final class ConnectivityMonitor {
         let newInterface = detectPrimaryInterface(path)
         let isExpensive = path.isExpensive
         let isConstrained = path.isConstrained
+        let lowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
 
         // Pitfall 1: The initial NWPathMonitor callback reports current state,
         // not a transition. Capture it silently without logging an event.
@@ -737,6 +749,7 @@ final class ConnectivityMonitor {
                 interface: newInterface,
                 isExpensive: isExpensive,
                 isConstrained: isConstrained,
+                lowPowerMode: lowPowerMode,
                 vpnState: currentVPNState,
                 vpnInterface: currentVPNInterface
             )
@@ -753,7 +766,8 @@ final class ConnectivityMonitor {
                 newStatus: newStatus,
                 newInterface: newInterface,
                 isExpensive: isExpensive,
-                isConstrained: isConstrained
+                isConstrained: isConstrained,
+                lowPowerMode: lowPowerMode
             )
         }
     }
@@ -772,7 +786,8 @@ final class ConnectivityMonitor {
         newStatus: PathStatus,
         newInterface: InterfaceType,
         isExpensive: Bool,
-        isConstrained: Bool
+        isConstrained: Bool,
+        lowPowerMode: Bool
     ) {
         // Case 1 -- Overt drop: path was satisfied, now unsatisfied or requiresConnection
         if previousPathStatus == .satisfied && (newStatus == .unsatisfied || newStatus == .requiresConnection) {
@@ -782,7 +797,8 @@ final class ConnectivityMonitor {
                 status: newStatus,
                 interface: newInterface,
                 isExpensive: isExpensive,
-                isConstrained: isConstrained
+                isConstrained: isConstrained,
+                lowPowerMode: lowPowerMode
             )
         }
         // Case 2 -- Connectivity restored: path was down, now satisfied (DAT-02)
@@ -795,6 +811,7 @@ final class ConnectivityMonitor {
                 interface: newInterface,
                 isExpensive: isExpensive,
                 isConstrained: isConstrained,
+                lowPowerMode: lowPowerMode,
                 dropDuration: dropDuration
             )
         }
@@ -805,7 +822,8 @@ final class ConnectivityMonitor {
                 status: newStatus,
                 interface: newInterface,
                 isExpensive: isExpensive,
-                isConstrained: isConstrained
+                isConstrained: isConstrained,
+                lowPowerMode: lowPowerMode
             )
         }
         // Case 4 -- Other meaningful transition: any remaining status or interface change
@@ -815,7 +833,8 @@ final class ConnectivityMonitor {
                 status: newStatus,
                 interface: newInterface,
                 isExpensive: isExpensive,
-                isConstrained: isConstrained
+                isConstrained: isConstrained,
+                lowPowerMode: lowPowerMode
             )
         }
 
@@ -872,6 +891,7 @@ final class ConnectivityMonitor {
         interface: InterfaceType,
         isExpensive: Bool,
         isConstrained: Bool,
+        lowPowerMode: Bool = false,
         probeLatencyMs: Double? = nil,
         probeFailureReason: String? = nil,
         dropDuration: Double? = nil,
@@ -900,6 +920,7 @@ final class ConnectivityMonitor {
                 interfaceType: interface,
                 isExpensive: isExpensive,
                 isConstrained: isConstrained,
+                lowPowerMode: lowPowerMode,
                 radioTechnology: radioTech,
                 carrierName: carrier,
                 cellularDataRestricted: cellularRestriction,
