@@ -96,7 +96,11 @@ final class ConnectivityEvent {
 
     /// Whether Low Power Mode was enabled at the time of the event.
     /// Source: `ProcessInfo.processInfo.isLowPowerModeEnabled`.
-    var lowPowerMode: Bool
+    /// Declaration default `= false` is REQUIRED for SwiftData lightweight migration:
+    /// existing rows have no value for this new mandatory column, and SwiftData reads the
+    /// property-declaration default (NOT the init default) to backfill them. Without it,
+    /// adding this non-optional attribute crashes on launch with a 134110 migration error.
+    var lowPowerMode: Bool = false
 
     // MARK: Cellular metadata
 
