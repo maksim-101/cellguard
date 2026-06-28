@@ -94,6 +94,7 @@ None.
 | fast | Seed VPN edge-detector at launch so a pre-existing VPN (Tailscale already connected) reads `.connected` not stale `.connecting` on first probe | 2026-06-28 | c819cd6 | — |
 | fast | Probe Latency analytics section — side-by-side Successful vs Failed min/median/mean/max/count (failed = probeFailure + silentFailure); surfaces slow successful probes | 2026-06-28 | 6bb2ab6 | — |
 | fast | Discard app-suspension artifacts from probe latency + throughput (wall-clock across background freeze gave 900s+ "latencies"); nil latency / skip throughput beyond probeTimeout+2s; Analytics filters >15s | 2026-06-28 | e68e123 | — |
+| fast | Severe-throughput tier: 3-tier classification (>=1Mbps ok / 200k-1M slowThroughput / <200k severeThroughput); severeThroughput (rawValue 8) counts as a drop + notifies; kept distinct from silentFailure | 2026-06-28 | 93f7a66 | — |
 
 ## Session Continuity
 
