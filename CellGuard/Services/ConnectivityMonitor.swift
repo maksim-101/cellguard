@@ -179,6 +179,11 @@ final class ConnectivityMonitor {
     /// Tunable: lower for stricter flagging, raise to reduce noise on marginal connections.
     private let slowThroughputThresholdKbps: Double = 1000
 
+    /// Throughput below this threshold (in Kbps) is classified as .severeThroughput and COUNTS AS A
+    /// DROP. 200 Kbps ≈ a 100KB transfer taking >4s — bulk data effectively unusable for web/video
+    /// even though tiny reachability probes still succeed. Tunable: this is the failure/degraded line.
+    private let severeThroughputThresholdKbps: Double = 200
+
     /// Counts completed reachability cycles to schedule the every-Nth-cycle throughput measurement.
     private var throughputCycleCounter = 0
 
@@ -618,7 +623,14 @@ final class ConnectivityMonitor {
                   elapsed > 0.001, elapsed <= probeTimeout + 2 else { return }
 
             let kbps = (Double(data.count) * 8.0) / 1000.0 / elapsed
-            let eventType: EventType = kbps < slowThroughputThresholdKbps ? .slowThroughput : .probeSuccess
+            let eventType: EventType
+            if kbps < severeThroughputThresholdKbps {
+                eventType = .severeThroughput   // effectively unusable — counts as a drop
+            } else if kbps < slowThroughputThresholdKbps {
+                eventType = .slowThroughput     // degraded but functional — not a drop
+            } else {
+                eventType = .probeSuccess
+            }
             logEvent(
                 type: eventType,
                 status: status,
@@ -1070,15 +1082,21 @@ final class ConnectivityMonitor {
     private func scheduleDropNotification(eventType: EventType) {
         // Only notify for actual drops -- not probe successes, restorations, or gaps
         guard eventType == .silentFailure ||
+              eventType == .severeThroughput ||
               (eventType == .pathChange && (currentPathStatus == .unsatisfied || currentPathStatus == .requiresConnection)) else {
             return
         }
 
         let content = UNMutableNotificationContent()
         content.title = "Cellular Drop Detected"
-        content.body = eventType == .silentFailure
-            ? "Silent modem failure detected. Capture sysdiagnose: Settings > Privacy > Analytics > sysdiagnose"
-            : "Connectivity lost. Capture sysdiagnose: Settings > Privacy > Analytics > sysdiagnose"
+        switch eventType {
+        case .silentFailure:
+            content.body = "Silent modem failure detected. Capture sysdiagnose: Settings > Privacy > Analytics > sysdiagnose"
+        case .severeThroughput:
+            content.body = "Severe throughput degradation — data effectively stalled on 5G/cellular. Capture sysdiagnose: Settings > Privacy > Analytics > sysdiagnose"
+        default:
+            content.body = "Connectivity lost. Capture sysdiagnose: Settings > Privacy > Analytics > sysdiagnose"
+        }
         content.sound = .default
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)

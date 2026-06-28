@@ -25,6 +25,10 @@ enum EventType: Int, Codable, CaseIterable {
     /// Logged when a cellular download-throughput measurement falls below slowThroughputThresholdKbps.
     /// Not a drop — no notification is sent. Explicit rawValue 7 for migration safety.
     case slowThroughput = 7
+    /// Logged when a throughput measurement falls below severeThroughputThresholdKbps — bulk data
+    /// is effectively unusable (reachability still succeeds, but a 100KB transfer crawls). Counts as
+    /// a drop, distinct from .slowThroughput (degraded but functional). Explicit rawValue 8 (migration safety).
+    case severeThroughput = 8
 }
 
 /// Network path status as reported by NWPathMonitor.
@@ -399,6 +403,7 @@ extension EventType {
         case .monitoringGap: "monitoringGap"
         case .vpnStateChange: "vpnStateChange"
         case .slowThroughput: "slowThroughput"
+        case .severeThroughput: "severeThroughput"
         }
     }
 
@@ -413,6 +418,7 @@ extension EventType {
         case "monitoringGap": .monitoringGap
         case "vpnStateChange": .vpnStateChange
         case "slowThroughput": .slowThroughput
+        case "severeThroughput": .severeThroughput
         default: nil
         }
     }
@@ -507,6 +513,7 @@ extension EventType {
         case .monitoringGap: "Monitoring Gap"
         case .vpnStateChange: "VPN State Change"
         case .slowThroughput: "Slow Throughput"
+        case .severeThroughput: "Severe Throughput"
         }
     }
 }
