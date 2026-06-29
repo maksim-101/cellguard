@@ -15,4 +15,17 @@ enum AppDefaultsKeys {
     /// while `UIApplication.shared.applicationState != .active` (POLISH-01 / D-08).
     /// Read by HealthDetailSheet's TimelineView-wrapped wake row.
     static let lastBackgroundWakeTimestamp = "lastBackgroundWakeTimestamp"
+
+    /// Heartbeat: epoch seconds of the last moment we KNOW the app was alive and monitoring.
+    /// Written by ConnectivityMonitor on every logged event (any probe, path change, etc.) AND
+    /// by LocationService on every wake — NOT only on location wakes. Gap detection measures
+    /// "now − lastActive", so writing it on every probe is what keeps monitoringGap durations
+    /// honest (previously foreground/BG probes left it stale and gaps were massively overcounted).
+    /// Value string kept as "lastActiveTimestamp" so existing installs' stored value carries over.
+    static let lastActiveTimestamp = "lastActiveTimestamp"
+
+    /// Opt-in "Intensive Capture" flag. When true, LocationService holds a continuous low-accuracy
+    /// location session to keep the process alive while stationary, and the 60s probe timer is kept
+    /// running in the background. Costs battery + shows the persistent location indicator.
+    static let intensiveCaptureEnabled = "intensiveCaptureEnabled"
 }

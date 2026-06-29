@@ -29,6 +29,12 @@ struct ContentView: View {
                 // Resume probe timer in foreground (only if monitoring is active)
                 if monitor.isMonitoring {
                     monitor.startProbeTimer()
+
+                    // Flag any monitoring hole that opened while the app was suspended. The
+                    // heartbeat (lastActiveTimestamp) is now bumped by every probe, so on
+                    // foreground return this measures the true sleep duration — catching the
+                    // "asleep all evening while stationary" case that location wakes miss.
+                    locationService.detectAndLogGap()
                 }
 
                 // Re-evaluate health on foreground return (catches changes that happened
@@ -39,8 +45,12 @@ struct ContentView: View {
                     backgroundRefresh: UIApplication.shared.backgroundRefreshStatus
                 )
             } else if newPhase == .background {
-                // Timer suspended by iOS in background
-                monitor.stopProbeTimer()
+                // In intensive capture mode the continuous-location session keeps the process
+                // alive in the background, so we KEEP the 60s probe timer running for true 60s
+                // cadence. In normal mode iOS suspends timers anyway, so stop it to be tidy.
+                if !locationService.intensiveCaptureEnabled {
+                    monitor.stopProbeTimer()
+                }
 
                 // Schedule BGAppRefreshTask on background entry (BKG-03)
                 MonitoringHealthService.scheduleAppRefresh()

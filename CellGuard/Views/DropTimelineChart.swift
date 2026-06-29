@@ -119,9 +119,9 @@ struct DropTimelineChart: View {
 
             let type: DropSeries
             switch event.eventType {
-            case .silentFailure:     type = .silent
-            case .severeThroughput:  type = .stall
-            default:                 type = .overt
+            case .silentFailure:               type = .silent
+            case .severeThroughput, .dataStall: type = .stall
+            default:                           type = .overt
             }
             grouped[bucketDate, default: [:]][type, default: 0] += 1
         }

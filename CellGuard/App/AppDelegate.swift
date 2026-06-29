@@ -21,6 +21,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     /// where no SwiftUI view hierarchy exists.
     static var sharedMonitor: ConnectivityMonitor?
 
+    /// Shared reference to the LocationService, set by CellGuardApp.init(). Lets the
+    /// BGAppRefreshTask handler flag a monitoring gap that opened since the last heartbeat,
+    /// even on a background-only wake with no scene and no location movement.
+    static var sharedLocationService: LocationService?
+
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
@@ -39,6 +44,8 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             }
 
             Task { @MainActor in
+                // Flag any gap that opened since the last heartbeat before this probe rewrites it.
+                AppDelegate.sharedLocationService?.detectAndLogGap()
                 if let monitor = AppDelegate.sharedMonitor {
                     await monitor.runSingleProbe()
                 }

@@ -22,7 +22,7 @@ enum HealthScore {
     /// Non-outcome types (pathChange, connectivityRestored, monitoringGap, vpnStateChange)
     /// are excluded — they do not reflect a reachability probe result.
     private static let probeOutcomeTypes: Set<EventType> = [
-        .probeSuccess, .probeFailure, .silentFailure, .slowThroughput, .severeThroughput
+        .probeSuccess, .probeFailure, .silentFailure, .slowThroughput, .severeThroughput, .dataStall
     ]
 
     /// Applies the time window filter. Returns the full array when `since` is nil.
@@ -125,7 +125,11 @@ enum HealthScore {
         // `isExpensive` check is needed — the function's own cellular discrimination is reused.
         let overt = w.filter { $0.eventType == .pathChange && isDropEvent($0) }.count
 
-        let stall = w.filter { $0.eventType == .severeThroughput && isCellular($0) }.count
+        // Stall = bulk-data-dead (severeThroughput) plus sustained-stream freezes (dataStall);
+        // both are "reachable but unusable for real-time/bulk" and both count as drops.
+        let stall = w.filter {
+            ($0.eventType == .severeThroughput || $0.eventType == .dataStall) && isCellular($0)
+        }.count
 
         let degradedSlow = w.filter { $0.eventType == .slowThroughput && isCellular($0) }.count
         let degradedSlowSuccess = w.filter {

@@ -39,15 +39,18 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
     /// The event store for persisting monitoring gap events.
     private let eventStore: EventStore
 
-    /// Threshold in seconds above which a gap between wakes is logged as a monitoringGap event.
-    /// 10 minutes (600s) -- gaps shorter than this are normal iOS scheduling behavior.
-    private let gapThreshold: TimeInterval = 600
+    /// Threshold in seconds above which a gap between probes is logged as a monitoringGap event.
+    /// In normal mode 10 minutes (600s) — shorter gaps are just iOS discretionary scheduling
+    /// (BGAppRefresh runs ~every 15 min). In intensive mode the 60s timer should never miss for
+    /// long, so a 4-minute hole already means keep-alive failed and is worth recording.
+    private var gapThreshold: TimeInterval {
+        UserDefaults.standard.bool(forKey: AppDefaultsKeys.intensiveCaptureEnabled) ? 240 : 600
+    }
 
     // MARK: - UserDefaults Keys
 
     private enum DefaultsKey {
         static let monitoringEnabled = "monitoringEnabled"
-        static let lastActiveTimestamp = "lastActiveTimestamp"
     }
 
     // MARK: - Initializer
@@ -80,17 +83,63 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
         locationManager.requestAlwaysAuthorization()
         locationManager.startMonitoringSignificantLocationChanges()
 
+        // Honor a previously-enabled intensive capture session across relaunches.
+        if UserDefaults.standard.bool(forKey: AppDefaultsKeys.intensiveCaptureEnabled) {
+            startIntensiveLocationUpdates()
+        }
+
         // Persist monitoring state for auto-resume after relaunch (DAT-03)
         UserDefaults.standard.set(true, forKey: DefaultsKey.monitoringEnabled)
-        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: DefaultsKey.lastActiveTimestamp)
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: AppDefaultsKeys.lastActiveTimestamp)
     }
 
     /// Stops significant location change monitoring and releases the CLServiceSession.
     @MainActor
     func stopMonitoring() {
         locationManager.stopMonitoringSignificantLocationChanges()
+        stopIntensiveLocationUpdates()
         serviceSession = nil
         UserDefaults.standard.set(false, forKey: DefaultsKey.monitoringEnabled)
+    }
+
+    // MARK: - Intensive Capture Mode (keep-alive)
+
+    /// Enables or disables continuous low-accuracy location keep-alive.
+    ///
+    /// The failure clusters in the field were all stationary-at-home: significant-location-change
+    /// never wakes the app when the user doesn't move, so the 60s probe timer is suspended exactly
+    /// when the modem misbehaves. An active continuous-location session keeps the process alive in
+    /// the background (legitimate declared `location` background mode), letting the timer keep
+    /// probing. Low accuracy (3km, cell-tower-based) keeps the battery cost modest.
+    @MainActor
+    func setIntensiveCapture(_ enabled: Bool) {
+        UserDefaults.standard.set(enabled, forKey: AppDefaultsKeys.intensiveCaptureEnabled)
+        guard UserDefaults.standard.bool(forKey: DefaultsKey.monitoringEnabled) else { return }
+        if enabled {
+            startIntensiveLocationUpdates()
+        } else {
+            stopIntensiveLocationUpdates()
+        }
+    }
+
+    /// Whether intensive capture is currently enabled (persisted).
+    var intensiveCaptureEnabled: Bool {
+        UserDefaults.standard.bool(forKey: AppDefaultsKeys.intensiveCaptureEnabled)
+    }
+
+    @MainActor
+    private func startIntensiveLocationUpdates() {
+        locationManager.allowsBackgroundLocationUpdates = true
+        locationManager.pausesLocationUpdatesAutomatically = false
+        locationManager.desiredAccuracy = kCLLocationAccuracyThreeKilometers
+        locationManager.distanceFilter = kCLDistanceFilterNone
+        locationManager.startUpdatingLocation()
+    }
+
+    @MainActor
+    private func stopIntensiveLocationUpdates() {
+        locationManager.stopUpdatingLocation()
+        locationManager.allowsBackgroundLocationUpdates = false
     }
 
     // MARK: - CLLocationManagerDelegate
@@ -114,10 +163,11 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
             // 3. Run a single connectivity probe (wake-then-probe pattern)
             await monitor.runSingleProbe()
 
-            // 4. Update last active timestamp for next gap check
+            // 4. Update last active timestamp for next gap check. (runProbe above also writes
+            //    this on every event; writing it here too keeps wakes that log nothing honest.)
             UserDefaults.standard.set(
                 Date().timeIntervalSince1970,
-                forKey: DefaultsKey.lastActiveTimestamp
+                forKey: AppDefaultsKeys.lastActiveTimestamp
             )
 
             // 5. NEW (POLISH-01 / D-08): record a background-wake-only timestamp. This is
@@ -143,17 +193,21 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
     /// Detects monitoring gaps by comparing the current time to the last recorded
     /// active timestamp in UserDefaults.
     ///
-    /// If the gap exceeds the threshold (10 minutes), a monitoringGap event is logged
-    /// with the gap start time and duration. This allows exported data to distinguish
-    /// "no drops occurred" from "the app was suspended and couldn't detect drops."
-    private func detectAndLogGap() {
-        let lastActive = UserDefaults.standard.double(forKey: DefaultsKey.lastActiveTimestamp)
+    /// If the gap exceeds the threshold, a monitoringGap event is logged with the gap start
+    /// time and duration. This allows exported data to distinguish "no drops occurred" from
+    /// "the app was suspended and couldn't detect drops."
+    ///
+    /// `internal` (not private) so it can also be called on foreground return (ContentView) and
+    /// on BGAppRefresh wake (AppDelegate) — not only on location wakes. That closes the case where
+    /// the app slept all evening while stationary and the gap was only noticed on the next move.
+    func detectAndLogGap() {
+        let lastActive = UserDefaults.standard.double(forKey: AppDefaultsKeys.lastActiveTimestamp)
 
         // First launch -- no previous timestamp to compare against
         if lastActive == 0 {
             UserDefaults.standard.set(
                 Date().timeIntervalSince1970,
-                forKey: DefaultsKey.lastActiveTimestamp
+                forKey: AppDefaultsKeys.lastActiveTimestamp
             )
             return
         }

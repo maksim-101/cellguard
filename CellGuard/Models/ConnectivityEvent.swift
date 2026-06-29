@@ -29,6 +29,20 @@ enum EventType: Int, Codable, CaseIterable {
     /// is effectively unusable (reachability still succeeds, but a 100KB transfer crawls). Counts as
     /// a drop, distinct from .slowThroughput (degraded but functional). Explicit rawValue 8 (migration safety).
     case severeThroughput = 8
+    /// Logged when the cellular radio access technology changes (e.g. NRNSA→LTE, an EN-DC/SCG
+    /// fallback). Not a drop — it is the high-resolution radio-layer trace that surfaces baseband
+    /// instability. Sourced from CTServiceRadioAccessTechnologyDidChange. Explicit rawValue 9.
+    case radioTechChange = 9
+    /// Logged when the user manually taps the incident marker during a real-world failure
+    /// (dropped call, dead data). Ground-truth to correlate against the automated probe trace.
+    /// Not a measured drop — kept distinct so user-reported and measured events never conflate.
+    /// Explicit rawValue 10 (migration safety).
+    case userIncident = 10
+    /// Logged when a sustained streaming probe detects a mid-transfer freeze longer than the
+    /// stall threshold — the closest data-plane analog of a real-time call freezing. Counts as a
+    /// drop: a multi-second stream stall makes VoIP unusable even when reachability succeeds.
+    /// Explicit rawValue 11 (migration safety).
+    case dataStall = 11
 }
 
 /// Network path status as reported by NWPathMonitor.
@@ -285,6 +299,7 @@ extension ConnectivityEvent: Codable {
         case probeLatencyMs
         case throughputKbps
         case probeFailureReason
+        case degraded
         case latitude
         case longitude
         case locationAccuracy
@@ -384,6 +399,14 @@ extension ConnectivityEvent: Codable {
         try container.encodeIfPresent(probeLatencyMs, forKey: .probeLatencyMs)
         try container.encodeIfPresent(throughputKbps, forKey: .throughputKbps)
         try container.encodeIfPresent(probeFailureReason, forKey: .probeFailureReason)
+        // Self-describing degraded marker: a probeSuccess whose latency exceeds the degraded
+        // threshold is "reachable but slow" — flagged here so the export needs no post-hoc rule
+        // (the same threshold the dashboard uses to count it as degraded). slowThroughput and
+        // severeThroughput are already self-describing via their own eventType, so only the
+        // otherwise-ambiguous probeSuccess case is marked.
+        if eventType == .probeSuccess, let lat = probeLatencyMs, lat > HealthScore.slowLatencyThresholdMs {
+            try container.encode(true, forKey: .degraded)
+        }
         let omitLocation = encoder.userInfo[.omitLocation] as? Bool ?? false
         if !omitLocation {
             try container.encodeIfPresent(latitude, forKey: .latitude)
@@ -416,6 +439,9 @@ extension EventType {
         case .vpnStateChange: "vpnStateChange"
         case .slowThroughput: "slowThroughput"
         case .severeThroughput: "severeThroughput"
+        case .radioTechChange: "radioTechChange"
+        case .userIncident: "userIncident"
+        case .dataStall: "dataStall"
         }
     }
 
@@ -431,6 +457,9 @@ extension EventType {
         case "vpnStateChange": .vpnStateChange
         case "slowThroughput": .slowThroughput
         case "severeThroughput": .severeThroughput
+        case "radioTechChange": .radioTechChange
+        case "userIncident": .userIncident
+        case "dataStall": .dataStall
         default: nil
         }
     }
@@ -526,6 +555,9 @@ extension EventType {
         case .vpnStateChange: "VPN State Change"
         case .slowThroughput: "Slow Throughput"
         case .severeThroughput: "Severe Throughput"
+        case .radioTechChange: "Radio Tech Change"
+        case .userIncident: "User Incident"
+        case .dataStall: "Data Stall"
         }
     }
 }

@@ -12,13 +12,17 @@ import Foundation
 ///   -> drop ONLY when it was a cellular loss (interfaceType cellular, or legacy .unknown).
 ///   Wi-Fi handover gaps record interfaceType .wifi and are excluded so they don't inflate
 ///   the cellular-drop count.
+/// - dataStall (eventTypeRaw == 11) -> always a drop (a sustained-transfer freeze long enough
+///   to break a real-time call — reachable but unusable for VoIP/video).
 /// - All other event types (probeSuccess, probeFailure, slowThroughput, connectivityRestored,
-///   monitoringGap) -> NOT drops
+///   monitoringGap, radioTechChange, userIncident) -> NOT drops
 func isDropEvent(_ event: ConnectivityEvent) -> Bool {
     switch event.eventType {
     case .silentFailure:
         return true
     case .severeThroughput:
+        return true
+    case .dataStall:
         return true
     case .pathChange:
         guard event.pathStatus == .unsatisfied || event.pathStatus == .requiresConnection else { return false }

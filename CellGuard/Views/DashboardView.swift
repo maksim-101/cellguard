@@ -6,13 +6,16 @@ import SwiftData
 /// and a failure-mode breakdown, followed by the standard navigation links.
 struct DashboardView: View {
     @Environment(ConnectivityMonitor.self) private var monitor
+    @Environment(LocationService.self) private var locationService
     @Environment(MonitoringHealthService.self) private var healthService
 
     @Query(sort: \ConnectivityEvent.timestamp, order: .reverse)
     private var allEvents: [ConnectivityEvent]
 
     @State private var showHealthSheet = false
+    @State private var incidentLogged = false
     @AppStorage("omitLocationData") private var omitLocation = false
+    @AppStorage(AppDefaultsKeys.intensiveCaptureEnabled) private var intensiveCapture = false
 
     // MARK: - HealthScore Derived Values
 
@@ -35,9 +38,17 @@ struct DashboardView: View {
     // MARK: - Body
 
     var body: some View {
+        ScrollView {
         VStack(spacing: 0) {
             // Health status bar (tappable, opens detail sheet)
             healthBar
+                .padding(.top, 6)
+                .padding(.bottom, 6)
+
+            // One-tap incident marker — ground truth for correlating real-world failures
+            // (dropped call, dead data) against the automated probe + radio-transition trace.
+            incidentButton
+                .padding(.horizontal)
                 .padding(.bottom, 6)
 
             // Card 1: Cellular Health — two ScoreRings + verdict pill
@@ -122,6 +133,25 @@ struct DashboardView: View {
             .padding(.horizontal)
             .padding(.bottom, 4)
 
+            // Intensive capture toggle — continuous keep-alive to close stationary monitoring gaps.
+            VStack(alignment: .leading, spacing: 2) {
+                Toggle("Intensive Capture", isOn: $intensiveCapture)
+                    .font(.subheadline)
+                    .onChange(of: intensiveCapture) { _, on in
+                        locationService.setIntensiveCapture(on)
+                    }
+                Text("Keeps probing every 60 s while stationary. Higher battery use; shows the location indicator.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Color(.secondarySystemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .padding(.horizontal)
+            .padding(.bottom, 4)
+
             // Privacy toggle for export (EXPT-01, EXPT-03)
             Toggle("Omit location, Wi-Fi, and VPN data", isOn: $omitLocation)
                 .font(.subheadline)
@@ -149,13 +179,46 @@ struct DashboardView: View {
             .buttonStyle(.plain)
             .padding(.horizontal)
 
-            Spacer(minLength: 40)
+        }
+        .padding(.bottom, 40)
         }
         .navigationTitle("CellGuard")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showHealthSheet) {
             HealthDetailSheet()
         }
+    }
+
+    // MARK: - Incident Marker Button
+
+    private var incidentButton: some View {
+        Button {
+            incidentLogged = true
+            Task {
+                await monitor.logUserIncident()
+                try? await Task.sleep(for: .seconds(2))
+                incidentLogged = false
+            }
+        } label: {
+            HStack {
+                Image(systemName: incidentLogged ? "checkmark.circle.fill" : "exclamationmark.bubble.fill")
+                Text(incidentLogged ? "Incident logged" : "Log Incident Now")
+                    .fontWeight(.semibold)
+                Spacer()
+                Text("call/data drop")
+                    .font(.caption)
+                    .opacity(0.9)
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(incidentLogged ? Color.green : Color.red)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .sensoryFeedback(.success, trigger: incidentLogged)
+        .accessibilityLabel("Log a connectivity incident now")
     }
 
     // MARK: - Health Status Bar

@@ -187,6 +187,30 @@ final class ConnectivityMonitor {
     /// Counts completed reachability cycles to schedule the every-Nth-cycle throughput measurement.
     private var throughputCycleCounter = 0
 
+    // MARK: - Sustained Stall Probe (call-mimic)
+
+    /// URL for the sustained streaming probe. A one-shot HEAD/GET can't see the 1–3s mid-stream
+    /// freezes that break a real-time call; a larger streamed download holds the connection open
+    /// long enough to observe an inter-chunk freeze. 2 MB from Cloudflare's deterministic endpoint.
+    private let sustainedProbeURL = URL(string: "https://speed.cloudflare.com/__down?bytes=2000000")!
+
+    /// Per-chunk timeout for the sustained probe (seconds). Larger than the reachability timeout
+    /// because the transfer legitimately takes several seconds; if no data arrives for this long
+    /// the request errors out and we do NOT log a dataStall (ambiguous with app suspension —
+    /// total death is already captured as silentFailure by the reachability probe).
+    private let sustainedProbeTimeout: TimeInterval = 30
+
+    /// A mid-stream freeze longer than this (ms) is logged as a .dataStall — the closest
+    /// data-plane analog of a call freezing. 1500 ms is well past normal cellular jitter.
+    private let stallThresholdMs: Double = 1500
+
+    /// Run the sustained stall probe once every Nth reachability cycle (≈ 10 min at N=10).
+    /// At 2 MB/run that is ~12 MB/hr while continuously alive (intensive mode). Tunable.
+    private let stallProbeCycleInterval = 10
+
+    /// Counts completed reachability cycles to schedule the every-Nth-cycle sustained stall probe.
+    private var stallCycleCounter = 0
+
     /// Creates a fresh ephemeral URLSession for each probe. Per-probe sessions prevent stale
     /// HTTP keep-alive connections (caused by cellular NAT binding expiry or IP rotation) from
     /// hanging to the full 10s timeout and being misclassified as silentFailure on an otherwise
@@ -360,6 +384,28 @@ final class ConnectivityMonitor {
     /// Called by LocationService on significant location change and by BGAppRefreshTask handler.
     @MainActor
     func runSingleProbe() async {
+        await runProbe()
+    }
+
+    /// Logs a user-reported incident (manual marker) with the current radio/path/location
+    /// snapshot. This is the ground-truth tap the user makes the instant a real-world failure
+    /// happens (dropped call, dead data), giving an anchor to correlate against the automated
+    /// probe and radio-transition trace. Also fires an immediate confirmation probe so the
+    /// measured connectivity state right at the incident is captured alongside the marker.
+    @MainActor
+    func logUserIncident() async {
+        logEvent(
+            type: .userIncident,
+            status: currentPathStatus,
+            interface: currentInterfaceType,
+            isExpensive: pathMonitor.currentPath.isExpensive,
+            isConstrained: pathMonitor.currentPath.isConstrained,
+            lowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled,
+            pathUsesCellular: pathMonitor.currentPath.usesInterfaceType(.cellular)
+        )
+        // Force a fresh probe at the incident moment (bypasses the dedup window by clearing the
+        // last outcome) so the marker is paired with a real-time reachability measurement.
+        lastProbeOutcome = nil
         await runProbe()
     }
 
@@ -572,6 +618,25 @@ final class ConnectivityMonitor {
                 vpnInterface: capturedVPNInterface
             )
         }
+
+        // Sustained stall probe (call-mimic): a less-frequent, heavier streamed download that
+        // surfaces mid-stream freezes a one-shot probe cannot. Same gating as throughput
+        // (cellular + this cycle's reachability succeeded).
+        stallCycleCounter += 1
+        if stallCycleCounter % stallProbeCycleInterval == 0
+            && capturedPathUsesCellular
+            && lastProbeOutcome == .probeSuccess {
+            await measureSustainedStall(
+                status: capturedStatus,
+                interface: capturedInterface,
+                isExpensive: capturedIsExpensive,
+                isConstrained: capturedIsConstrained,
+                lowPowerMode: capturedLowPowerMode,
+                pathUsesCellular: capturedPathUsesCellular,
+                vpnState: capturedVPNState,
+                vpnInterface: capturedVPNInterface
+            )
+        }
     }
 
     /// Probes an independent host (Cloudflare) to confirm a suspected silent modem failure.
@@ -658,6 +723,45 @@ final class ConnectivityMonitor {
         }
     }
 
+    /// Streams a larger payload and measures the longest gap between received data chunks.
+    /// A long mid-stream freeze on an otherwise-reachable link is the closest data-plane analog
+    /// of a real-time call freezing — logged as .dataStall (a drop).
+    ///
+    /// Only logs on CLEAN completion (no error): a request that times out is ambiguous with an
+    /// app suspension spanning the transfer, and a total link death is already captured as
+    /// silentFailure by the reachability probe. This isolates the "froze for N seconds, then
+    /// recovered" signature.
+    @MainActor
+    private func measureSustainedStall(
+        status: PathStatus,
+        interface: InterfaceType,
+        isExpensive: Bool,
+        isConstrained: Bool,
+        lowPowerMode: Bool,
+        pathUsesCellular: Bool,
+        vpnState: VPNState,
+        vpnInterface: String?
+    ) async {
+        let tracker = StallTracker()
+        let result = await tracker.run(url: sustainedProbeURL, timeout: sustainedProbeTimeout)
+
+        guard result.error == nil, result.totalBytes > 0, result.maxStallMs > stallThresholdMs else { return }
+
+        logEvent(
+            type: .dataStall,
+            status: status,
+            interface: interface,
+            isExpensive: isExpensive,
+            isConstrained: isConstrained,
+            lowPowerMode: lowPowerMode,
+            pathUsesCellular: pathUsesCellular,
+            probeFailureReason: "stream froze mid-transfer",
+            dropDuration: result.maxStallMs / 1000,
+            vpnState: vpnState,
+            vpnInterface: vpnInterface
+        )
+    }
+
     // MARK: - CoreTelephony Observers
 
     /// Registers for radio access technology change notifications via NotificationCenter.
@@ -681,7 +785,23 @@ final class ConnectivityMonitor {
             let freshInfo = CTTelephonyNetworkInfo()
             let newTech = freshInfo.serviceCurrentRadioAccessTechnology?.values.first
             Task { @MainActor in
-                self?.currentRadioTechnology = newTech
+                guard let self else { return }
+                let oldTech = self.currentRadioTechnology
+                self.currentRadioTechnology = newTech
+                // High-resolution radio-layer trace: log every actual transition (incl. signal
+                // acquisition/loss). This is the near-free oscilloscope for baseband instability —
+                // an NRNSA→LTE flip is the EN-DC/SCG-failure fingerprint that coincides with the
+                // call-drop window. The new tech lands in the event's radioTechnology via logEvent;
+                // the prior event's value gives the "from" side. Not a drop, so no notification.
+                guard oldTech != newTech else { return }
+                self.logEvent(
+                    type: .radioTechChange,
+                    status: self.currentPathStatus,
+                    interface: self.currentInterfaceType,
+                    isExpensive: self.pathMonitor.currentPath.isExpensive,
+                    isConstrained: self.pathMonitor.currentPath.isConstrained,
+                    lowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled
+                )
             }
         }
     }
@@ -1040,6 +1160,12 @@ final class ConnectivityMonitor {
         vpnState: VPNState? = nil,
         vpnInterface: String? = nil
     ) {
+        // Heartbeat (gap-accounting fix): every logged event proves the app was alive and
+        // monitoring at this instant. LocationService.detectAndLogGap measures now − lastActive,
+        // so updating it here — on every probe/path event, not just location wakes — is what keeps
+        // monitoringGap durations from overcounting time the app was actually awake and probing.
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: AppDefaultsKeys.lastActiveTimestamp)
+
         // Capture synchronous metadata outside the Task (D-09: VPN detector must be called
         // synchronously to match Phase 7's wifiSSID precedent and avoid actor-hop staleness).
         let radioTech = captureRadioTechnology()
@@ -1121,5 +1247,51 @@ final class ConnectivityMonitor {
             trigger: trigger
         )
         UNUserNotificationCenter.current().add(request)
+    }
+}
+
+// MARK: - Sustained Stall Tracking Delegate
+
+/// Streams a download via URLSessionDataDelegate and records the longest gap between received
+/// data chunks (the "mid-stream freeze"). A completion-handler data task accumulates data without
+/// firing per-chunk delegate callbacks, so a delegate-driven task is required to time chunks.
+///
+/// `@unchecked Sendable`: all mutable state is touched only on the session's serial delegate
+/// queue (chunk callbacks) and read once after the task completes — no concurrent access.
+private final class StallTracker: NSObject, URLSessionDataDelegate, @unchecked Sendable {
+    private var lastChunkAt: Date?
+    private var maxStallMs: Double = 0
+    private var totalBytes = 0
+    private var failure: Error?
+    private var continuation: CheckedContinuation<Void, Never>?
+
+    /// Runs the streamed download and returns the longest inter-chunk gap, bytes received, and any error.
+    func run(url: URL, timeout: TimeInterval) async -> (maxStallMs: Double, totalBytes: Int, error: Error?) {
+        let config = URLSessionConfiguration.ephemeral
+        config.timeoutIntervalForRequest = timeout
+        config.waitsForConnectivity = false
+        let session = URLSession(configuration: config, delegate: self, delegateQueue: nil)
+        await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
+            self.continuation = cont
+            session.dataTask(with: url).resume()
+        }
+        session.finishTasksAndInvalidate()
+        return (maxStallMs, totalBytes, failure)
+    }
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        let now = Date()
+        if let last = lastChunkAt {
+            let gap = now.timeIntervalSince(last) * 1000
+            if gap > maxStallMs { maxStallMs = gap }
+        }
+        lastChunkAt = now
+        totalBytes += data.count
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        failure = error
+        continuation?.resume()
+        continuation = nil
     }
 }

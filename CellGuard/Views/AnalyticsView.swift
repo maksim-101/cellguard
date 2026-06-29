@@ -88,8 +88,8 @@ struct AnalyticsView: View {
         let silentPct = (Double(silentCount) / Double(dropEvents.count)) * 100
         facts.append(("waveform.path.badge.minus", "Silent Failures (of total drops)", String(format: "%.0f%%", silentPct)))
 
-        // 1b. Data Stalls — severeThroughput events are included in dropEvents via isDropEvent
-        let stallCount = dropEvents.filter { $0.eventType == .severeThroughput }.count
+        // 1b. Data Stalls — severeThroughput + dataStall events are included in dropEvents via isDropEvent
+        let stallCount = dropEvents.filter { $0.eventType == .severeThroughput || $0.eventType == .dataStall }.count
         if stallCount > 0 {
             let stallPct = Double(stallCount) / Double(dropEvents.count) * 100
             facts.append(("bolt.horizontal.circle", "Data Stalls (of total drops)", String(format: "%.0f%%", stallPct)))

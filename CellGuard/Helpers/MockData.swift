@@ -87,6 +87,28 @@ enum MockData {
                 interfaceType: .cellular, isExpensive: true, pathUsesCellular: true, radioTechnology: nr, probeLatencyMs: 10000 + Double(i * 5),
                 probeFailureReason: "timeout"))
         }
+        // Radio-technology transitions (NEW — the radio-layer oscilloscope; NRNSA↔LTE flips)
+        for (i, tech) in ["CTRadioAccessTechnologyLTE", nr, "CTRadioAccessTechnologyLTE"].enumerated() {
+            events.append(ConnectivityEvent(
+                timestamp: ago(Double(i) * 70 + 15), eventType: .radioTechChange, pathStatus: .satisfied,
+                interfaceType: .cellular, isExpensive: true, pathUsesCellular: true, radioTechnology: tech,
+                latitude: clusterA.lat, longitude: clusterA.lon, locationAccuracy: 65))
+        }
+        // User-reported incidents (NEW — one-tap ground truth, e.g. a dropped WhatsApp call)
+        for i in 0..<2 {
+            events.append(ConnectivityEvent(
+                timestamp: ago(Double(i) * 130 + 45), eventType: .userIncident, pathStatus: .satisfied,
+                interfaceType: .cellular, isExpensive: true, pathUsesCellular: true, radioTechnology: nr,
+                latitude: clusterA.lat, longitude: clusterA.lon, locationAccuracy: 65))
+        }
+        // Data stalls (NEW — sustained-stream freezes; counts as a drop)
+        for (i, stallSec) in [2.4, 4.1, 7.8].enumerated() {
+            events.append(ConnectivityEvent(
+                timestamp: ago(Double(i) * 150 + 55), eventType: .dataStall, pathStatus: .satisfied,
+                interfaceType: .cellular, isExpensive: true, pathUsesCellular: true, radioTechnology: nr, vpnState: .connected, vpnInterface: "utun6",
+                probeFailureReason: "stream froze mid-transfer",
+                latitude: clusterA.lat, longitude: clusterA.lon, locationAccuracy: 65, dropDurationSeconds: stallSec))
+        }
 
         for event in events { context.insert(event) }
         try? context.save()

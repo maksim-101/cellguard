@@ -35,6 +35,7 @@ struct CellGuardApp: App {
         // Must happen before any background task fires. AppDelegate uses this to run
         // probes during background-only launches where no SwiftUI scene exists.
         AppDelegate.sharedMonitor = monitor
+        AppDelegate.sharedLocationService = locationService
 
         // Auto-resume monitoring immediately during init (DAT-03).
         // This is critical for background relaunches: when iOS relaunches the app
