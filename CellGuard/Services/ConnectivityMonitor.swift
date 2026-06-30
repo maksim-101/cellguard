@@ -93,6 +93,15 @@ final class ConnectivityMonitor {
     /// (D-14: failures are the entire evidence stream and must never be suppressed).
     private var lastProbeOutcome: EventType?
 
+    /// True while a probe is awaiting its network result. Because `runProbe()` is
+    /// `@MainActor async` it is reentrant at every `await`, so without this flag a
+    /// burst of triggers (rapid `logUserIncident()` calls, each clearing
+    /// `lastProbeOutcome`, overlapping the 60s timer) would start several probes that
+    /// all sail past the success-dedup guard and log in the same second — the
+    /// duplicate-timestamp clusters seen in exports. A concurrent probe started while
+    /// one is in flight is coalesced (skipped).
+    private var probeInFlight = false
+
     /// One-shot guard for the embedded Wave 0 self-check telemetry (08-VERIFICATION-WAVE-0.md).
     /// On the first `captureVPNDetectorBool()` call per app launch we emit the full
     /// `__SCOPED__` key list and the matched prefix (or "no match") via os_log so the
@@ -425,6 +434,10 @@ final class ConnectivityMonitor {
     /// where path status changes during the request (Pitfall 5 from research).
     @MainActor
     private func runProbe() async {
+        // In-flight guard: collapse overlapping reentrant probes to one. Failures are never
+        // suppressed by the dedup guard below, so without this a burst of triggers would log
+        // N identical-timestamp events for a single moment (the export duplicate clusters).
+        if probeInFlight { return }
         // POLISH-02 dedup guard (D-11..D-15): suppress only redundant successes within a
         // sliding 60s window. Failures (.probeFailure, .silentFailure) NEVER short-circuit
         // the next probe — every failure-state moment deserves fresh confirmation.
@@ -433,6 +446,8 @@ final class ConnectivityMonitor {
            lastProbeOutcome == .probeSuccess {
             return
         }
+        probeInFlight = true
+        defer { probeInFlight = false }
         // Update probe-START clock BEFORE the await so a concurrent caller is also blocked
         // by the same window. Outcome is set AFTER each logEvent below.
         lastProbeStartedAt = Date()
