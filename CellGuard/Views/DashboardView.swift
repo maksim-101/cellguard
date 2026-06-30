@@ -14,6 +14,7 @@ struct DashboardView: View {
 
     @State private var showHealthSheet = false
     @State private var incidentLogged = false
+    @State private var incidentTapCount = 0
     @AppStorage("omitLocationData") private var omitLocation = false
     @AppStorage(AppDefaultsKeys.intensiveCaptureEnabled) private var intensiveCapture = false
 
@@ -193,11 +194,19 @@ struct DashboardView: View {
 
     private var incidentButton: some View {
         Button {
+            // Every tap pulses haptic (counter trigger) and re-arms the confirmation, so
+            // rapid successive presses during an outage all register — the button never
+            // feels locked. Only the last tap's task clears the green state, so it stays
+            // lit for 2s after the final press rather than flickering off mid-burst.
+            incidentTapCount += 1
             incidentLogged = true
+            let tapAtPress = incidentTapCount
             Task {
                 await monitor.logUserIncident()
                 try? await Task.sleep(for: .seconds(2))
-                incidentLogged = false
+                if incidentTapCount == tapAtPress {
+                    incidentLogged = false
+                }
             }
         } label: {
             HStack {
@@ -217,7 +226,7 @@ struct DashboardView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .sensoryFeedback(.success, trigger: incidentLogged)
+        .sensoryFeedback(.success, trigger: incidentTapCount)
         .accessibilityLabel("Log a connectivity incident now")
     }
 
