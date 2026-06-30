@@ -96,6 +96,7 @@ None.
 | fast | Discard app-suspension artifacts from probe latency + throughput (wall-clock across background freeze gave 900s+ "latencies"); nil latency / skip throughput beyond probeTimeout+2s; Analytics filters >15s | 2026-06-28 | e68e123 | — |
 | 260628-rpt | Option H "Cellular Health" home redesign: dynamic 0–100 score (clean-probe %, cellular-only via isExpensive, Wi-Fi excluded) — Overall + Last-24h rings + "vs usual" verdict + probe denominator + failure-mode legend rows; Stall series added to Drop Timeline (moved to Analytics) + Data Stalls Key Driver; new HealthScore.swift helper. Self-verified via simulator screenshots. | 2026-06-28 | 9d672a6 | [260628-rpt-option-h-cellular-health-home-redesign-w](./quick/260628-rpt-option-h-cellular-health-home-redesign-w/) |
 | fast | Severe-throughput tier: 3-tier classification (>=1Mbps ok / 200k-1M slowThroughput / <200k severeThroughput); severeThroughput (rawValue 8) counts as a drop + notifies; kept distinct from silentFailure | 2026-06-28 | 93f7a66 | — |
+| 260630-qsh | Fix duplicate same-timestamp event clusters (probeInFlight guard coalesces reentrant @MainActor probes — 6x@09:35:01 etc. in 06-30 export) + Log-Incident button registers every tap with haptic (monotonic incidentTapCount, never disabled). Simulator build verified. | 2026-06-30 | 3ff4cf7 | [260630-qsh-fix-probe-dedup-and-incident-button](./quick/260630-qsh-fix-probe-dedup-and-incident-button/) |
 
 ## Session Continuity
 
