@@ -10,6 +10,8 @@ struct HealthDetailSheet: View {
     @State private var sheetDetent: PresentationDetent = .large
     @State private var vpnSelfCheckResult: String?
     @State private var showVPNSelfCheck: Bool = false
+    @State private var radioSelfCheckResult: String?
+    @State private var showRadioSelfCheck: Bool = false
 
     var body: some View {
         NavigationStack {
@@ -123,6 +125,41 @@ struct HealthDetailSheet: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Text("• No proxy settings: no VPN tunnel active. Expected when no VPN is connected; a problem if a VPN IS connected.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                // Radio services self-check (Task 3): dumps raw dataServiceIdentifier /
+                // serviceCurrentRadioAccessTechnology / serviceSubscriberCellularProviders so a
+                // single screenshot settles both on-device DSDS unknowns.
+                VStack(alignment: .leading, spacing: 8) {
+                    Button("Run Radio Services Self-Check") {
+                        radioSelfCheckResult = monitor.radioServicesSelfCheck()
+                        showRadioSelfCheck = true
+                    }
+                    .buttonStyle(.bordered)
+                    .alert("Radio Services Self-Check", isPresented: $showRadioSelfCheck) {
+                        Button("OK", role: .cancel) {}
+                    } message: {
+                        Text(radioSelfCheckResult ?? "")
+                    }
+
+                    Text("Dumps the raw multi-SIM radio state CellGuard sees right now -- which line iOS reports as the data line, and whether a second SIM service is registered on any network. This is evidence for the Apple escalation, not a live status display.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Outcomes:")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text("• Both lines listed, second line shows no tech: the unregistered second line is visible -- the hunting-line hypothesis is testable from the exported data.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text("• dataServiceIdentifier is (nil): the primary line is a sorted-key guess, so \"data line\" labels in the export are best-effort, not iOS's own answer.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text("• Provisioned keys (empty): the deprecated enumeration API no longer works on iOS 26 -- only REGISTERED services are visible, and an unregistered line is INVISIBLE. This inverts how the evidence must be read: absence of a second line in the data would then prove nothing.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

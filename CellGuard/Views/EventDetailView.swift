@@ -24,12 +24,38 @@ struct EventDetailView: View {
             }
 
             Section("Cellular") {
-                LabeledContent("Radio Tech", value: radioTechDisplay)
+                LabeledContent("Radio Tech (data line)", value: radioTechDisplay)
                 if let restriction = event.cellularDataRestricted, restriction != "unknown" {
                     LabeledContent("Cellular Data Access", value: restriction)
                 }
                 if let kbps = event.throughputKbps {
                     LabeledContent("Throughput", value: String(format: "%.1f Mbps", kbps / 1000))
+                }
+            }
+
+            // Multi-SIM / DSDS per-service radio state (DSDS-01/02/03). Shown only when the
+            // event actually captured per-service data -- legacy events (both fields nil) render
+            // exactly as before, no empty section or placeholder.
+            if let services = event.radioServices, !services.isEmpty {
+                Section("SIM Services") {
+                    if let changed = event.radioChangeService {
+                        LabeledContent("Changed Line", value: changed)
+                    }
+                    ForEach(services, id: \.service) { snapshot in
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack {
+                                Text(snapshot.isPrimary ? "Data Line" : "Other Line")
+                                Spacer()
+                                // A service with no radio tech is provisioned but registered on
+                                // NO network -- this must always render explicitly, never as
+                                // blank or "Unknown", because that absence IS the evidence.
+                                Text(radioTechDisplay(for: snapshot.tech))
+                            }
+                            Text(snapshot.service)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
             }
 
@@ -85,11 +111,24 @@ struct EventDetailView: View {
 
     // MARK: - Computed Helpers
 
-    /// Strips the "CTRadioAccessTechnology" prefix from the raw radio tech string
-    /// for cleaner display (e.g., "NR" instead of "CTRadioAccessTechnologyNR").
+    /// Strips the "CTRadioAccessTechnology" prefix from a raw radio tech string for cleaner
+    /// display (e.g., "NR" instead of "CTRadioAccessTechnologyNR"). Shared by both the
+    /// top-level "Radio Tech (data line)" row and the per-service "SIM Services" section.
+    private func stripRadioTechPrefix(_ tech: String) -> String {
+        tech.replacingOccurrences(of: "CTRadioAccessTechnology", with: "")
+    }
+
     private var radioTechDisplay: String {
         guard let tech = event.radioTechnology else { return "Unknown" }
-        return tech.replacingOccurrences(of: "CTRadioAccessTechnology", with: "")
+        return stripRadioTechPrefix(tech)
+    }
+
+    /// Per-service display: nil means the service is provisioned but registered on NO
+    /// network -- rendered as an explicit "Not registered", never blank or "Unknown", because
+    /// that ambiguity would erase the exact signal this feature exists to surface.
+    private func radioTechDisplay(for tech: String?) -> String {
+        guard let tech else { return "Not registered" }
+        return stripRadioTechPrefix(tech)
     }
 
     /// Formats a duration in seconds as a human-readable string.
