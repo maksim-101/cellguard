@@ -2,10 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Polish & Analytics
+current_phase: 10
+current_phase_name: reports-and-analytics
 status: complete
-stopped_at: v1.3 complete
-last_updated: "2026-04-26T12:00:00.000Z"
-last_activity: 2026-06-28 -- quick 260628-ope: low-data cellular throughput probe + slowThroughput event
+stopped_at: quick-260711-e5s complete, blocking checkpoint pending user on-device verification
+last_updated: "2026-07-11T08:35:32.430Z"
+last_activity: 2026-07-11
+last_activity_desc: "quick 260711-e5s: severe-latency drop tier gated on throughput built + migration-verified; blocked on user's on-device confirmation (blocking checkpoint)."
 progress:
   total_phases: 3
   completed_phases: 3
@@ -98,12 +101,19 @@ None.
 | fast | Severe-throughput tier: 3-tier classification (>=1Mbps ok / 200k-1M slowThroughput / <200k severeThroughput); severeThroughput (rawValue 8) counts as a drop + notifies; kept distinct from silentFailure | 2026-06-28 | 93f7a66 | — |
 | 260630-qsh | Fix duplicate same-timestamp event clusters (probeInFlight guard coalesces reentrant @MainActor probes — 6x@09:35:01 etc. in 06-30 export) + Log-Incident button registers every tap with haptic (monotonic incidentTapCount, never disabled). Simulator build verified. | 2026-06-30 | 3ff4cf7 | [260630-qsh-fix-probe-dedup-and-incident-button](./quick/260630-qsh-fix-probe-dedup-and-incident-button/) |
 | 260711-b4z 🔶 | Per-service (DSDS multi-SIM) radio logging. Fixes `.values.first` non-determinism — with 2 SIM services the app sampled an ARBITRARY line, corrupting `radioTechnology` and emitting phantom `radioTechChange` events. Now: primary line resolved via `dataServiceIdentifier` (stable sorted-key fallback); all provisioned services enumerated (unregistered line = absent key, per Apple's own doc); `radioChangeService` records WHICH line changed; per-service array in JSON export; "SIM Services" in EventDetailView + Radio Services Self-Check. Migration smoke-tested on a populated store (53 rows, 0 lost, no 134110). **Awaiting on-device verify (Tello line ON).** | 2026-07-11 | ef02d61 | [260711-b4z-per-service-radio-logging-for-multi-sim-](./quick/260711-b4z-per-service-radio-logging-for-multi-sim-/) |
+| 260711-e5s 🔶 | Severe-latency drop tier gated on throughput. A cellular probe that succeeds but takes >5s over a radio that measured >=1Mbps within the freshness window (~6min) is now `.severeLatency` (rawValue 12) — a DROP — instead of a silently-counted "success". Slow probes on poor/unknown throughput stay non-drops (never blame the modem for weak coverage). New `SevereLatencyRule.swift` (Foundation-only, machine-tested via standalone swiftc: all 4 branches + boundaries pass). `referenceThroughputKbps` recorded on both outcomes for audit. Wired through HealthScore denominator/stall bucket, DropTimelineChart, AnalyticsView, EventDetailView, SummaryReportView. Migration smoke-tested on the populated device-mirror simulator store (86→91 rows across the test, 0 lost, `ZREFERENCETHROUGHPUTKBPS` column confirmed present, 0 historical rows reclassified, no 134110). **Awaiting on-device verify (needs real cellular throughput samples — simulator has no cellular path).** | 2026-07-11 | a3af190 | [260711-e5s-severe-latency-tier-gated-on-throughput](./quick/260711-e5s-severe-latency-tier-gated-on-throughput/) |
 
 ## Session Continuity
 
-**Last activity:** 2026-07-11 — quick 260711-b4z: per-service DSDS radio logging built; blocked on user's on-device self-check screenshot.
+**Last session:** 2026-07-11T08:35:32.424Z
+**Stopped at:** quick-260711-e5s complete, blocking checkpoint pending user on-device verification
+
+**Latest activity:** 2026-07-11 — quick 260711-e5s: severe-latency drop tier gated on throughput. All 3 tasks committed (`9cbf2a2`, `0f0bc39`, `a3af190`); migration smoke test passed on the populated simulator store. **Blocked on the plan's blocking checkpoint** — needs the user to install on the physical iPhone 17 Pro Max, run on cellular for ~10min, and confirm a real slow-probe episode is classified `.severeLatency` (not "Probe Success") with a Reference Throughput >=1.0 Mbps, AND that genuinely weak-signal locations do NOT produce false severeLatency events. See `.planning/quick/260711-e5s-severe-latency-tier-gated-on-throughput/260711-e5s-SUMMARY.md` for full detail.
+
+**Previous activity:** 2026-07-11 — quick 260711-b4z: per-service DSDS radio logging built; blocked on user's on-device self-check screenshot.
 
 **What this session did (field-debugging the live cellular issue, not v1.3 work):**
+
 - Diagnosed & fixed a false-positive `silentFailure` bug: probe reused one URLSession → stale cellular sockets hung to 10s timeout. Fix = per-probe ephemeral session + two-host (Apple + Cloudflare) confirmation. Debug session: `.planning/debug/probe-false-silent-failures.md` (commit `ad991b7`).
 - Quick `260627-r9c`: GET+body-validation probe, `CTCellularData.restrictedState`, per-event `vpnInterface`, dedicated `vpnStateChange` events, in-app VPN self-check button (HealthDetailSheet). Commits `d3b79b3`→`771b8fc`.
 - Quick `260627-rtr`: event detail always shows VPN status (Disconnected/None); self-check UI explanation + verdict. `a92552e`.
@@ -115,10 +125,11 @@ None.
 **Deliverable written:** `apple-support-dossier-2026-06-27.md` (in repo root AND `~/code/flashtype-workspace/`) — full evidence/escalation/remediation reference for senior Apple support. Backed by 8 research reports in this session's scratchpad.
 
 **RESUME HERE — waiting on user's on-device data. Next actions in priority order:**
+
 1. **5G Auto/LTE A/B** (highest value): does forcing Settings→Cellular→Voice&Data→5G Auto/LTE drop the confirmed NRNSA silent failures? Clean-on-LTE = pinpoints the NR-NSA subsystem for Apple.
 2. Read the user's exported CellGuard CSV/JSON: compute confirmed-silentFailure **rate** per window (baseline vs 5G-Auto; later Tailscale/Proton windows — VPN windows are now low-value).
 3. Optional offers still open: render the dossier to **PDF**; **iOS 26.6 / iOS 27 public-beta** test (NOT dev beta); capture a **sysdiagnose** timed to a failure + file **Feedback Assistant** report.
 
 **Git:** branch `feature/apple-support-script`, **needs push** (commits since `2240e0e`). Pre-existing unrelated uncommitted `project.pbxproj` (M) and `apple-support-script-2026-05-23.html` (untracked) were NOT touched this session — leave them.
 
-Resume file: .planning/debug/probe-false-silent-failures.md
+Resume file: None
