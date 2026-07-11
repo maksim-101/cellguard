@@ -10,6 +10,9 @@ enum HealthScore {
     // MARK: - Tunable Constants
 
     /// Probes with latency above this threshold are counted as degraded even when reachability succeeds.
+    /// The SEVERE tier above this (throughput-gated, counts as a drop) lives in
+    /// `SevereLatencyRule.severeLatencyThresholdMs`, kept there because that file must compile
+    /// without SwiftData/SwiftUI so the rule can be machine-tested standalone.
     static let slowLatencyThresholdMs: Double = 3000
 
     /// Minimum cellular probes required before a score is meaningful.
@@ -22,7 +25,8 @@ enum HealthScore {
     /// Non-outcome types (pathChange, connectivityRestored, monitoringGap, vpnStateChange)
     /// are excluded — they do not reflect a reachability probe result.
     private static let probeOutcomeTypes: Set<EventType> = [
-        .probeSuccess, .probeFailure, .silentFailure, .slowThroughput, .severeThroughput, .dataStall
+        .probeSuccess, .probeFailure, .silentFailure, .slowThroughput, .severeThroughput, .dataStall,
+        .severeLatency
     ]
 
     /// Applies the time window filter. Returns the full array when `since` is nil.
@@ -112,7 +116,8 @@ enum HealthScore {
     ///
     /// - `silent`:   modem reports attached but probe failed — "attached but unreachable."
     /// - `overt`:    NWPath reported a path loss — system-acknowledged cellular drop.
-    /// - `stall`:    throughput effectively zero though reachability succeeds.
+    /// - `stall`:    bulk data effectively dead, a mid-stream freeze, or a >5s probe over a
+    ///                demonstrably capable radio (severeThroughput, dataStall, severeLatency).
     /// - `degraded`: slow-but-not-dropped (slowThroughput, or probeSuccess with high latency).
     /// - `drops`:    silent + overt + stall — all confirmed-unreachable or data-dead events.
     /// - `probes`:   total cellular probe-outcome events in the window.
@@ -125,10 +130,12 @@ enum HealthScore {
         // `isExpensive` check is needed — the function's own cellular discrimination is reused.
         let overt = w.filter { $0.eventType == .pathChange && isDropEvent($0) }.count
 
-        // Stall = bulk-data-dead (severeThroughput) plus sustained-stream freezes (dataStall);
-        // both are "reachable but unusable for real-time/bulk" and both count as drops.
+        // Stall = bulk-data-dead (severeThroughput), sustained-stream freezes (dataStall), and
+        // >5s probes over a demonstrably capable radio (severeLatency) -- all "reachable but
+        // unusable for real-time/bulk" and all count as drops.
         let stall = w.filter {
-            ($0.eventType == .severeThroughput || $0.eventType == .dataStall) && isCellular($0)
+            ($0.eventType == .severeThroughput || $0.eventType == .dataStall || $0.eventType == .severeLatency)
+                && isCellular($0)
         }.count
 
         let degradedSlow = w.filter { $0.eventType == .slowThroughput && isCellular($0) }.count

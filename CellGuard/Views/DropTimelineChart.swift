@@ -120,7 +120,7 @@ struct DropTimelineChart: View {
             let type: DropSeries
             switch event.eventType {
             case .silentFailure:               type = .silent
-            case .severeThroughput, .dataStall: type = .stall
+            case .severeThroughput, .dataStall, .severeLatency: type = .stall
             default:                           type = .overt
             }
             grouped[bucketDate, default: [:]][type, default: 0] += 1

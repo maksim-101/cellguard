@@ -196,6 +196,23 @@ final class ConnectivityMonitor {
     /// Counts completed reachability cycles to schedule the every-Nth-cycle throughput measurement.
     private var throughputCycleCounter = 0
 
+    /// Most recent VALID cellular throughput measurement and when it was taken. The severe-latency
+    /// rule needs to know whether the radio was demonstrably capable at capture time; a logged
+    /// event cannot answer that (it is written, not read back synchronously), so this is retained
+    /// as monitor state instead.
+    private var lastThroughput: (kbps: Double, at: Date)?
+
+    /// How long a `lastThroughput` sample stays usable as the severe-latency rule's reference.
+    /// DERIVED, not hardcoded: throughput samples are produced every `throughputCycleInterval`
+    /// reachability cycles, so one full cycle is the natural staleness bound; the extra
+    /// `probeInterval` absorbs scheduling drift and background-wake slop. Deriving it from the two
+    /// constants that CAUSE the sampling cadence means changing either constant cannot silently
+    /// invalidate the rule. A sample older than this window counts as NO DATA (the conservative
+    /// branch in `SevereLatencyRule`).
+    private var throughputFreshnessWindow: TimeInterval {
+        TimeInterval(throughputCycleInterval) * probeInterval + probeInterval
+    }
+
     // MARK: - Sustained Stall Probe (call-mimic)
 
     /// URL for the sustained streaming probe. A one-shot HEAD/GET can't see the 1–3s mid-stream
@@ -539,8 +556,25 @@ final class ConnectivityMonitor {
                 // produce false-positive probeSuccess events. Require "Success" in the body.
                 let body = String(data: data, encoding: .utf8) ?? ""
                 if body.contains("Success") {
+                    // Severe-latency gate: a genuine round-trip success that took too long, over a
+                    // radio that JUST proved it can move data fast, is the modem stalling -- not
+                    // weak coverage. Gated on capturedPathUsesCellular (D-05, same VPN-tolerant gate
+                    // the throughput probe uses): interfaceType reads .other through a VPN tunnel and
+                    // would silently disable the rule under Tailscale. Wi-Fi probes are never
+                    // reclassified. Deliberately NOT applied in the catch/confirmation-host branch
+                    // below -- that branch's latencyMs is the time the primary host took to FAIL,
+                    // not a round-trip of a success, so feeding it here would manufacture drops.
+                    let reference = lastThroughput
+                    let referenceAge = reference.map { Date().timeIntervalSince($0.at) }
+                    let severe = capturedPathUsesCellular && SevereLatencyRule.isSevere(
+                        latencyMs: latencyMs,
+                        referenceThroughputKbps: reference?.kbps,
+                        referenceAge: referenceAge,
+                        freshnessWindow: throughputFreshnessWindow,
+                        healthyThroughputKbps: slowThroughputThresholdKbps
+                    )
                     logEvent(
-                        type: .probeSuccess,
+                        type: severe ? .severeLatency : .probeSuccess,
                         status: capturedStatus,
                         interface: capturedInterface,
                         isExpensive: capturedIsExpensive,
@@ -548,6 +582,7 @@ final class ConnectivityMonitor {
                         lowPowerMode: capturedLowPowerMode,
                         pathUsesCellular: capturedPathUsesCellular,
                         probeLatencyMs: latencyMs,
+                        referenceThroughputKbps: reference?.kbps,
                         vpnState: capturedVPNState,
                         vpnInterface: capturedVPNInterface
                     )
@@ -634,6 +669,10 @@ final class ConnectivityMonitor {
                     lastProbeOutcome = .silentFailure
                 } else {
                     // Confirmation host reachable — primary probe failure was a single-host fluke.
+                    // Deliberately NOT gated through SevereLatencyRule here: latencyMs on this path
+                    // is the time the primary host took to FAIL (a timeout), not a round-trip of a
+                    // success -- feeding a timeout to the severe-latency rule would manufacture
+                    // drops out of a measurement whose semantics don't match the rule's contract.
                     logEvent(
                         type: .probeSuccess,
                         status: capturedStatus,
@@ -765,6 +804,12 @@ final class ConnectivityMonitor {
                   elapsed > 0.001, elapsed <= probeTimeout + 2 else { return }
 
             let kbps = (Double(data.count) * 8.0) / 1000.0 / elapsed
+            // Record EVERY valid sample -- healthy, slow, AND severe -- as the severe-latency
+            // rule's reference, before the tier branch below. A POOR reading is precisely what
+            // proves weak signal and must be able to SUPPRESS a severe-latency call; if only
+            // healthy readings were retained, the rule would become a one-way ratchet and weak
+            // signal would start getting blamed on the modem.
+            lastThroughput = (kbps: kbps, at: Date())
             let eventType: EventType
             if kbps < severeThroughputThresholdKbps {
                 eventType = .severeThroughput   // effectively unusable — counts as a drop
@@ -1297,6 +1342,7 @@ final class ConnectivityMonitor {
         pathUsesCellular: Bool? = nil,
         probeLatencyMs: Double? = nil,
         throughputKbps: Double? = nil,
+        referenceThroughputKbps: Double? = nil,
         probeFailureReason: String? = nil,
         dropDuration: Double? = nil,
         vpnState: VPNState? = nil,
@@ -1350,6 +1396,7 @@ final class ConnectivityMonitor {
                 vpnInterface: resolvedVPNInterface,
                 probeLatencyMs: probeLatencyMs,
                 throughputKbps: throughputKbps,
+                referenceThroughputKbps: referenceThroughputKbps,
                 probeFailureReason: probeFailureReason,
                 latitude: location?.latitude,
                 longitude: location?.longitude,
