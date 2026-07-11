@@ -130,10 +130,26 @@ final class ConnectivityEvent {
     // MARK: Cellular metadata
 
     /// Radio access technology string, e.g. "CTRadioAccessTechnologyNR" for 5G. Nil if unknown.
+    /// As of the per-service radio logging change, this mirrors the PRIMARY/data line ONLY --
+    /// see `radioServicesJSON` for the state of every provisioned service.
     var radioTechnology: String?
 
     /// Carrier name from CTTelephonyNetworkInfo. May be nil due to CTCarrier deprecation on iOS 16.4+.
     var carrierName: String?
+
+    /// Per-service (multi-SIM / DSDS) radio state for ALL provisioned services, JSON-encoded via
+    /// `RadioServiceSnapshot.encode`. Optional with a nil default: SwiftData backfills a new
+    /// optional attribute with nil and needs no declaration default (the path already proven by
+    /// `vpnInterface`/`throughputKbps` in this store) -- a non-optional column would need
+    /// `= default` on the declaration or existing rows crash with CoreData 134110 on migration.
+    /// One JSON column rather than one column per service: the service count is device-dependent,
+    /// columns are not.
+    var radioServicesJSON: String?
+
+    /// The service identifier that fired CTServiceRadioAccessTechnologyDidChange for this event;
+    /// nil for every event type other than `.radioTechChange`. Same optional-with-nil-default
+    /// migration-safety rationale as `radioServicesJSON` above.
+    var radioChangeService: String?
 
     // MARK: Cellular restriction metadata
 
@@ -214,6 +230,12 @@ final class ConnectivityEvent {
         set { interfaceTypeRaw = newValue.rawValue }
     }
 
+    /// Typed accessor for per-service radio state. Decodes `radioServicesJSON` on read; nil when
+    /// no cellular services were observed (simulator, airplane mode, or legacy pre-feature events).
+    var radioServices: [RadioServiceSnapshot]? {
+        RadioServiceSnapshot.decode(radioServicesJSON)
+    }
+
     // MARK: Location reconstruction
 
     /// Reconstructs a CLLocationCoordinate2D from stored latitude/longitude. Returns nil if either is missing.
@@ -242,6 +264,8 @@ final class ConnectivityEvent {
         pathUsesCellular: Bool = false,
         radioTechnology: String? = nil,
         carrierName: String? = nil,
+        radioServicesJSON: String? = nil,
+        radioChangeService: String? = nil,
         cellularDataRestricted: String? = nil,
         wifiSSID: String? = nil,
         vpnState: VPNState? = nil,
@@ -265,6 +289,8 @@ final class ConnectivityEvent {
         self.pathUsesCellular = pathUsesCellular
         self.radioTechnology = radioTechnology
         self.carrierName = carrierName
+        self.radioServicesJSON = radioServicesJSON
+        self.radioChangeService = radioChangeService
         self.cellularDataRestricted = cellularDataRestricted
         self.wifiSSID = wifiSSID
         self.vpnStateRaw = vpnState?.rawValue
@@ -295,6 +321,8 @@ extension ConnectivityEvent: Codable {
         case pathUsesCellular
         case radioTechnology
         case carrierName
+        case radioServices
+        case radioChangeService
         case cellularDataRestricted
         case probeLatencyMs
         case throughputKbps
@@ -349,6 +377,11 @@ extension ConnectivityEvent: Codable {
             vpnState = nil
         }
 
+        // Per-service radio state decodes as a structured array (matching how it is encoded
+        // below), then gets re-encoded to the compact string form used for storage. `decodeIfPresent`
+        // returns nil for legacy export files lacking this key, which decodes cleanly to nil.
+        let radioServices = try container.decodeIfPresent([RadioServiceSnapshot].self, forKey: .radioServices)
+
         self.init(
             timestamp: timestamp,
             eventType: eventType,
@@ -362,6 +395,8 @@ extension ConnectivityEvent: Codable {
             pathUsesCellular: try container.decodeIfPresent(Bool.self, forKey: .pathUsesCellular) ?? false,
             radioTechnology: try container.decodeIfPresent(String.self, forKey: .radioTechnology),
             carrierName: try container.decodeIfPresent(String.self, forKey: .carrierName),
+            radioServicesJSON: RadioServiceSnapshot.encode(radioServices ?? []),
+            radioChangeService: try container.decodeIfPresent(String.self, forKey: .radioChangeService),
             cellularDataRestricted: try container.decodeIfPresent(String.self, forKey: .cellularDataRestricted),
             wifiSSID: try container.decodeIfPresent(String.self, forKey: .wifiSSID),
             vpnState: vpnState,
@@ -391,6 +426,15 @@ extension ConnectivityEvent: Codable {
         try container.encode(pathUsesCellular, forKey: .pathUsesCellular)
         try container.encodeIfPresent(radioTechnology, forKey: .radioTechnology)
         try container.encodeIfPresent(carrierName, forKey: .carrierName)
+        // Per-service radio state and the changed-service identifier are the evidence this feature
+        // exists to produce -- encoded as a STRUCTURED array (not a stringified JSON blob) so the
+        // export file an Apple engineer reads needs no post-processing. Left OUTSIDE the
+        // !omitLocation privacy gate below: a CoreTelephony service identifier is an opaque local
+        // slot handle (not IMSI/ICCID/MSISDN — no subscriber/SIM/device identity), and gating it
+        // would strip this evidence from the very export the user is most likely to send
+        // (the privacy-on export).
+        try container.encodeIfPresent(radioServices, forKey: .radioServices)
+        try container.encodeIfPresent(radioChangeService, forKey: .radioChangeService)
         // Omit "unknown" cellular restriction state from export — same noise-reduction principle
         // as the vpnState guard below; only meaningful values reach the export file.
         if let restriction = cellularDataRestricted, restriction != "unknown" {
