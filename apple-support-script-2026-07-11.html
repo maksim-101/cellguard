@@ -1,0 +1,345 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apple Support — Escalation Script &amp; Evidence | iPhone 17 Pro Max</title>
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --border: #d2d2d7;
+    --text: #1d1d1f;
+    --muted: #6e6e73;
+    --accent: #0071e3;
+    --red: #c0392b;
+    --red-bg: #fff0ee;
+    --green: #1a7f37;
+    --green-bg: #efffed;
+    --orange: #b45309;
+    --orange-bg: #fffbeb;
+    --purple: #5b21b6;
+    --purple-bg: #f5f3ff;
+    --tag-bg: #e8f0fe;
+    --tag-text: #1a56db;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a1c; --card: #232326; --border: #3a3a3d; --text: #f5f5f7; --muted: #98989d;
+      --red-bg: #2d1a18; --green-bg: #16241a; --orange-bg: #2a2113; --purple-bg: #211c33;
+      --tag-bg: #1c2c4d; --tag-text: #7ab0ff;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1a1a1c; --card: #232326; --border: #3a3a3d; --text: #f5f5f7; --muted: #98989d;
+    --red-bg: #2d1a18; --green-bg: #16241a; --orange-bg: #2a2113; --purple-bg: #211c33;
+    --tag-bg: #1c2c4d; --tag-text: #7ab0ff;
+  }
+  :root[data-theme="light"] {
+    --bg: #f5f5f7; --card: #ffffff; --border: #d2d2d7; --text: #1d1d1f; --muted: #6e6e73;
+    --red-bg: #fff0ee; --green-bg: #efffed; --orange-bg: #fffbeb; --purple-bg: #f5f3ff;
+    --tag-bg: #e8f0fe; --tag-text: #1a56db;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 15px;
+  }
+  .page { max-width: 880px; margin: 0 auto; padding: 32px 20px 80px; }
+
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 4px; }
+  .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+
+  h2 {
+    font-size: 13px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.6px; color: var(--muted); margin: 0 0 12px;
+  }
+  h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 22px 24px; margin-bottom: 20px;
+  }
+  .card.red    { border-color: #f5c6c2; background: var(--red-bg); }
+  .card.green  { border-color: #b5e8c2; background: var(--green-bg); }
+  .card.orange { border-color: #fde68a; background: var(--orange-bg); }
+  .card.purple { border-color: #c4b5fd; background: var(--purple-bg); }
+
+  .placeholder {
+    background: #ffe8a3; color: #6b4d00; padding: 1px 6px;
+    border-radius: 4px; font-weight: 600; font-size: 13px;
+  }
+  @media (prefers-color-scheme: dark) { .placeholder { background: #6b5518; color: #ffe8a3; } }
+
+  .script-block {
+    background: #f0f4ff; border-left: 4px solid var(--accent);
+    border-radius: 0 10px 10px 0; padding: 14px 18px; margin: 12px 0;
+    font-style: italic; color: #1a1a2e; line-height: 1.75;
+  }
+  @media (prefers-color-scheme: dark) { .script-block { background: #1b2338; color: #dfe6f5; } }
+  .script-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.8px; color: var(--accent); margin-bottom: 6px; font-style: normal;
+  }
+
+  .checklist { list-style: none; }
+  .checklist li {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 14px;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist li::before { content: "☐"; font-size: 17px; flex-shrink: 0; color: var(--accent); }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 480px; }
+  th {
+    text-align: left; font-weight: 600; padding: 8px 10px;
+    background: var(--bg); border-bottom: 1px solid var(--border);
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted);
+  }
+  td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); border-radius: 5px; padding: 1px 7px; font-size: 12px; font-weight: 600; }
+  .tag.red { background: var(--red-bg); color: var(--red); }
+
+  .step { display: flex; gap: 16px; margin-bottom: 22px; }
+  .step-num {
+    flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%;
+    background: var(--accent); color: white; font-weight: 700; font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .step-body { flex: 1; min-width: 0; }
+
+  .zombie { color: var(--red); font-weight: 600; }
+  .kill { color: var(--red); font-weight: 600; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+
+  code {
+    font-family: "SF Mono", "Menlo", monospace; font-size: 12px;
+    background: var(--bg); border: 1px solid var(--border);
+    padding: 1px 5px; border-radius: 4px;
+  }
+  pre {
+    font-family: "SF Mono", "Menlo", monospace; font-size: 13px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 14px; overflow-x: auto; margin: 10px 0;
+  }
+
+  .dont {
+    border-left: 4px solid var(--red); background: var(--red-bg);
+    padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 14px;
+  }
+
+  @media print {
+    body { background: white; }
+    .card { break-inside: avoid; }
+    .step { break-inside: avoid; }
+  }
+</style>
+
+<div class="page">
+
+  <h1>Apple Support — Escalation Script</h1>
+  <p class="subtitle">iPhone 17 Pro Max &middot; Dual-SIM data starvation &amp; silent modem failure &middot; Prepared 2026-07-11 &middot; <strong>Supersedes the 2026-05-23 script</strong></p>
+
+  <div class="card red">
+    <h3 style="color:var(--red); margin-bottom:6px;">⚠️ Read this before you use the old script</h3>
+    <p style="font-size:14px;">The May 23 script argued <em>"this is a defect in my specific unit, not a general software problem."</em> <strong class="kill">That argument is now known to be false and must not be used.</strong> Three replacement phones all reproduced the fault because every iPhone would. Your sysdiagnose contains the second eSIM in plain sight — if you argue "my unit is defective" and an engineer opens the log, your credibility is gone.</p>
+    <p style="font-size:14px; margin-top:10px;">The new position is <strong>stronger, not weaker</strong>: you have done what Apple asks of every reporter and almost nobody delivers — <strong>isolated a deterministic reproduction.</strong></p>
+  </div>
+
+  <div class="card purple">
+    <h3 style="color:var(--purple); margin-bottom:6px;">Goal of this contact</h3>
+    <p style="font-size:14px;">Escalation to <strong>Apple Engineering</strong> with a reproducible bug, and a <strong>Feedback Assistant / bug number</strong> you can hold them to. <strong>Not</strong> another hardware replacement — a like-for-like device will reproduce this on day one, and accepting one as closure would end the case without fixing anything.</p>
+  </div>
+
+  <hr>
+
+  <h2>The Finding, in one paragraph</h2>
+  <div class="card">
+    <p style="font-size:15px;">A second eSIM (a US voice-only line) is provisioned and active on the device. It cannot register on any Swiss network, so it searches continuously. The iPhone is a <strong>Dual SIM Dual Standby</strong> device — both lines share <strong>one RF chain</strong> — and paging, signalling and network-search on the idle line take <strong>priority over packet data</strong> on the active line. The result: the Swisscom line reports full bars and 5G while passing <strong>zero data, for hours</strong>, and iOS never detects it. <strong>Disabling the second line resolves the problem completely.</strong> Re-enabling it brings the problem back.</p>
+  </div>
+
+  <h2>Evidence — the three that matter</h2>
+
+  <div class="card green">
+    <h3 style="color:var(--green);">1. Apple's own battery telemetry corroborates it</h3>
+    <p style="font-size:14px; margin-bottom:10px;"><strong>Settings → Battery → "Poor Cell Coverage", week of 2026-07-04 to 07-11.</strong> The only two days with essentially <strong>zero</strong> poor-coverage battery usage are <strong>Wednesday 07-08</strong> and <strong>Friday 07-10</strong> — the exact two days the second line was switched off. Every other day: 1.5–3.5%.</p>
+    <p style="font-size:14px;">This is <strong>iOS's own accounting</strong>, in Apple's own UI. It proves the idle line is actively burning radio, not sitting dormant. It cannot be dismissed as third-party instrumentation.</p>
+    <p style="font-size:13px; color:var(--muted); margin-top:8px;">→ Have the screenshot ready.</p>
+  </div>
+
+  <div class="card">
+    <h3>2. The unregistered line is visible in CoreTelephony</h3>
+    <pre>Other Line   0000000100000001    Not registered     ← US line
+Data Line    0000000100000002    NRNSA              ← Swisscom</pre>
+    <p style="font-size:14px;">Per Apple's own documentation for <code>serviceCurrentRadioAccessTechnology</code>: <em>"An entry may be nil if the service is not registered on any network."</em> The second line has no radio access technology because it is registered nowhere — while it continues to search.</p>
+  </div>
+
+  <div class="card">
+    <h3>3. The failure is independent of the second line's RAT preference</h3>
+    <p style="font-size:14px;">Tested with the second line's <strong>Voice &amp; Data set to 5G, and again to LTE</strong>. The failure occurs either way. This rules out a 5G/NR-specific fault and points squarely at the <strong>network-search behaviour itself</strong>. The second line has <strong>Data Roaming OFF</strong> and <strong>Wi-Fi Calling OFF</strong> — it has no data entitlement and no non-cellular reachability path, so it can only hunt.</p>
+  </div>
+
+  <hr>
+
+  <h2>Severity — from the 43-day monitored period (Mar 25 – May 23)</h2>
+  <div class="card">
+    <div class="table-wrap">
+    <table>
+      <tbody>
+        <tr><td>Total silent failures logged</td><td><strong class="kill">317</strong> over 43 monitored days</td></tr>
+        <tr><td>Days affected</td><td><strong>39 of 43</strong> (91%)</td></tr>
+        <tr><td>Cellular probe failure rate</td><td><strong class="kill">23.1%</strong> — roughly 1 in 4 probes failed silently</td></tr>
+        <tr><td>Measured outage time</td><td><strong>73.1 hours</strong> (conservative — open episodes excluded)</td></tr>
+        <tr><td>Effect of every iOS / carrier / modem update</td><td>15.0% before vs 15.3% after — <strong>zero improvement</strong></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p style="font-size:13px; color:var(--muted); margin-top:12px;">These figures are <em>conservative</em>. Probes that completed but took up to 10 seconds were counted as <strong>successes</strong>. The true failure rate is higher.</p>
+  </div>
+
+  <div class="card orange">
+    <h3 style="color:var(--orange);">The "zombie modem" events — and a clue for Engineering</h3>
+    <p style="font-size:13px; color:var(--muted); margin-bottom:12px;">During each of these the phone showed full bars and a 5G icon. No data passed. iOS never detected a failure.</p>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Date &amp; time (CH local)</th><th>Duration</th></tr></thead>
+      <tbody>
+        <tr><td>April 27, <strong>04:49</strong></td><td class="zombie">6 h 59 min</td></tr>
+        <tr><td>May 14, <strong>04:55</strong></td><td class="zombie">6 h 49 min</td></tr>
+        <tr><td>April 30, <strong>05:09</strong></td><td class="zombie">5 h 31 min</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p style="font-size:14px; margin-top:12px;"><strong>All three start within a 20-minute window, ~05:00.</strong> That is not a random distribution — it looks like a <strong>~24-hour retry timer</strong>. Ask Engineering to check <strong>T3245</strong> (the forbidden-PLMN retry timer, max 24 h) in the baseband logs. Present this as a <em>hypothesis for them to test</em>, not as a conclusion.</p>
+  </div>
+
+  <hr>
+
+  <h2>Call / Chat Script</h2>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h3>Opening — lead with the reproduction</h3>
+      <div class="script-block">
+        <div class="script-label">Say this</div>
+        "I've had an open case since March about my iPhone 17 Pro Max silently losing all cellular data while showing full 5G bars. I'm not calling to repeat that. <strong>I'm calling because I've isolated a deterministic reproduction of the bug</strong>, and I need it in front of Engineering. I can reproduce the failure on demand and I can make it stop on demand. I have the diagnostic data, and iOS's own battery telemetry independently confirms the mechanism."
+      </div>
+      <p style="font-size:13px; color:var(--muted);">Give your case number the moment they ask. Ask for a Senior Advisor immediately.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h3>The reproduction</h3>
+      <div class="script-block">
+        <div class="script-label">Say this</div>
+        "I have two lines on the device — my Swiss carrier, and a US voice-only eSIM. The US line cannot register on any network here, so it searches continuously. <strong>With that second line switched on, my primary line silently loses all data — full bars, 5G icon, nothing gets through, for up to seven hours at a stretch, and iOS never notices. With that line switched off, the problem disappears entirely.</strong> On, off, on — it tracks every time. It happens whether the second line is set to 5G or LTE, so it isn't a 5G issue. It's the network search itself."
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h3>Close the "that's expected in Dual SIM" exit</h3>
+      <p style="font-size:14px; margin-bottom:8px; color:var(--muted);">They will reach for this. Do not argue that RF contention shouldn't exist — it does, and they'll be right. Attack the <em>silence</em> instead.</p>
+      <div class="script-block">
+        <div class="script-label">Say this</div>
+        "I understand Dual SIM shares one radio, and I'd accept that my data gets slower. <strong>What I don't accept is that the modem reports full 5G signal while passing zero data for seven hours, and the operating system never detects it.</strong> Radio contention should degrade a connection. It should not produce a silent black hole that iOS reports as a healthy connection. That's the defect. And Dual SIM is a feature Apple advertises and sells this phone on — this is a supported configuration."
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <h3>The battery evidence — your strongest card</h3>
+      <div class="script-block">
+        <div class="script-label">Say this</div>
+        "This isn't only my app's data. <strong>Open Settings, Battery, 'Poor Cell Coverage.'</strong> On the two days I had the second line switched off, that figure is essentially zero. On every day it was on, it's 1.5 to 3.5 percent. <strong>That's iOS's own accounting</strong>, telling you the idle line is burning radio continuously. Your own operating system is measuring the problem — it just never tells the user, and never acts on it."
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <h3>What iOS failed to do</h3>
+      <div class="script-block">
+        <div class="script-label">Say this</div>
+        "iOS knows this line is unregistered. It knows data roaming is off on it. It knows it hasn't attached in weeks. And it does nothing with any of that. <strong>There is no warning, no indicator, and no setting to deprioritise an idle line.</strong> I only found this because I wrote my own diagnostic app. A user without one has no way to discover it — they just conclude the iPhone is broken."
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">6</div>
+    <div class="step-body">
+      <h3>The asks — three, in this order</h3>
+      <div class="script-block">
+        <div class="script-label">Say this</div>
+        "Three things. <strong>First</strong>, escalate this to Engineering with the reproduction — I have a sysdiagnose captured during an active failure with the cellular logging profile installed, plus 100+ days of structured event data, ready to send. <strong>Second</strong>, I want a Feedback Assistant number so this is tracked as a bug and I can follow it. <strong>Third</strong>, I want it documented on my case that this device has been unfit for its primary function since March, while I've been paying for AppleCare+."
+      </div>
+      <div class="dont">
+        <strong>Do NOT ask for a replacement device.</strong> If they offer one, say: <em>"A replacement won't fix this — three units already reproduced it, because every iPhone will. I'm not looking for another handset. I'm looking for the bug to be fixed."</em> Accepting a swap closes the case and solves nothing.
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">7</div>
+    <div class="step-body">
+      <h3>Impact — keep it concrete and factual</h3>
+      <div class="script-block">
+        <div class="script-label">Say this</div>
+        "To be concrete: 317 logged silent failures across 43 monitored days. 73 hours of measured outage. I can't reliably buy a transit ticket when I'm out. I've had calls drop. For four months this phone has not reliably performed its primary function away from Wi-Fi, and every iOS and carrier update in that time changed the failure rate by 0.3 percent."
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <h2>Have ready before you call</h2>
+  <div class="card">
+    <ul class="checklist">
+      <li><strong>Existing case number</strong> (March) — <span class="placeholder">FILL IN</span></li>
+      <li><strong>IMEI</strong> — Settings → General → About</li>
+      <li><strong>iOS version, Modem Firmware, Carrier Settings version</strong> — Settings → General → About</li>
+      <li><strong>Battery screenshot</strong> — Settings → Battery → Poor Cell Coverage (the week showing Wed + Fri near zero)</li>
+      <li><strong>SIM Services screenshot</strong> — showing the second line "Not registered"</li>
+      <li><strong>Sysdiagnose captured during an active failure</strong>, with the cellular/baseband logging profile installed <span class="placeholder">← STILL TO CAPTURE</span></li>
+      <li><strong>CellGuard JSON export</strong> — <span class="placeholder">re-export with the current build</span></li>
+      <li><strong>Swisscom ticket number</strong> — <span class="placeholder">FILL IN</span> (Apple asked for this)</li>
+      <li><strong>AppleCare+ contract / order number</strong></li>
+    </ul>
+  </div>
+
+  <div class="card red">
+    <h3 style="color:var(--red);">Do not go in without the sysdiagnose</h3>
+    <p style="font-size:14px;">A sysdiagnose captured <strong>during an active silent failure</strong>, with Apple's cellular logging profile installed, is the one artefact Engineering actually reads. It contains the PLMN search cycles, the NAS reject causes, and the retry timers. Without it you have a compelling story; with it you have a bug report they can act on.</p>
+    <p style="font-size:14px; margin-top:8px;">Profile: <code>developer.apple.com/bug-reporting/profiles</code> → Cellular / Baseband.<br>Capture: hold <strong>Volume Up + Volume Down + Side</strong> for ~1.5 s during a failure. Note the exact timestamp.</p>
+  </div>
+
+  <div class="card green">
+    <h3 style="color:var(--green);">Route</h3>
+    <p style="font-size:14px; margin-top:8px;">
+      <strong>Web:</strong> getsupport.apple.com → iPhone → Cellular → "No service or calls/data dropping"<br>
+      <strong>Ask for:</strong> Senior Advisor → reference existing case → request Engineering escalation + Feedback Assistant number<br>
+      <strong>Tip:</strong> Chat escalates faster than phone for technical cases with documented evidence — and it gives you a <strong>written record</strong>, which matters for the legal track. <strong>Save the transcript.</strong>
+    </p>
+  </div>
+
+  <div class="card orange">
+    <h3 style="color:var(--orange);">The legal track runs in parallel — don't let the support call replace it</h3>
+    <p style="font-size:14px;">A support call is <strong>not</strong> a Mängelrüge. It does not preserve your rights under Art. 197 ff. OR and does not stop the Art. 201 clock. Send the written notice separately. See <code>maengelruege-2026-07-11.html</code>.</p>
+  </div>
+
+  <p style="font-size:12px; color:var(--muted); margin-top:20px; text-align:center;">
+    Prepared 2026-07-11 &middot; Supersedes apple-support-script-2026-05-23.html &middot; CellGuard diagnostic data
+  </p>
+
+</div>
