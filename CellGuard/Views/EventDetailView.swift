@@ -75,10 +75,18 @@ struct EventDetailView: View {
                 }
             }
 
-            if event.probeLatencyMs != nil || event.probeFailureReason != nil {
+            if event.probeLatencyMs != nil || event.probeFailureReason != nil || event.referenceThroughputKbps != nil {
                 Section("Probe") {
                     if let latency = event.probeLatencyMs {
                         LabeledContent("Latency", value: String(format: "%.0f ms", latency))
+                    }
+                    // The audit trail for the severe-latency rule: says either "this probe was
+                    // called a drop because the radio measured N Mbps shortly before" or "this
+                    // slow probe was NOT called a drop because the radio measured only N Mbps".
+                    // Nil (legacy events, or no throughput sample was fresh at capture time) renders
+                    // no row at all -- never an empty placeholder.
+                    if let referenceKbps = event.referenceThroughputKbps {
+                        LabeledContent("Reference Throughput", value: String(format: "%.1f Mbps", referenceKbps / 1000))
                     }
                     if let reason = event.probeFailureReason {
                         LabeledContent("Failure Reason", value: reason)

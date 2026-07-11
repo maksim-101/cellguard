@@ -5,7 +5,7 @@ struct SummaryReport {
     let totalDrops: Int
     let overtDrops: Int
     let silentDrops: Int
-    let stallDrops: Int       // severeThroughput — reachable but data effectively dead
+    let stallDrops: Int       // severeThroughput + dataStall + severeLatency — reachable but data/latency effectively dead
     let degradedCount: Int    // slow throughput / slow probes — NOT a drop
     let averageDurationSeconds: Double?
     let maxDurationSeconds: Double?

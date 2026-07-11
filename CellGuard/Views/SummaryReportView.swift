@@ -17,13 +17,13 @@ struct SummaryReportView: View {
                 LabeledContent("Total Drops", value: "\(report.totalDrops)")
                 LabeledContent("Overt Drops", value: "\(report.overtDrops)")
                 LabeledContent("Silent Failures", value: "\(report.silentDrops)")
-                LabeledContent("Data Stalls", value: "\(report.stallDrops)")
+                LabeledContent("Stalls (data / latency)", value: "\(report.stallDrops)")
                 LabeledContent("Total Events", value: "\(report.totalEvents)")
                 LabeledContent("Days Monitored", value: "\(report.monitoringDays) day\(report.monitoringDays == 1 ? "" : "s")")
             } header: {
                 Text("Overview")
             } footer: {
-                Text("Total Drops = Overt + Silent + Data Stalls. Degraded events (below) are slow but not lost, so they are not counted as drops.")
+                Text("Total Drops = Overt + Silent + Stalls (data / latency). Degraded events (below) are slow but not lost, so they are not counted as drops. Severe-latency drops are classified at capture time; events recorded before this rule shipped keep their original classification and are not reclassified.")
             }
             Section("Degraded (not drops)") {
                 LabeledContent("Slow / degraded probes", value: "\(report.degradedCount)")
@@ -49,7 +49,7 @@ struct SummaryReportView: View {
                                 
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Denominator: cellular probe attempts + overt drops")
-                                    Text("Numerator: Total Drops (Silent + Overt + Data Stalls)")
+                                    Text("Numerator: Total Drops (Silent + Overt + Stalls (data / latency))")
                                 }
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
