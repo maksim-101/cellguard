@@ -43,6 +43,13 @@ enum EventType: Int, Codable, CaseIterable {
     /// drop: a multi-second stream stall makes VoIP unusable even when reachability succeeds.
     /// Explicit rawValue 11 (migration safety).
     case dataStall = 11
+    /// Logged when a reachability probe SUCCEEDED but took longer than
+    /// `SevereLatencyRule.severeLatencyThresholdMs` over a radio that measured healthy throughput
+    /// (>= the healthy bar) within the freshness window — the radio was demonstrably capable, so
+    /// this is the modem stalling, not weak coverage. Counts as a drop. Only ever emitted when a
+    /// fresh healthy throughput reference existed at capture time (see `referenceThroughputKbps`).
+    /// Explicit rawValue 12 (migration safety).
+    case severeLatency = 12
 }
 
 /// Network path status as reported by NWPathMonitor.
@@ -191,6 +198,18 @@ final class ConnectivityEvent {
     /// Nil when no throughput was measured for this event.
     var throughputKbps: Double?
 
+    /// The throughput reading `SevereLatencyRule` consulted when classifying this probe. Optional
+    /// with a nil default is REQUIRED for SwiftData lightweight migration: existing rows have no
+    /// value for this new column, and an optional attribute backfills to nil with no declaration
+    /// default needed (the path already proven in this store by `throughputKbps` / `vpnInterface`;
+    /// see `<migration_constraint>` in the plan before changing this to non-optional).
+    /// Recorded on BOTH outcomes the rule evaluated — the drop AND the not-a-drop — because the
+    /// audit question an Apple engineer will ask is "why did you call THIS one a drop and THAT one
+    /// not?", and only the consulted reference answers it. The reference's age is not stored
+    /// separately: it is bounded by the freshness window, and the preceding throughput event is
+    /// right there in the same log, timestamped.
+    var referenceThroughputKbps: Double?
+
     /// Reason the connectivity probe failed. Nil if probe succeeded or was not performed.
     var probeFailureReason: String?
 
@@ -272,6 +291,7 @@ final class ConnectivityEvent {
         vpnInterface: String? = nil,
         probeLatencyMs: Double? = nil,
         throughputKbps: Double? = nil,
+        referenceThroughputKbps: Double? = nil,
         probeFailureReason: String? = nil,
         latitude: Double? = nil,
         longitude: Double? = nil,
@@ -297,6 +317,7 @@ final class ConnectivityEvent {
         self.vpnInterface = vpnInterface
         self.probeLatencyMs = probeLatencyMs
         self.throughputKbps = throughputKbps
+        self.referenceThroughputKbps = referenceThroughputKbps
         self.probeFailureReason = probeFailureReason
         self.latitude = latitude
         self.longitude = longitude
@@ -326,6 +347,7 @@ extension ConnectivityEvent: Codable {
         case cellularDataRestricted
         case probeLatencyMs
         case throughputKbps
+        case referenceThroughputKbps
         case probeFailureReason
         case degraded
         case latitude
@@ -403,6 +425,7 @@ extension ConnectivityEvent: Codable {
             vpnInterface: try container.decodeIfPresent(String.self, forKey: .vpnInterface),
             probeLatencyMs: try container.decodeIfPresent(Double.self, forKey: .probeLatencyMs),
             throughputKbps: try container.decodeIfPresent(Double.self, forKey: .throughputKbps),
+            referenceThroughputKbps: try container.decodeIfPresent(Double.self, forKey: .referenceThroughputKbps),
             probeFailureReason: try container.decodeIfPresent(String.self, forKey: .probeFailureReason),
             latitude: try container.decodeIfPresent(Double.self, forKey: .latitude),
             longitude: try container.decodeIfPresent(Double.self, forKey: .longitude),
@@ -442,6 +465,10 @@ extension ConnectivityEvent: Codable {
         }
         try container.encodeIfPresent(probeLatencyMs, forKey: .probeLatencyMs)
         try container.encodeIfPresent(throughputKbps, forKey: .throughputKbps)
+        // Outside the !omitLocation privacy gate below: this is a bandwidth number, carries no
+        // location or identity, and is the audit trail for why a slow probe was or was not called
+        // a drop -- the same reasoning as radioServices above.
+        try container.encodeIfPresent(referenceThroughputKbps, forKey: .referenceThroughputKbps)
         try container.encodeIfPresent(probeFailureReason, forKey: .probeFailureReason)
         // Self-describing degraded marker: a probeSuccess whose latency exceeds the degraded
         // threshold is "reachable but slow" — flagged here so the export needs no post-hoc rule
@@ -486,6 +513,7 @@ extension EventType {
         case .radioTechChange: "radioTechChange"
         case .userIncident: "userIncident"
         case .dataStall: "dataStall"
+        case .severeLatency: "severeLatency"
         }
     }
 
@@ -504,6 +532,7 @@ extension EventType {
         case "radioTechChange": .radioTechChange
         case "userIncident": .userIncident
         case "dataStall": .dataStall
+        case "severeLatency": .severeLatency
         default: nil
         }
     }
@@ -602,6 +631,7 @@ extension EventType {
         case .radioTechChange: "Radio Tech Change"
         case .userIncident: "User Incident"
         case .dataStall: "Data Stall"
+        case .severeLatency: "Severe Latency"
         }
     }
 }
