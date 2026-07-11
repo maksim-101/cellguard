@@ -244,6 +244,13 @@ final class ConnectivityMonitor {
     /// NotificationCenter observer token for radio tech changes, stored for cleanup on stop.
     private var radioTechObserver: (any NSObjectProtocol)?
 
+    /// Last-known tech per service identifier, keyed by CoreTelephony's opaque service id.
+    /// Seeded at `startMonitoring()` and refreshed on every radioTechChange, so the phantom-event
+    /// fix in `setupRadioTechObserver` compares each service against ITSELF rather than against
+    /// a single arbitrary-dictionary-order value. Without the launch-time seed, the first
+    /// notification after launch could log a change for a service whose tech never actually moved.
+    private var lastTechByService: [String: String] = [:]
+
     /// Retained CTCellularData instance for monitoring cellular data access restriction.
     /// The notifier closure (set in startMonitoring) populates `cellularDataRestrictedState`
     /// asynchronously; `.restrictedStateUnknown` is the value before the first callback.
@@ -292,7 +299,12 @@ final class ConnectivityMonitor {
         // CoreTelephony: register for radio tech changes and capture initial state.
         // Use a fresh CTTelephonyNetworkInfo for the initial read to avoid stale cached values.
         setupRadioTechObserver()
-        currentRadioTechnology = CTTelephonyNetworkInfo().serviceCurrentRadioAccessTechnology?.values.first
+        let initialRadioSnapshot = captureRadioSnapshot()
+        currentRadioTechnology = initialRadioSnapshot.primaryTech
+        // Seed per-service tracking at launch -- without this, the first radioTechChange
+        // notification after launch could log a change for a service whose tech never actually
+        // moved (there would be nothing to compare it against).
+        lastTechByService = initialRadioSnapshot.techByService
 
         // CTCellularData: install notifier to track whether cellular data is restricted (Task 2).
         // The notifier fires immediately with the current state and again on any change. We retain
@@ -357,6 +369,48 @@ final class ConnectivityMonitor {
         }
         let keyList = detection.sortedKeys.joined(separator: ", ")
         return "NO MATCH — keys=[\(keyList)]"
+    }
+
+    // MARK: - Radio Services Self-Check (Task 2)
+
+    /// Performs an on-demand radio-services self-check, dumping the RAW CoreTelephony inputs so
+    /// a single screenshot settles both on-device unknowns left open by the SDK header review:
+    /// whether `dataServiceIdentifier` resolves to a real line, and whether
+    /// `serviceSubscriberCellularProviders` still enumerates provisioned service keys on iOS 26.
+    /// Prints only what the APIs returned -- no inference, no scanning detection (see plan
+    /// `<out_of_scope>`: there is no public API for signal strength or PLMN-scan state).
+    func radioServicesSelfCheck() -> String {
+        let info = CTTelephonyNetworkInfo()
+        let techByService = info.serviceCurrentRadioAccessTechnology ?? [:]
+        let subscriberKeys = info.serviceSubscriberCellularProviders?.keys.sorted() ?? []
+        let snapshot = captureRadioSnapshot()
+
+        var lines: [String] = []
+
+        lines.append("dataServiceIdentifier: \(info.dataServiceIdentifier ?? "(nil)")")
+
+        if techByService.isEmpty {
+            lines.append("serviceCurrentRadioAccessTechnology: (empty)")
+        } else {
+            for id in techByService.keys.sorted() {
+                lines.append("  \(id) = \(techByService[id] ?? "(nil)")")
+            }
+        }
+
+        lines.append(subscriberKeys.isEmpty
+            ? "serviceSubscriberCellularProviders keys: (empty)"
+            : "serviceSubscriberCellularProviders keys: \(subscriberKeys.joined(separator: ", "))")
+
+        let primaryService = snapshot.services.first(where: \.isPrimary)
+        let primaryRule = info.dataServiceIdentifier != nil ? "dataServiceIdentifier" : "sorted-key fallback"
+        lines.append("Primary chosen: \(primaryService?.service ?? "(none)") (rule: \(primaryRule))")
+
+        let unregistered = snapshot.services.filter { $0.tech == nil }.map(\.service)
+        lines.append(unregistered.isEmpty
+            ? "Provisioned but unregistered: (none)"
+            : "Provisioned but unregistered: \(unregistered.joined(separator: ", "))")
+
+        return lines.joined(separator: "\n")
     }
 
     // MARK: - Probe Timer Management
@@ -795,27 +849,53 @@ final class ConnectivityMonitor {
             forName: .CTServiceRadioAccessTechnologyDidChange,
             object: nil,
             queue: nil
-        ) { [weak self] _ in
-            // Create a fresh instance to avoid stale cached values
-            let freshInfo = CTTelephonyNetworkInfo()
-            let newTech = freshInfo.serviceCurrentRadioAccessTechnology?.values.first
+        ) { [weak self] notification in
+            // The notification's `object` IS the service identifier String whose radio tech
+            // changed (SDK-confirmed: CTServiceRadioAccessTechnologyDidChangeNotification header
+            // doc). This is exactly what the old `.values.first` read discarded, which made the
+            // old/new comparison an arbitrary-dictionary-iteration-order coin flip whenever two
+            // SIM services were present. No CoreTelephony call needed to read the notification
+            // object, so this can stay outside the CoreTelephony reads below.
+            let changedService = notification.object as? String
             Task { @MainActor in
                 guard let self else { return }
-                let oldTech = self.currentRadioTechnology
-                self.currentRadioTechnology = newTech
+
+                let snapshot = self.captureRadioSnapshot()
+                let newTechForChangedService = changedService.flatMap { snapshot.techByService[$0] }
+
+                let suppress: Bool
+                if let svc = changedService {
+                    // Phantom-event fix: suppress only when THIS SPECIFIC service's tech is
+                    // unchanged, comparing it against ITSELF (lastTechByService[svc]) instead of
+                    // the old single-value currentRadioTechnology. An iteration-order flip
+                    // between two lines can no longer masquerade as a transition, because we now
+                    // compare a line against itself.
+                    suppress = self.lastTechByService[svc] == newTechForChangedService
+                } else {
+                    // Not expected per the header doc, but if the identifier is somehow absent,
+                    // fall back to comparing the primary tech (today's pre-fix behavior) rather
+                    // than dropping the event: a logged event with a nil radioChangeService is
+                    // recoverable evidence; a dropped event is not.
+                    suppress = self.currentRadioTechnology == snapshot.primaryTech
+                }
+                // Update tracking regardless of suppression so the next notification compares
+                // against the current state, not a stale one.
+                self.lastTechByService = snapshot.techByService
+                self.currentRadioTechnology = snapshot.primaryTech
+                guard !suppress else { return }
+
                 // High-resolution radio-layer trace: log every actual transition (incl. signal
                 // acquisition/loss). This is the near-free oscilloscope for baseband instability —
                 // an NRNSA→LTE flip is the EN-DC/SCG-failure fingerprint that coincides with the
-                // call-drop window. The new tech lands in the event's radioTechnology via logEvent;
-                // the prior event's value gives the "from" side. Not a drop, so no notification.
-                guard oldTech != newTech else { return }
+                // call-drop window. Not a drop, so no notification.
                 self.logEvent(
                     type: .radioTechChange,
                     status: self.currentPathStatus,
                     interface: self.currentInterfaceType,
                     isExpensive: self.pathMonitor.currentPath.isExpensive,
                     isConstrained: self.pathMonitor.currentPath.isConstrained,
-                    lowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled
+                    lowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled,
+                    radioChangeService: changedService
                 )
             }
         }
@@ -830,16 +910,63 @@ final class ConnectivityMonitor {
         }
     }
 
-    /// Captures the current radio access technology string for event metadata (MON-04).
-    /// Returns values like "CTRadioAccessTechnologyLTE", "CTRadioAccessTechnologyNR", etc.
+    /// Result of a single `captureRadioSnapshot()` call: every provisioned service's state plus
+    /// the resolved primary line's tech, so callers needing only the primary (the vast majority)
+    /// don't need a second CoreTelephony read.
+    private struct RadioCapture {
+        let services: [RadioServiceSnapshot]
+        let primaryTech: String?
+        let techByService: [String: String]
+    }
+
+    /// Captures the full per-service (multi-SIM / DSDS) radio state in one CoreTelephony read
+    /// for event metadata (MON-04, DSDS-01/02/03). Replaces `captureRadioTechnology()` -- the
+    /// old `serviceCurrentRadioAccessTechnology?.values.first` read sampled an ARBITRARY
+    /// dictionary entry whenever two SIM services were present (Dictionary.values has no defined
+    /// ordering), corrupting both the stored radioTechnology and the phantom-transition
+    /// classification in `setupRadioTechObserver`.
     ///
-    /// Creates a fresh CTTelephonyNetworkInfo instance each time to avoid returning stale
-    /// cached values from the long-lived `networkInfo` property. This is necessary because
-    /// a single CTTelephonyNetworkInfo instance can cache the radio tech from creation time
-    /// and not reflect subsequent user settings changes (e.g., switching from LTE to 5G).
-    private func captureRadioTechnology() -> String? {
-        let freshInfo = CTTelephonyNetworkInfo()
-        return freshInfo.serviceCurrentRadioAccessTechnology?.values.first
+    /// Creates a fresh CTTelephonyNetworkInfo instance each time to avoid returning stale cached
+    /// values from the long-lived `networkInfo` property -- a single instance can cache the
+    /// radio tech from creation time and miss subsequent settings changes (e.g. LTE <-> 5G).
+    private func captureRadioSnapshot() -> RadioCapture {
+        let info = CTTelephonyNetworkInfo()
+        let techByService = info.serviceCurrentRadioAccessTechnology ?? [:]
+
+        // Provisioned-service enumeration: serviceSubscriberCellularProviders is deprecated
+        // (iOS 16.4, no replacement) but its KEYS still enumerate provisioned service slots --
+        // only its CTCarrier VALUES are junk post-16.4 and must never be read. The resulting
+        // deprecation warning is expected and accepted (see plan sdk_facts #3).
+        var provisionedIDs = Set(techByService.keys)
+        if let subscriberKeys = info.serviceSubscriberCellularProviders?.keys {
+            provisionedIDs.formUnion(subscriberKeys)
+        }
+        // Belt-and-braces: never let the data line silently drop out of the list even if both
+        // dictionaries above somehow omit it.
+        if let dataID = info.dataServiceIdentifier {
+            provisionedIDs.insert(dataID)
+        }
+        // Sorting is what makes the union's iteration order STABLE across calls.
+        let sortedIDs = provisionedIDs.sorted()
+
+        // Primary-line selection, in priority order:
+        // 1. dataServiceIdentifier -- iOS's own authoritative answer to "which line carries
+        //    data" (public, iOS 13+, not deprecated). Used whenever non-nil.
+        // 2. Fallback: the lowest service identifier in the sorted union. Arbitrary but STABLE --
+        //    the same line is chosen on every call, so the tie-break itself can never manufacture
+        //    a phantom transition. A future reader must know the primary is a guess in this
+        //    branch (see radioServicesSelfCheck(), which reports which rule fired).
+        let primary = info.dataServiceIdentifier ?? sortedIDs.first
+
+        let services = sortedIDs.map { id in
+            // A missing entry in techByService means the service is provisioned but registered
+            // on NO network (Apple's documented absence semantics) -- recorded as an explicit
+            // nil `tech`, never omitted from the array.
+            RadioServiceSnapshot(service: id, tech: techByService[id], isPrimary: id == primary)
+        }
+        let primaryTech = primary.flatMap { techByService[$0] }
+
+        return RadioCapture(services: services, primaryTech: primaryTech, techByService: techByService)
     }
 
     /// Carrier name is no longer available — Apple deprecated CTCarrier in iOS 16 with no replacement.
@@ -1173,7 +1300,8 @@ final class ConnectivityMonitor {
         probeFailureReason: String? = nil,
         dropDuration: Double? = nil,
         vpnState: VPNState? = nil,
-        vpnInterface: String? = nil
+        vpnInterface: String? = nil,
+        radioChangeService: String? = nil
     ) {
         // Heartbeat (gap-accounting fix): every logged event proves the app was alive and
         // monitoring at this instant. LocationService.detectAndLogGap measures now − lastActive,
@@ -1183,7 +1311,10 @@ final class ConnectivityMonitor {
 
         // Capture synchronous metadata outside the Task (D-09: VPN detector must be called
         // synchronously to match Phase 7's wifiSSID precedent and avoid actor-hop staleness).
-        let radioTech = captureRadioTechnology()
+        // Single CoreTelephony read for this event -- captureRadioSnapshot() replaces the old
+        // captureRadioTechnology() call and supplies both the primary-line tech and every
+        // provisioned service's state from the same read.
+        let radio = captureRadioSnapshot()
         let carrier = captureCarrierName()
         let cellularRestriction = captureCellularDataRestriction()
         let location = lastLocation
@@ -1209,8 +1340,10 @@ final class ConnectivityMonitor {
                 isConstrained: isConstrained,
                 lowPowerMode: lowPowerMode,
                 pathUsesCellular: resolvedUsesCellular,
-                radioTechnology: radioTech,
+                radioTechnology: radio.primaryTech,
                 carrierName: carrier,
+                radioServicesJSON: RadioServiceSnapshot.encode(radio.services),
+                radioChangeService: radioChangeService,
                 cellularDataRestricted: cellularRestriction,
                 wifiSSID: ssid,
                 vpnState: resolvedVPNState,
