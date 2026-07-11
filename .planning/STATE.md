@@ -5,10 +5,10 @@ milestone_name: Polish & Analytics
 current_phase: 10
 current_phase_name: reports-and-analytics
 status: complete
-stopped_at: quick-260711-e5s complete, blocking checkpoint pending user on-device verification
+stopped_at: "ROOT CAUSE FOUND (2nd eSIM / DSDS contention). quick-260711-e5s checkpoint open; manual-network-selection experiment running; Maengelruege drafted not sent."
 last_updated: "2026-07-11T08:35:32.430Z"
 last_activity: 2026-07-11
-last_activity_desc: "quick 260711-e5s: severe-latency drop tier gated on throughput built + migration-verified; blocked on user's on-device confirmation (blocking checkpoint)."
+last_activity_desc: "Root cause isolated: the unregistrable Tello eSIM starves the data line via DSDS RF contention (confirmed by iOS's own Poor Cell Coverage battery telemetry). Per-service radio logging + severe-latency tier shipped. Apple support script rewritten; Maengelruege drafted."
 progress:
   total_phases: 3
   completed_phases: 3
@@ -83,7 +83,13 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 ### Blockers/Concerns
 
-None.
+**1. OPEN CHECKPOINT — quick-260711-e5s needs on-device verification.** Severe-latency tier is built and migration-verified but never exercised on real cellular (the simulator has no cellular path, so `lastThroughput` never populates and the rule always takes the conservative no-data branch). The load-bearing check is the NEGATIVE one: **in genuinely weak-coverage spots, slow probes must stay "Probe Success (degraded)", NOT `.severeLatency`.** If bad coverage starts producing severeLatency drops, the throughput gate is broken and the data is not defensible to Apple.
+
+**2. BIGGEST EVIDENCE GAP — no sysdiagnose captured during an active failure.** With Apple's cellular/baseband logging profile installed (developer.apple.com/bug-reporting/profiles), a sysdiagnose taken *during* a silent failure is the one artefact Apple Engineering actually reads (PLMN search cycles, NAS reject causes, retry timers). **Sequencing trap:** the manual-network-selection experiment now running may FIX the phone, leaving no failure left to capture. Mitigation: install the profile now; if manual mode works, deliberately revert Tello to automatic for one day to capture a failure sysdiagnose. Note the exact timestamp for correlation with the CellGuard log.
+
+**3. LEGAL CLOCK RUNNING — Mängelrüge drafted but NOT SENT.** Art. 201 OR requires notice of a defect "immediately" upon gaining certainty; the Bundesgericht is strict (≈7 days has been treated as only barely timely) and late notice means the defect is deemed accepted, irrebuttably. Draft is at `maengelruege-2026-07-11.html` (first written notice; certainty-timing argument dated 11.07.2026). Needs: seller entity copied off the invoice (do NOT guess), placeholders filled, Einschreiben, review by Stiftung für Konsumentenschutz or a lawyer.
+
+**4. The 2026-05-23 support script is factually WRONG and still on disk (untracked).** It argues "defect in my specific unit" — now known false. Superseded by `apple-support-script-2026-07-11.html`. Delete or archive it so it cannot be grabbed by mistake.
 
 ### Quick Tasks Completed
 
@@ -100,7 +106,7 @@ None.
 | 260628-rpt | Option H "Cellular Health" home redesign: dynamic 0–100 score (clean-probe %, cellular-only via isExpensive, Wi-Fi excluded) — Overall + Last-24h rings + "vs usual" verdict + probe denominator + failure-mode legend rows; Stall series added to Drop Timeline (moved to Analytics) + Data Stalls Key Driver; new HealthScore.swift helper. Self-verified via simulator screenshots. | 2026-06-28 | 9d672a6 | [260628-rpt-option-h-cellular-health-home-redesign-w](./quick/260628-rpt-option-h-cellular-health-home-redesign-w/) |
 | fast | Severe-throughput tier: 3-tier classification (>=1Mbps ok / 200k-1M slowThroughput / <200k severeThroughput); severeThroughput (rawValue 8) counts as a drop + notifies; kept distinct from silentFailure | 2026-06-28 | 93f7a66 | — |
 | 260630-qsh | Fix duplicate same-timestamp event clusters (probeInFlight guard coalesces reentrant @MainActor probes — 6x@09:35:01 etc. in 06-30 export) + Log-Incident button registers every tap with haptic (monotonic incidentTapCount, never disabled). Simulator build verified. | 2026-06-30 | 3ff4cf7 | [260630-qsh-fix-probe-dedup-and-incident-button](./quick/260630-qsh-fix-probe-dedup-and-incident-button/) |
-| 260711-b4z 🔶 | Per-service (DSDS multi-SIM) radio logging. Fixes `.values.first` non-determinism — with 2 SIM services the app sampled an ARBITRARY line, corrupting `radioTechnology` and emitting phantom `radioTechChange` events. Now: primary line resolved via `dataServiceIdentifier` (stable sorted-key fallback); all provisioned services enumerated (unregistered line = absent key, per Apple's own doc); `radioChangeService` records WHICH line changed; per-service array in JSON export; "SIM Services" in EventDetailView + Radio Services Self-Check. Migration smoke-tested on a populated store (53 rows, 0 lost, no 134110). **Awaiting on-device verify (Tello line ON).** | 2026-07-11 | ef02d61 | [260711-b4z-per-service-radio-logging-for-multi-sim-](./quick/260711-b4z-per-service-radio-logging-for-multi-sim-/) |
+| 260711-b4z ✅ | Per-service (DSDS multi-SIM) radio logging. Fixes `.values.first` non-determinism — with 2 SIM services the app sampled an ARBITRARY line, corrupting `radioTechnology` and emitting phantom `radioTechChange` events. Now: primary line resolved via `dataServiceIdentifier` (stable sorted-key fallback); all provisioned services enumerated (unregistered line = absent key, per Apple's own doc); `radioChangeService` records WHICH line changed; per-service array in JSON export; "SIM Services" in EventDetailView + Radio Services Self-Check. Migration smoke-tested on a populated store (53 rows, 0 lost, no 134110). **ON-DEVICE VERIFIED 2026-07-11** — both risky assumptions confirmed by the user's self-check screenshot: `dataServiceIdentifier` returns a real value on iOS 26, and the deprecated `serviceSubscriberCellularProviders` DOES still enumerate service keys. Device shows `0000000100000001 = Not registered` (Tello) / `0000000100000002 = NRNSA` (Swisscom). Checkpoint CLOSED. | 2026-07-11 | ef02d61 | [260711-b4z-per-service-radio-logging-for-multi-sim-](./quick/260711-b4z-per-service-radio-logging-for-multi-sim-/) |
 | 260711-e5s 🔶 | Severe-latency drop tier gated on throughput. A cellular probe that succeeds but takes >5s over a radio that measured >=1Mbps within the freshness window (~6min) is now `.severeLatency` (rawValue 12) — a DROP — instead of a silently-counted "success". Slow probes on poor/unknown throughput stay non-drops (never blame the modem for weak coverage). New `SevereLatencyRule.swift` (Foundation-only, machine-tested via standalone swiftc: all 4 branches + boundaries pass). `referenceThroughputKbps` recorded on both outcomes for audit. Wired through HealthScore denominator/stall bucket, DropTimelineChart, AnalyticsView, EventDetailView, SummaryReportView. Migration smoke-tested on the populated device-mirror simulator store (86→91 rows across the test, 0 lost, `ZREFERENCETHROUGHPUTKBPS` column confirmed present, 0 historical rows reclassified, no 134110). **Awaiting on-device verify (needs real cellular throughput samples — simulator has no cellular path).** | 2026-07-11 | a3af190 | [260711-e5s-severe-latency-tier-gated-on-throughput](./quick/260711-e5s-severe-latency-tier-gated-on-throughput/) |
 
 ## Session Continuity
@@ -109,6 +115,40 @@ None.
 **Stopped at:** quick-260711-e5s complete, blocking checkpoint pending user on-device verification
 
 **Latest activity:** 2026-07-11 — quick 260711-e5s: severe-latency drop tier gated on throughput. All 3 tasks committed (`9cbf2a2`, `0f0bc39`, `a3af190`); migration smoke test passed on the populated simulator store. **Blocked on the plan's blocking checkpoint** — needs the user to install on the physical iPhone 17 Pro Max, run on cellular for ~10min, and confirm a real slow-probe episode is classified `.severeLatency` (not "Probe Success") with a Reference Throughput >=1.0 Mbps, AND that genuinely weak-signal locations do NOT produce false severeLatency events. See `.planning/quick/260711-e5s-severe-latency-tier-gated-on-throughput/260711-e5s-SUMMARY.md` for full detail.
+
+---
+
+## ⚡ ROOT CAUSE FOUND — read this before touching anything (2026-07-11)
+
+**This session stopped being an app-development session and became a field investigation. The app is now instrumentation for a live Apple escalation. Act accordingly.**
+
+**The cause of the cellular drops is the second eSIM (Tello, US voice-only line), not the iPhone hardware.** It cannot register on any Swiss network, so it searches continuously. iPhone is DSDS — both lines share ONE RF chain — and paging/signalling/network-search on the idle line outranks packet data on the active line. Result: the Swisscom line reports full bars + 5G while passing zero data for hours, and iOS never detects it.
+
+**Evidence (all confirmed, not speculation):**
+- Tello **OFF** → zero issues, sustained, even with Tailscale + ProtonVPN reinstalled. Tello **ON** → issues return.
+- Failure occurs with Tello's Voice & Data on **5G *and* on LTE** → **the "5G SA hunting" hypothesis is RULED OUT.** It's the network search itself, not the bands.
+- **Region locale is a RED HERRING** — user set region back to US, issue did not return on that account. The 2026-07-08 "region=CH is the fix" conclusion was WRONG. Do not resurrect it.
+- **iOS's own battery telemetry corroborates it** (Settings → Battery → "Poor Cell Coverage"): the ONLY two days at ~zero are Wed 7/8 and Fri 7/10 — the exact two days Tello was off (dates VERIFIED). All other days 1.5–3.5%. This proves the idle line is actively burning radio, not dormant. **This is Apple's own accounting and is the strongest single artefact in the case** — it cannot be dismissed as third-party instrumentation.
+
+**Consequences — these change the strategy, not just the diagnosis:**
+- The "defect in my specific unit" framing is **DEAD**. Three phone swaps reproduced it because *every* iPhone would.
+- **A REPLACEMENT HANDSET WILL NOT FIX THIS.** Do not pursue ERS. Do not accept a like-for-like swap as closure — it solves nothing and ends the case. Ersatzlieferung is therefore a worthless remedy; only a software fix or Wandelung (refund) actually helps.
+- The defect that survives is still Apple's and still serious: in a **supported, advertised configuration** (Dual SIM), the device silently reports full 5G while carrying zero data for up to 7 hours, and iOS neither detects it, surfaces it, nor offers any control to deprioritise an idle line.
+- Reframe the escalation as **"I have isolated a deterministic reproduction"** — not "it was my eSIM." The sysdiagnose already contains the second eSIM; concealment is impossible and would destroy credibility.
+
+**EXPERIMENT RUNNING (started 2026-07-11):** Tello line **ON**, Network Selection → **Manual → Sunrise**. Tello shows **zero bars** (confirmed) = it did NOT register = this is the intended test (pinned to an unjoinable network, so the PLMN search should be suppressed). Pre-registered predictions:
+- **Poor Cell Coverage stays ~0 with the line ON** → manual mode killed the hunt → **iOS had a remedy available all along and neither applied nor surfaced it.** Devastating for Apple.
+- **Poor Cell Coverage returns to 1.5–3.5%** → iOS silently ignored manual selection and fell back to automatic scanning → a defect in its own right.
+
+**What to do on resume:** ask for the Poor Cell Coverage battery chart + CellGuard drop counts for the days since 2026-07-11. Both outcomes are findings. Do NOT re-litigate the root cause.
+
+**Unexplained, worth chasing:** the three multi-hour "zombie modem" events all start at **04:49 / 04:55 / 05:09** — same time of day. A ~24h retry timer (3GPP **T3245**, the forbidden-PLMN retry timer, max 24h) would produce exactly this. Falsifiable via baseband logs; present to Apple as a hypothesis for *them* to test, not as a conclusion.
+
+**Hard constraint learned this session:** there is **NO public API for signal strength on iOS** (not CoreTelephony, not anywhere in the iOS 26 SDK). Private APIs (`CTGetSignalStrength`, status-bar scraping) are **rejected** — a diagnostic tool that reads undocumented internals hands Apple a free way to dismiss the entire dataset. Do not go looking again. Throughput is the only permitted signal-quality proxy, which is exactly why the `.severeLatency` tier is gated on it.
+
+**Deliverables written this session (commit `cae76ec`):**
+- `apple-support-script-2026-07-11.html` — rebuilt around the reproduction; drops the ERS ask; coaches refusal of a swap.
+- `maengelruege-2026-07-11.html` — first written notice under Art. 201 OR; reserves the Art. 205/206 choice of remedy; pre-emptively kills Ersatzlieferung as a non-remedy; notes Swiss law has **no statutory right to repair** (Apple cannot force a repair loop). **NOT SENT — see Blockers #3.**
 
 **Previous activity:** 2026-07-11 — quick 260711-b4z: per-service DSDS radio logging built; blocked on user's on-device self-check screenshot.
 
