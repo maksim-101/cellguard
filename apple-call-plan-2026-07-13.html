@@ -1,0 +1,275 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apple Support — Escalation Script &amp; Evidence | iPhone 17 Pro Max</title>
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --border: #d2d2d7;
+    --text: #1d1d1f;
+    --muted: #6e6e73;
+    --accent: #0071e3;
+    --red: #c0392b;
+    --red-bg: #fff0ee;
+    --green: #1a7f37;
+    --green-bg: #efffed;
+    --orange: #b45309;
+    --orange-bg: #fffbeb;
+    --purple: #5b21b6;
+    --purple-bg: #f5f3ff;
+    --tag-bg: #e8f0fe;
+    --tag-text: #1a56db;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a1c; --card: #232326; --border: #3a3a3d; --text: #f5f5f7; --muted: #98989d;
+      --red-bg: #2d1a18; --green-bg: #16241a; --orange-bg: #2a2113; --purple-bg: #211c33;
+      --tag-bg: #1c2c4d; --tag-text: #7ab0ff;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1a1a1c; --card: #232326; --border: #3a3a3d; --text: #f5f5f7; --muted: #98989d;
+    --red-bg: #2d1a18; --green-bg: #16241a; --orange-bg: #2a2113; --purple-bg: #211c33;
+    --tag-bg: #1c2c4d; --tag-text: #7ab0ff;
+  }
+  :root[data-theme="light"] {
+    --bg: #f5f5f7; --card: #ffffff; --border: #d2d2d7; --text: #1d1d1f; --muted: #6e6e73;
+    --red-bg: #fff0ee; --green-bg: #efffed; --orange-bg: #fffbeb; --purple-bg: #f5f3ff;
+    --tag-bg: #e8f0fe; --tag-text: #1a56db;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 15px;
+  }
+  .page { max-width: 880px; margin: 0 auto; padding: 32px 20px 80px; }
+
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 4px; }
+  .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+
+  h2 {
+    font-size: 13px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.6px; color: var(--muted); margin: 0 0 12px;
+  }
+  h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 22px 24px; margin-bottom: 20px;
+  }
+  .card.red    { border-color: #f5c6c2; background: var(--red-bg); }
+  .card.green  { border-color: #b5e8c2; background: var(--green-bg); }
+  .card.orange { border-color: #fde68a; background: var(--orange-bg); }
+  .card.purple { border-color: #c4b5fd; background: var(--purple-bg); }
+
+  .placeholder {
+    background: #ffe8a3; color: #6b4d00; padding: 1px 6px;
+    border-radius: 4px; font-weight: 600; font-size: 13px;
+  }
+  @media (prefers-color-scheme: dark) { .placeholder { background: #6b5518; color: #ffe8a3; } }
+
+  .script-block {
+    background: #f0f4ff; border-left: 4px solid var(--accent);
+    border-radius: 0 10px 10px 0; padding: 14px 18px; margin: 12px 0;
+    font-style: italic; color: #1a1a2e; line-height: 1.75;
+  }
+  @media (prefers-color-scheme: dark) { .script-block { background: #1b2338; color: #dfe6f5; } }
+  .script-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.8px; color: var(--accent); margin-bottom: 6px; font-style: normal;
+  }
+
+  .checklist { list-style: none; }
+  .checklist li {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 14px;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist li::before { content: "☐"; font-size: 17px; flex-shrink: 0; color: var(--accent); }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 480px; }
+  th {
+    text-align: left; font-weight: 600; padding: 8px 10px;
+    background: var(--bg); border-bottom: 1px solid var(--border);
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted);
+  }
+  td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); border-radius: 5px; padding: 1px 7px; font-size: 12px; font-weight: 600; }
+  .tag.red { background: var(--red-bg); color: var(--red); }
+
+  .step { display: flex; gap: 16px; margin-bottom: 22px; }
+  .step-num {
+    flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%;
+    background: var(--accent); color: white; font-weight: 700; font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .step-body { flex: 1; min-width: 0; }
+
+  .zombie { color: var(--red); font-weight: 600; }
+  .kill { color: var(--red); font-weight: 600; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+
+  code {
+    font-family: "SF Mono", "Menlo", monospace; font-size: 12px;
+    background: var(--bg); border: 1px solid var(--border);
+    padding: 1px 5px; border-radius: 4px;
+  }
+  pre {
+    font-family: "SF Mono", "Menlo", monospace; font-size: 13px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 14px; overflow-x: auto; margin: 10px 0;
+  }
+
+  .dont {
+    border-left: 4px solid var(--red); background: var(--red-bg);
+    padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 14px;
+  }
+
+  @media print {
+    body { background: white; }
+    .card { break-inside: avoid; }
+    .step { break-inside: avoid; }
+  }
+</style>
+
+
+<div class="page">
+
+  <h1>Apple Engineering Call — Plan</h1>
+  <p class="subtitle">Senior Engineering Manager &middot; Prepared 2026-07-12 &middot; Companion to the Escalation Script</p>
+
+  <div class="card green">
+    <h3 style="color:var(--green); margin-bottom:6px;">✅ You already have the artifact — and it is better than you think</h3>
+    <p style="font-size:14px; margin-bottom:10px;"><strong>Do NOT re-break the phone.</strong> The sysdiagnose you already filed with Feedback Assistant contains a verbose baseband trace that captures an actual silent failure in progress. Verified:</p>
+    <div class="table-wrap">
+    <table>
+      <tbody>
+        <tr><td>Archive</td><td><code>sysdiagnose_2026.06.30_19-37-32+0200_iPhone-OS_iPhone_23F84</code></td></tr>
+        <tr><td>Logging profile active</td><td><strong style="color:var(--green);">Yes</strong> — <code>com.apple.basebandlogging</code>, "Baseband and Telephony Logging" (Apple Inc.)</td></tr>
+        <tr><td>Collector status</td><td><code>Baseband log collection: Success (ABM running)</code></td></tr>
+        <tr><td>Baseband QDSS trace</td><td><code>log-bb-2026-06-30-19-37-49-994-qdss</code> — 128 MB, 134 files</td></tr>
+        <tr><td>Trace window (CEST)</td><td><strong>19:32:04 → 19:37:49</strong></td></tr>
+        <tr><td>Silent failure inside it</td><td><strong class="kill">19:36:50 CEST</strong> (17:36:50 UTC) — <strong>59 s before the trace ends</strong>, radio on LTE</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p style="font-size:14px; margin-top:12px;"><strong>Give her that exact filename and that exact timestamp.</strong> This is the difference between "somewhere in my logs" and "the failure is at 19:36:50, the baseband trace is still running, go look." Engineers act on the second one.</p>
+    <p style="font-size:13px; color:var(--muted); margin-top:10px;">→ Note: your other two captures that evening (20:13:56 and 21:30:17) have ~5-minute trace windows that do <strong>not</strong> contain a logged failure — nearest ones are 28 and 36 minutes away. <strong>Point her at the 19:37:32 archive specifically</strong>, or she may open the wrong one, find nothing, and conclude there is nothing to find.</p>
+  </div>
+
+  <div class="card orange">
+    <h3 style="color:var(--orange); margin-bottom:6px;">The one thing still worth capturing — free, no downside</h3>
+    <p style="font-size:14px;">You have the <em>failure</em> half. You do not have the <em>clean</em> half. <strong>Capture one more sysdiagnose now, while the phone is working on manual selection</strong> (Vol-Up + Vol-Down + Side, ~1.5 s) and note the timestamp.</p>
+    <p style="font-size:14px; margin-top:10px;">That gives the engineer an <strong>A/B pair from the same device, same carrier, same week</strong> — one baseband trace with the search running and data collapsing, one with the search stopped and data healthy. It costs you nothing, breaks nothing, and it is the single most persuasive thing you can hand a radio engineer. Do it before the call.</p>
+  </div>
+
+  <hr>
+
+  <h2>The one rule for this call</h2>
+  <div class="card purple">
+    <p style="font-size:15px;"><strong>This call is for the bug. It is not for the money.</strong></p>
+    <p style="font-size:14px; margin-top:10px;">An engineering manager's currency is the defect. She almost certainly has <strong>no authority to issue a goodwill credit</strong> — that sits with Customer Relations. If you open the reimbursement request with her, the realistic outcome is that you get recoded from <em>"the reporter who isolated a reproduction Apple's own support missed for four months"</em> into <em>"a customer seeking compensation,"</em> and routed back down to Support. You would be trading your single most valuable asset — the engineering channel — for something she cannot grant anyway.</p>
+    <p style="font-size:14px; margin-top:10px;"><strong>Get the bug number first.</strong> That number is what makes the commercial ask land later: it is Apple's own written acknowledgment that the fault is theirs and not yours. Asking for money before it exists throws away the thing that gives the ask its force.</p>
+  </div>
+
+  <div class="card orange">
+    <h3 style="color:var(--orange); margin-bottom:6px;">If she raises compensation herself</h3>
+    <p style="font-size:14px;">Let her. Don't refuse it — just don't <em>lead</em> with it, and don't let it become the subject of the call.</p>
+    <div class="script-block" style="margin-top:10px;">
+      <div class="script-label">Say this</div>
+      "I do want to talk about how this gets made right — I've been without reliable service for four months and through three handsets. But I'd rather deal with the engineering side properly first, and come back to that once the bug is filed. Can you point me to the right person for it afterwards?"
+    </div>
+  </div>
+
+  <hr>
+
+  <h2>The ask — in this order</h2>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h3>A bug number, in writing</h3>
+      <div class="script-block">
+        <div class="script-label">Say this</div>
+        "What I want out of this call is a <strong>Feedback Assistant or Radar number</strong> that I can reference. Not a case number for my support ticket — a <strong>bug ID for the defect itself</strong>, so there's a record that Apple has this, and so I have something to follow up against."
+      </div>
+      <p style="font-size:13px; color:var(--muted);">Get it before the call ends. Everything else is downstream of this.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h3>Point her at the exact archive, the exact minute</h3>
+      <div class="script-block">
+        <div class="script-label">Say this</div>
+        "The sysdiagnose is already in Feedback Assistant. The one you want is <strong>19:37:32 on 30 June</strong> — the baseband logging profile was installed, ABM was running, and the QDSS trace covers 19:32 to 19:37:49. <strong>There is a silent failure at 19:36:50, fifty-nine seconds before the trace ends.</strong> The event log timestamps line up with it. I also have a second capture from the working state for comparison. Your engineers will not need to reproduce this from scratch — it's already in the trace."
+      </div>
+      <p style="font-size:13px; color:var(--muted);">Naming the minute is what gets it opened. "Check my logs" gets it closed.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h3>Name what iOS should have done — this is the defect, not the eSIM</h3>
+      <div class="script-block">
+        <div class="script-label">Say this</div>
+        "iOS knows that line is registered nowhere — it reports no radio technology for it. It knows the search is failing, because it's been failing for four months. And it has a remedy available, because <strong>manual selection is iOS's own setting and it stops the problem completely.</strong> What iOS never does is <strong>bound that search, deprioritise it against the line actually carrying data, or tell me any of this is happening.</strong> That's the defect. Three things, all in software, all Apple's."
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <h2 style="color:var(--red);">The boundary — what you claim, and what you do not</h2>
+
+  <div class="card green">
+    <h3 style="color:var(--green); margin-bottom:8px;">✅ Claim this — it is measured and it holds</h3>
+    <ul style="font-size:14px; margin-left:18px;">
+      <li style="margin-bottom:5px;">235 silent failures over 43 monitored days; <strong>23.1%</strong> of cellular probes failed silently.</li>
+      <li style="margin-bottom:5px;">The four-arm result: <strong>13.5% → 0%</strong>, and the LTE control that changed nothing.</li>
+      <li style="margin-bottom:5px;">Under the failing config, <strong>0 of 111</strong> sliding 23-hour windows were failure-free.</li>
+      <li style="margin-bottom:5px;"><strong>100% of failures are timeouts, 0% are "offline"</strong> — the line never detaches.</li>
+      <li>Apple's own "Poor Cell Coverage" battery telemetry lands on the same two clean days.</li>
+    </ul>
+  </div>
+
+  <div class="card red">
+    <h3 style="color:var(--red); margin-bottom:8px;">🚫 Do NOT claim this — you cannot support it, and it is what will cost you her</h3>
+    <ul style="font-size:14px; margin-left:18px;">
+      <li style="margin-bottom:5px;"><strong>Do not name the failing component.</strong> You do not know it is T3245, and you do not know which baseband subsystem is at fault. Offer T3245 as <em>a hypothesis for them to check</em> — the ~05:00 clustering of the long events is a genuine clue — and let <strong>their</strong> engineers name the part. She will know the modem far better than you do, and one overclaim here converts you from a credible reporter into an amateur with a theory.</li>
+      <li style="margin-bottom:5px;"><strong>Do not claim it is a hardware defect in your unit.</strong> That framing is dead. Three swaps reproduced it because every iPhone would.</li>
+      <li><strong>Do not say the drops are periodic.</strong> They are bursty — retry-with-backoff, not a metronome.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>If she says "that's expected in Dual SIM — the other carrier just isn't available here"</h3>
+    <div class="script-block">
+      <div class="script-label">Say this</div>
+      "Then iOS should stop searching — and it already knows how, because that's exactly what manual selection does, and it costs the primary line nothing. <strong>A line that has failed to register on every network and every band for four months should not still be sweeping the radio at the expense of the line carrying my data.</strong> The retry is unbounded, nothing ever gives up, and the user is never told. I'd accept degraded data. I don't accept a silent black hole the OS reports as healthy."
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>If Swisscom's analysis comes back "our network is fine"</h3>
+    <p style="font-size:14px;">That <strong>helps you</strong>, and you should say so out loud. Swisscom's network does not know or care what your second line's <em>network-selection setting</em> is. <strong>Congestion cannot switch on and off in lockstep with a menu option on an unregistered second line.</strong> Whatever Swisscom reports, the carrier is excluded by the experiment itself — a clean report is confirmation, and an anomalous one is corroboration. You cannot lose this one.</p>
+  </div>
+
+  <hr>
+
+  <h2>After the call — the commercial track</h2>
+  <div class="card">
+    <p style="font-size:14px;">Your leverage for a Gutschein is <strong>not the bug</strong> — Apple can always answer "a workaround exists, use manual selection." Your leverage is <strong>the cost Apple put you to while failing to diagnose their own defect</strong>: four months of degraded service on a premium device, three replacement handsets Apple's own process pushed you through, and an advertised feature (Dual SIM) that cannot be used without silent multi-hour data loss.</p>
+    <p style="font-size:14px; margin-top:10px;">Under Swiss sales law a device lacking a warranted property is a <strong>Sachmangel</strong>, and repeated failed replacement attempts strengthen a claim to <strong>Wandelung</strong> or <strong>Minderung</strong> — a price reduction being, in commercial terms, precisely a Gutschein. That is what the <strong>Mängelrüge</strong> is for, and it is why the legal track must keep running <em>in parallel</em> and must not be dropped just because a workaround now exists.</p>
+    <p style="font-size:14px; margin-top:10px;"><strong>Set expectations honestly:</strong> a goodwill credit at full-iPhone scale is well above what a support or engineering channel normally grants on its own. It usually needs Customer Relations <em>with a consumer-law backdrop behind it</em>. The bug number gets you taken seriously; the Mängelrüge is what gives the number teeth.</p>
+    <p style="font-size:13px; color:var(--muted); margin-top:10px;">→ Worth an hour with the Stiftung für Konsumentenschutz or a Swiss consumer lawyer before the Mängelrüge goes out. Neither the letter nor this page is legal advice.</p>
+  </div>
+
+</div>

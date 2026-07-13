@@ -140,7 +140,7 @@
 <div class="page">
 
   <h1>Apple Support — Escalation Script</h1>
-  <p class="subtitle">iPhone 17 Pro Max &middot; Dual-SIM data starvation &amp; silent modem failure &middot; Prepared 2026-07-11 &middot; <strong>Supersedes the 2026-05-23 script</strong></p>
+  <p class="subtitle">iPhone 17 Pro Max &middot; Dual-SIM data starvation &amp; silent modem failure &middot; Prepared 2026-07-11, root cause revised 2026-07-12 &middot; <strong>Supersedes the 2026-05-23 script</strong></p>
 
   <div class="card red">
     <h3 style="color:var(--red); margin-bottom:6px;">⚠️ Read this before you use the old script</h3>
@@ -157,28 +157,54 @@
 
   <h2>The Finding, in one paragraph</h2>
   <div class="card">
-    <p style="font-size:15px;">A second eSIM (a US voice-only line) is provisioned and active on the device. It cannot register on any Swiss network, so it searches continuously. The iPhone is a <strong>Dual SIM Dual Standby</strong> device — both lines share <strong>one RF chain</strong> — and paging, signalling and network-search on the idle line take <strong>priority over packet data</strong> on the active line. The result: the Swisscom line reports full bars and 5G while passing <strong>zero data, for hours</strong>, and iOS never detects it. <strong>Disabling the second line resolves the problem completely.</strong> Re-enabling it brings the problem back.</p>
+    <p style="font-size:15px;">A second eSIM (a US voice-only line) is provisioned and active on the device. It cannot register on any Swiss network. With <strong>Network Selection set to Automatic</strong>, it therefore never stops <strong>searching</strong> — it sweeps the bands, fails, backs off, and sweeps again, indefinitely. The iPhone is a <strong>Dual SIM Dual Standby</strong> device — both lines share <strong>one RF chain</strong> — so every one of those sweeps takes the transceiver away from the active data line. The result: the Swisscom line reports full bars and 5G while passing <strong>zero data, for hours</strong>, and iOS never detects it.</p>
+    <p style="font-size:15px; margin-top:12px;">The defect is <strong class="kill">the unbounded network search on the idle line</strong> — not the mere presence of a second line. Two independent changes stop the failure completely, and they share exactly one property: <strong>both end the search.</strong> Disabling the second line ends it. Leaving the second line fully enabled but setting <strong>Network Selection to Manual</strong> also ends it. A change that does <em>not</em> stop the search — switching the second line between 5G and LTE — has <strong>no effect at all</strong>.</p>
   </div>
 
-  <h2>Evidence — the three that matter</h2>
+  <div class="card purple">
+    <h3 style="color:var(--purple); margin-bottom:6px;">Why this framing matters</h3>
+    <p style="font-size:14px;">"My second eSIM breaks my phone" invites the answer <em>"then remove the second eSIM"</em> — and the case closes with nothing fixed. <strong>"An idle line's background network search silently blackholes the active line's data, and iOS never bounds it or reports it"</strong> is a defect Apple has to own. Dual SIM is a feature Apple advertises and sells this phone on. Lead with the second sentence.</p>
+  </div>
+
+  <h2>Evidence — the four that matter</h2>
 
   <div class="card green">
-    <h3 style="color:var(--green);">1. Apple's own battery telemetry corroborates it</h3>
+    <h3 style="color:var(--green);">1. A controlled three-arm experiment isolates the search</h3>
+    <p style="font-size:14px; margin-bottom:12px;">Every arm measured with the same instrument, the same probe cadence and the same device. A "silent failure" is a network probe that <strong>timed out while the modem reported an active cellular connection</strong>.</p>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Arm</th><th>Second line configuration</th><th>Search running?</th><th>Silent-failure rate</th></tr></thead>
+      <tbody>
+        <tr><td><strong>A</strong></td><td>Enabled, Network Selection <strong>Automatic</strong></td><td><strong class="kill">Yes</strong></td><td><strong class="kill">96 / 712 = 13.5%</strong></td></tr>
+        <tr><td><strong>A′</strong></td><td>Enabled, Automatic, <strong>forced to LTE</strong></td><td><strong class="kill">Yes</strong></td><td><strong class="kill">No improvement</strong></td></tr>
+        <tr><td><strong>B</strong></td><td><strong>Disabled entirely</strong></td><td>No</td><td><strong style="color:var(--green);">0 / 127 = 0.0%</strong></td></tr>
+        <tr><td><strong>C</strong></td><td>Enabled, Network Selection <strong>Manual</strong></td><td>No</td><td><strong style="color:var(--green);">0 / 57 = 0.0%</strong></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p style="font-size:14px; margin-top:12px;"><strong>Arm C is the one that identifies the bug.</strong> The second line is still enabled, still provisioned, still registered nowhere, still sharing the RF chain — the only thing that changed is that it <strong>stopped searching</strong>. The failures stop with it. Arm A′ is the control: a change that leaves the search running changes nothing.</p>
+    <p style="font-size:14px; margin-top:10px;">Under Arm A, across <strong>111 sliding 23-hour windows</strong>, there was <strong class="kill">not one single failure-free window</strong>. The failure-free periods appear only in Arms B and C.</p>
+  </div>
+
+  <div class="card green">
+    <h3 style="color:var(--green);">2. Apple's own battery telemetry corroborates it</h3>
     <p style="font-size:14px; margin-bottom:10px;"><strong>Settings → Battery → "Poor Cell Coverage", week of 2026-07-04 to 07-11.</strong> The only two days with essentially <strong>zero</strong> poor-coverage battery usage are <strong>Wednesday 07-08</strong> and <strong>Friday 07-10</strong> — the exact two days the second line was switched off. Every other day: 1.5–3.5%.</p>
-    <p style="font-size:14px;">This is <strong>iOS's own accounting</strong>, in Apple's own UI. It proves the idle line is actively burning radio, not sitting dormant. It cannot be dismissed as third-party instrumentation.</p>
+    <p style="font-size:14px;">This is <strong>iOS's own accounting</strong>, in Apple's own UI, and it lands on <strong>the same two days</strong> that the independent probe log records as failure-free. Two unrelated instruments, one of them Apple's, agree. It proves the idle line is actively burning radio, not sitting dormant — and it cannot be dismissed as third-party instrumentation.</p>
     <p style="font-size:13px; color:var(--muted); margin-top:8px;">→ Have the screenshot ready.</p>
   </div>
 
   <div class="card">
-    <h3>2. The unregistered line is visible in CoreTelephony</h3>
-    <pre>Other Line   0000000100000001    Not registered     ← US line
-Data Line    0000000100000002    NRNSA              ← Swisscom</pre>
-    <p style="font-size:14px;">Per Apple's own documentation for <code>serviceCurrentRadioAccessTechnology</code>: <em>"An entry may be nil if the service is not registered on any network."</em> The second line has no radio access technology because it is registered nowhere — while it continues to search.</p>
+    <h3>3. The line never registers — Manual selection silences it, it does not home it</h3>
+    <pre>Other Line   0000000100000001    (no RAT reported)   ← US line
+Data Line    0000000100000002    NRNSA               ← Swisscom</pre>
+    <p style="font-size:14px;">Per Apple's own documentation for <code>serviceCurrentRadioAccessTechnology</code>: <em>"An entry may be nil if the service is not registered on any network."</em> The second line reports no radio access technology because it is registered nowhere.</p>
+    <p style="font-size:14px; margin-top:10px;"><strong>It still reports none under Manual selection, throughout the failure-free period.</strong> Manual selection did not get the line onto a network — it is exactly as unregistered as before. What it changed is that the modem <strong>stopped hunting for one</strong>. This is the cleanest statement of the defect: the harm comes from the search, not from the unregistered state.</p>
   </div>
 
   <div class="card">
-    <h3>3. The failure is independent of the second line's RAT preference</h3>
-    <p style="font-size:14px;">Tested with the second line's <strong>Voice &amp; Data set to 5G, and again to LTE</strong>. The failure occurs either way. This rules out a 5G/NR-specific fault and points squarely at the <strong>network-search behaviour itself</strong>. The second line has <strong>Data Roaming OFF</strong> and <strong>Wi-Fi Calling OFF</strong> — it has no data entitlement and no non-cellular reachability path, so it can only hunt.</p>
+    <h3>4. Every failure is a timeout — never a loss of service</h3>
+    <p style="font-size:14px;">Across <strong>388 logged silent failures</strong>, the failure mode is <strong>100% request timeout</strong> and <strong>0% "connection offline"</strong>. The primary line never detaches, never loses registration, never drops a bar. It stays <em>attached and reports itself healthy</em> while passing no packets — which is precisely why iOS never reacts, and why no user-facing indication ever appears.</p>
+    <p style="font-size:14px; margin-top:10px;">The failures arrive in <strong>bursts, not at fixed intervals</strong> — the signature of a retry-with-backoff loop, not a scheduled timer.</p>
   </div>
 
   <hr>
@@ -237,7 +263,12 @@ Data Line    0000000100000002    NRNSA              ← Swisscom</pre>
       <h3>The reproduction</h3>
       <div class="script-block">
         <div class="script-label">Say this</div>
-        "I have two lines on the device — my Swiss carrier, and a US voice-only eSIM. The US line cannot register on any network here, so it searches continuously. <strong>With that second line switched on, my primary line silently loses all data — full bars, 5G icon, nothing gets through, for up to seven hours at a stretch, and iOS never notices. With that line switched off, the problem disappears entirely.</strong> On, off, on — it tracks every time. It happens whether the second line is set to 5G or LTE, so it isn't a 5G issue. It's the network search itself."
+        "I have two lines on the device — my Swiss carrier, and a US voice-only eSIM. The US line cannot register on any network here, so on Automatic selection it searches continuously. <strong>With that second line searching, my primary line silently loses all data — full bars, 5G icon, nothing gets through, for up to seven hours at a stretch, and iOS never notices.</strong> Thirteen and a half percent of my connectivity probes fail that way.
+        <p style="margin-top:10px;"><strong>Now here's the part I want Engineering to see.</strong> I don't have to disable the line to fix it. I can leave that eSIM fully enabled — still provisioned, still registered on no network, still sharing the radio — and simply set its Network Selection to <strong>Manual</strong>. The failures go to <strong>zero</strong>. The only thing that changed is that it stopped searching."</p>
+      </div>
+      <div class="script-block" style="margin-top:12px;">
+        <div class="script-label">If they push on whether that's really the variable</div>
+        "I ran the control. I set that second line to LTE instead of 5G — that leaves the search running — and it made <strong>no difference whatsoever</strong>. Disabling the line fixes it. Manual selection fixes it. Changing the radio type does not. The one thing the two fixes have in common is that they both stop the network search."
       </div>
     </div>
   </div>
@@ -246,10 +277,14 @@ Data Line    0000000100000002    NRNSA              ← Swisscom</pre>
     <div class="step-num">3</div>
     <div class="step-body">
       <h3>Close the "that's expected in Dual SIM" exit</h3>
-      <p style="font-size:14px; margin-bottom:8px; color:var(--muted);">They will reach for this. Do not argue that RF contention shouldn't exist — it does, and they'll be right. Attack the <em>silence</em> instead.</p>
+      <p style="font-size:14px; margin-bottom:8px; color:var(--muted);">They will reach for this. Do not argue that RF contention shouldn't exist — it does, and they'll be right. Attack the <em>unboundedness</em> and the <em>silence</em> instead.</p>
       <div class="script-block">
         <div class="script-label">Say this</div>
         "I understand Dual SIM shares one radio, and I'd accept that my data gets slower. <strong>What I don't accept is that the modem reports full 5G signal while passing zero data for seven hours, and the operating system never detects it.</strong> Radio contention should degrade a connection. It should not produce a silent black hole that iOS reports as a healthy connection. That's the defect. And Dual SIM is a feature Apple advertises and sells this phone on — this is a supported configuration."
+      </div>
+      <div class="script-block" style="margin-top:12px;">
+        <div class="script-label">If they say "the second line just can't register here — that's the carrier's problem"</div>
+        "Then iOS should stop searching. It already knows how — that's exactly what Manual selection does, and it costs the primary line nothing. <strong>A line that has failed to register on every network, on every band, for four straight months should not still be sweeping the radio every few minutes at the expense of the line that's actually carrying my data.</strong> The retry is unbounded. Nothing in iOS ever gives up, backs off far enough, or tells me. That's a software defect, and it's Apple's."
       </div>
     </div>
   </div>

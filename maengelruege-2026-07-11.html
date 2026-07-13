@@ -120,15 +120,31 @@
 
     <p>Das Gerät verliert im Mobilfunkbetrieb wiederholt und über längere Zeiträume vollständig die Datenverbindung, <strong>ohne dass dies vom Betriebssystem erkannt oder angezeigt wird</strong>. Das Gerät zeigt während dieser Ausfälle volle Signalstärke und ein 5G-Symbol an; tatsächlich wird kein einziges Datenpaket übertragen. Einzelne solche Ausfälle dauerten <strong>über sechs Stunden</strong> ohne jeden Hinweis an die Nutzerin oder den Nutzer.</p>
 
-    <p>Über einen Beobachtungszeitraum von 43 Tagen wurden <strong>317 derartige stille Ausfälle</strong> protokolliert, an 39 von 43 Tagen. Die gemessene Ausfallzeit beträgt rund <strong>73 Stunden</strong>. Sämtliche in diesem Zeitraum verfügbaren iOS-, Modemfirmware- und Betreibereinstellungs-Updates wurden installiert; die Ausfallquote veränderte sich dadurch nicht (15,0 % vor, 15,3 % nach den Updates).</p>
+    <p>Über einen Beobachtungszeitraum von <strong>43 protokollierten Tagen</strong> (25. März bis 23. Mai 2026) wurden <strong>235 solcher stillen Ausfälle</strong> aufgezeichnet, verteilt auf <strong>35 dieser 43 Tage</strong>. Von sämtlichen Messsonden, die über die Mobilfunkverbindung liefen, schlugen <strong>23,1 %</strong> (189 von 818) auf diese stille Weise fehl — rund jede vierte. Hinzu kommen 82 offen erkennbare Verbindungsfehler, die hier <em>nicht</em> mitgezählt sind. Sämtliche in diesem Zeitraum verfügbaren iOS-, Modemfirmware- und Betreibereinstellungs-Updates wurden installiert, ohne dass sich das Fehlerbild veränderte.</p>
 
-    <p>Der Mangel tritt in einer von Apple ausdrücklich beworbenen und unterstützten Gerätekonfiguration auf: bei aktiviertem <strong>Dual-SIM-Betrieb</strong> mit einer zweiten, im Inland nicht registrierbaren eSIM. Das Gerät ist dadurch für seinen vorausgesetzten Gebrauch — die zuverlässige Übertragung von Mobilfunkdaten — erheblich untauglich (Art. 197 Abs. 1 OR).</p>
+    <h2 class="sec">1.1 Ursache des Mangels</h2>
+
+    <p>Die Ursache liess sich am 11./12. Juli 2026 durch eine kontrollierte Versuchsreihe isolieren. Sie liegt <strong>nicht</strong> im blossen Vorhandensein einer zweiten Leitung, sondern im Verhalten der Geräte-Software: Ist auf der zweiten (im Inland nicht registrierbaren) Leitung die <strong>automatische Netzwahl</strong> aktiv, so sucht das Gerät <strong>zeitlich unbegrenzt und ohne Abbruchkriterium</strong> nach einem Netz, das diese Leitung nie erreichen wird. Da beide Leitungen sich <strong>eine einzige Funkeinheit teilen</strong> (Dual SIM Dual Standby), entzieht jeder dieser Suchvorgänge der aktiven Datenleitung die Funkeinheit. Die aktive Leitung bleibt dabei formal am Netz angemeldet und meldet dem Betriebssystem eine <em>intakte</em> Verbindung — überträgt aber keine Daten. Sämtliche 235 protokollierten Ausfälle sind Zeitüberschreitungen bei bestehender, vom System als intakt gemeldeter Verbindung; in keinem einzigen Fall meldete das Gerät einen Verbindungsabbruch.</p>
+
+    <p>Der Mangel tritt damit in einer von Apple ausdrücklich beworbenen und unterstützten Gerätekonfiguration auf: im <strong>Dual-SIM-Betrieb</strong>. Das Gerät ist für seinen vorausgesetzten Gebrauch — die zuverlässige Übertragung von Mobilfunkdaten — erheblich untauglich (Art. 197 Abs. 1 OR).</p>
+
+    <h2 class="sec">1.2 Behelfslösung — der Mangel bleibt bestehen</h2>
+
+    <p>Ich lege offen, dass ich <strong>selbst einen Behelf gefunden habe</strong>, mit dem die Ausfälle aufhören: Wird die Netzwahl der zweiten Leitung von „automatisch" auf <strong>„manuell"</strong> umgestellt, so stellt das Gerät die Netzsuche ein, und die Ausfälle verschwinden vollständig. Dieser Behelf <strong>heilt den Mangel jedoch nicht</strong>, und zwar aus drei Gründen:</p>
+
+    <ol class="legal">
+      <li><strong>Er stammt nicht von Ihnen.</strong> Weder Apple noch der Apple Support haben ihn in über vier Monaten und drei Gerätetauschen je genannt. Ich habe ihn durch eigene Messungen gefunden. Eine Abhilfe, die die Käuferschaft selbst entwickeln muss, ist keine Erfüllung des Kaufvertrages.</li>
+      <li><strong>Er kostet Funktionalität.</strong> Die manuelle Netzwahl schaltet die automatische Netzsuche dauerhaft ab. Die betroffene Leitung kann sich danach in keinem Netz mehr selbsttätig anmelden — auch nicht im Ausland, auch nicht bei Netzwechsel. Der Behelf besteht also darin, eine <strong>beworbene Grundfunktion des Geräts dauerhaft aufzugeben</strong>.</li>
+      <li><strong>Der eigentliche Mangel besteht fort.</strong> Das Betriebssystem begrenzt die Netzsuche der Nebenleitung nach wie vor nicht, erkennt den dadurch verursachten vollständigen Datenausfall nach wie vor nicht und zeigt ihn der Nutzerin oder dem Nutzer nach wie vor nicht an. Behoben ist nichts; ich weiche dem Fehler lediglich aus.</li>
+    </ol>
+
+    <p>Nach Art. 197 ff. OR wird ein Sachmangel nicht dadurch beseitigt, dass die Käuferschaft ihn durch eigenen Verzicht auf Funktionen umgeht.</p>
 
     <h2 class="sec">2. Zeitpunkt der Kenntniserlangung und Rechtzeitigkeit der Rüge</h2>
 
     <p>Es handelt sich um einen <strong>versteckten Mangel</strong>. Er war bei Übergabe nicht erkennbar und liess sich auch danach über Monate hinweg nicht zuverlässig zuordnen: Das Betriebssystem meldet während der Ausfälle ausdrücklich eine <em>intakte</em> Verbindung, weshalb der Mangel gerade nicht ohne Weiteres feststellbar war. Auch mehrere von Apple veranlasste Gerätetausche führten zu keiner Klärung, da das Fehlerbild jeweils erneut auftrat.</p>
 
-    <p>Sichere Kenntnis vom Mangel und seinem Auslöser habe ich erst am <strong>11. Juli 2026</strong> erlangt, als sich der Fehler erstmals reproduzierbar isolieren liess. Ich rüge den Mangel hiermit <strong>unverzüglich</strong> nach Kenntniserlangung im Sinne von Art. 201 Abs. 3 OR.</p>
+    <p>Sichere Kenntnis vom Mangel und seiner Ursache habe ich erst am <strong>11./12. Juli 2026</strong> erlangt, als sich der Fehler durch die unter Ziff. 6 beschriebene Versuchsreihe erstmals reproduzierbar isolieren liess. Ich rüge den Mangel hiermit <strong>unverzüglich</strong> nach Kenntniserlangung im Sinne von Art. 201 Abs. 3 OR.</p>
 
     <h2 class="sec">3. Rechtsgrundlage</h2>
 
@@ -152,6 +168,8 @@
       <li>welche Abhilfe Sie mir andernfalls anbieten.</li>
     </ol>
 
+    <p>Ich halte ausdrücklich fest, dass weder ein erneuter Gerätetausch (Ziff. 4) noch der Verweis auf die von mir selbst gefundene Behelfslösung (Ziff. 1.2) eine taugliche Abhilfe darstellt. Eine Erledigung der Sache mit dem Hinweis, ich möge die Netzwahl dauerhaft auf „manuell" belassen, wird von mir nicht akzeptiert.</p>
+
     <p>Sollte innert Frist keine Stellungnahme erfolgen oder keine taugliche Abhilfe angeboten werden, behalte ich mir vor, mein Wahlrecht nach Art. 205 f. OR auszuüben — namentlich die <strong>Wandelung des Kaufvertrages</strong> zu erklären — sowie weitere rechtliche Schritte einzuleiten.</p>
 
     <h2 class="sec">6. Beweismittel</h2>
@@ -159,12 +177,21 @@
     <p>Folgende Nachweise liegen vor und können Ihnen bzw. Ihrer Entwicklungsabteilung jederzeit zur Verfügung gestellt werden:</p>
 
     <ul class="ev">
-      <li>Strukturierte Ereignisprotokolle über mehr als 100 Tage (Zeitstempel, Funkzugangstechnologie, Netzwerkpfad-Status, Messsonden-Ergebnisse), maschinenlesbar als JSON;</li>
-      <li>eine <strong>reproduzierbare Fehlerauslösung</strong>: bei aktivierter zweiter eSIM tritt der Fehler auf, bei deaktivierter zweiter eSIM tritt er nicht auf — mehrfach in beide Richtungen bestätigt;</li>
-      <li>die <strong>geräteeigene Batteriestatistik von iOS</strong> („Poor Cell Coverage"), die den Mechanismus unabhängig bestätigt: an den Tagen mit deaktivierter zweiter Leitung liegt der entsprechende Verbrauch bei null, an allen übrigen Tagen bei 1,5–3,5 %;</li>
+      <li>Strukturierte Ereignisprotokolle über mehr als 100 Tage (Zeitstempel, Funkzugangstechnologie, Netzwerkpfad-Status, Messsonden-Ergebnisse je Leitung), maschinenlesbar als JSON;</li>
+      <li>eine <strong>kontrollierte Versuchsreihe mit vier Anordnungen</strong>, jeweils mit demselben Messverfahren am selben Gerät erhoben:
+        <ul style="margin-top:5px; margin-left:18px;">
+          <li>zweite Leitung aktiv, Netzwahl <strong>automatisch</strong> (Suche läuft): <strong>96 von 712 Messungen fehlgeschlagen — 13,5 %</strong>;</li>
+          <li>zweite Leitung aktiv, automatisch, zusätzlich auf LTE beschränkt (Suche läuft weiter): <strong>keine Verbesserung</strong> — die Funktechnologie ist nicht die Ursache;</li>
+          <li>zweite Leitung <strong>deaktiviert</strong> (keine Suche): <strong>0 von 127 Messungen fehlgeschlagen — 0 %</strong>;</li>
+          <li>zweite Leitung <strong>aktiv, Netzwahl manuell</strong> (keine Suche): <strong>0 von 57 Messungen fehlgeschlagen — 0 %</strong>.</li>
+        </ul>
+        Die dritte und die vierte Anordnung unterscheiden sich einzig darin, ob das Gerät nach einem Netz sucht — und nur daran entscheidet sich, ob die Datenverbindung ausfällt. In der ersten Anordnung gab es über <strong>111 gleitende 23-Stunden-Fenster hinweg kein einziges ausfallfreies Fenster</strong>;</li>
+      <li>die <strong>geräteeigene Batteriestatistik von iOS</strong> („Poor Cell Coverage"), die den Mechanismus unabhängig und mit Apples eigenen Mitteln bestätigt: an den beiden Tagen mit deaktivierter zweiter Leitung liegt der entsprechende Verbrauch bei null, an allen übrigen Tagen bei 1,5–3,5 % — dieselben zwei Tage, die auch das Ereignisprotokoll als ausfallfrei ausweist;</li>
       <li>Systemdiagnosen (sysdiagnose) des Geräts;</li>
       <li>eine laufende netzseitige Analyse meines Mobilfunkanbieters (Ticket-Nr. <span class="ph">Swisscom-Ticket-Nr.</span>), die von Apple selbst angefordert wurde.</li>
     </ul>
+
+    <p style="font-size:14px; color:#6e6e73;">Der Vollständigkeit halber: Die Messsonde kann den Ausfall als solchen belegen (Netzwerkpfad gemeldet „intakt", gültige Funktechnologie, gleichzeitiges Fehlschlagen gegen mehrere unabhängige Gegenstellen). Welche Baugruppe der Gerätesoftware im Einzelnen versagt, kann sie nicht bestimmen; das festzustellen ist Sache Ihrer Entwicklungsabteilung, der die Rohdaten offenstehen.</p>
 
     <h2 class="sec">7. Weitere Vorbehalte</h2>
 
