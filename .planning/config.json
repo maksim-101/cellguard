@@ -31,5 +31,17 @@
   "mode": "yolo",
   "granularity": "coarse",
   "runtime": "claude",
-  "resolve_model_ids": true
+  "model_profile_overrides": {
+    "antigravity": {
+      "opus": {
+        "model": "gemini-3.1-pro-high"
+      },
+      "sonnet": {
+        "model": "gemini-3.6-flash-high"
+      },
+      "haiku": {
+        "model": "gemini-3.6-flash-low"
+      }
+    }
+  }
 }
