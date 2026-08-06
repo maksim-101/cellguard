@@ -19,3 +19,6 @@ Packages/
 # Personal cellular data exports and Apple Feedback reports (local-only)
 cellguard-export-*.json
 reports/
+
+# GSD planning internals — never public
+.planning/
